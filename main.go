@@ -1,7 +1,9 @@
 package main
 
 import (
+	"EtsyScraper/controllers"
 	initializer "EtsyScraper/init"
+	"EtsyScraper/models"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +14,8 @@ import (
 
 var server *gin.Engine
 
+var controller controllers.User
+
 func init() {
 	config, err := initializer.LoadProjConfig(".")
 	if err != nil {
@@ -19,6 +23,10 @@ func init() {
 	}
 
 	initializer.DataBaseConnect(&config)
+
+	initializer.DB.AutoMigrate(&models.Account{})
+	fmt.Println("Migration is completed")
+
 }
 func main() {
 
@@ -29,13 +37,14 @@ func main() {
 	}
 
 	server = gin.Default()
-	fmt.Println("Migration is completed")
 
 	router := server.Group("/auth")
 	router.GET("/test", func(ctx *gin.Context) {
 		message := "Welcome to EtsyScraper a"
 		ctx.JSON(http.StatusOK, gin.H{"HTTPstatus": http.StatusOK, "message": message})
 	})
+	register := controllers.NewUserController(initializer.DB).RegisterUser
+	router.POST("/register", register)
 
 	log.Fatal(server.Run(":" + config.ServerPort))
 }
