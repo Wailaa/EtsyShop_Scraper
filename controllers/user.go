@@ -34,12 +34,19 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": message})
 		return
 	}
+	passwardHashed, err := utils.HashPass(account.Password)
+	if err != nil {
+		log.Fatal(err)
+		message := "error while hashing password"
+		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
+		return
+	}
 
 	newAccount := models.Account{
 		FirstName:        account.FirstName,
 		LastName:         account.LastName,
 		Email:            account.Email,
-		PasswordHashed:   utils.HashPass(account.Password),
+		PasswordHashed:   passwardHashed,
 		SubscriptionType: account.SubscriptionType,
 	}
 
@@ -96,7 +103,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	if loginDetails.Password != result.PasswordHashed {
+	if !utils.IsPassVerified(loginDetails.Password, result.PasswordHashed) {
 		message := "password is incorrect"
 		log.Println(message)
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
