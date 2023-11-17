@@ -3,6 +3,8 @@ package controllers
 import (
 	"EtsyScraper/models"
 	"EtsyScraper/utils"
+	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -53,5 +55,54 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 
 	message := "user created"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
+
+}
+func (s *User) GetAccountByEmail(email string) *models.Account {
+	account := &models.Account{}
+
+	result := s.DB.Where("email = ?", email).First(&account)
+	if result.Error != nil {
+
+		return account
+
+	}
+	newAccount := &models.Account{
+		FirstName:        account.FirstName,
+		LastName:         account.LastName,
+		Email:            account.Email,
+		PasswordHashed:   account.PasswordHashed,
+		SubscriptionType: account.SubscriptionType,
+	}
+	return newAccount
+}
+
+func (s *User) LoginAccount(ctx *gin.Context) {
+
+	var loginDetails *models.LoginRequest
+
+	if err := ctx.ShouldBindJSON(&loginDetails); err != nil {
+		message := "failed to fetch login details"
+
+		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	result := s.GetAccountByEmail(loginDetails.Email)
+
+	if *result == (models.Account{}) {
+		message := "user not found"
+		log.Println(message)
+		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	if loginDetails.Password != result.PasswordHashed {
+		message := "password is incorrect"
+		log.Println(message)
+		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	fmt.Println(result)
 
 }

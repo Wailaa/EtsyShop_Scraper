@@ -20,3 +20,8 @@ type RegisterAccount struct {
 	PasswordConfirm  string `json:"password_confirm" binding:"required"`
 	SubscriptionType string `json:"subscription_type"`
 }
+
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
