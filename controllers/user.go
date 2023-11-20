@@ -3,7 +3,6 @@ package controllers
 import (
 	"EtsyScraper/models"
 	"EtsyScraper/utils"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -110,6 +109,13 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	fmt.Println(result)
+	accessToken, err := utils.CreateJwtToken()
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Failed", "message": err.Error()})
+	}
+
+	ctx.SetCookie("accessToken", accessToken, 86400, "/", "localhost", false, true)
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "login success", "accessToken": gin.H{"bearer": accessToken}})
 
 }

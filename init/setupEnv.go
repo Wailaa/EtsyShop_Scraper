@@ -10,6 +10,7 @@ type Config struct {
 	DataBasePort         string `mapstructure:"POSTGRES_PORT"`
 	ServerPort           string `mapstructure:"PORT"`
 	ClientOrigin         string `mapstructure:"CLIENT_ORIGIN"`
+	JwtSecret            string `mapstructure:"JWT_SECRET"`
 }
 
 func LoadProjConfig(path string) (config Config, err error) {
