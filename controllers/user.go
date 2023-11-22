@@ -33,6 +33,7 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": message})
 		return
 	}
+
 	passwardHashed, err := utils.HashPass(account.Password)
 	if err != nil {
 		log.Fatal(err)
@@ -41,12 +42,21 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	newAccount := models.Account{
-		FirstName:        account.FirstName,
-		LastName:         account.LastName,
-		Email:            account.Email,
-		PasswordHashed:   passwardHashed,
-		SubscriptionType: account.SubscriptionType,
+	EmailVerificationToken, err := utils.CreateVerificationString()
+	if err != nil {
+		log.Fatal(err)
+		message := "error while creating the User"
+		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
+		return
+	}
+
+	newAccount := &models.Account{
+		FirstName:              account.FirstName,
+		LastName:               account.LastName,
+		Email:                  account.Email,
+		PasswordHashed:         passwardHashed,
+		SubscriptionType:       account.SubscriptionType,
+		EmailVerificationToken: EmailVerificationToken,
 	}
 
 	res := s.DB.Create(&newAccount)
@@ -58,7 +68,7 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 			return
 		}
 	}
-
+	utils.SendVerificationEmail(newAccount.FirstName, newAccount.Email, EmailVerificationToken)
 	message := "user created"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
 
