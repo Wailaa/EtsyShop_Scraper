@@ -69,7 +69,7 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 		}
 	}
 	utils.SendVerificationEmail(newAccount.FirstName, newAccount.Email, EmailVerificationToken)
-	message := "user created"
+	message := "thank you for registering, please check your email inbox"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
 
 }
@@ -128,4 +128,37 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "login success", "accessToken": gin.H{"bearer": accessToken}})
 
+}
+
+func (s *User) VerifyAccount(ctx *gin.Context) {
+	TranID := ctx.Query("TranID")
+
+	VerifyUser := &models.Account{}
+
+	DBCheck := s.DB.Where("email_verification_token = ?", TranID).Find(&VerifyUser).Limit(1)
+	if DBCheck.Error != nil {
+		log.Fatalln(DBCheck.Error)
+		message := "something went wrong while verifing email"
+		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	if *VerifyUser == (models.Account{}) {
+		message := "Invalid verification code or account does not exists"
+		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	if VerifyUser.EmailVerified {
+		message := "this link is not valid anymore"
+		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	VerifyUser.EmailVerificationToken = ""
+	VerifyUser.EmailVerified = true
+	s.DB.Save(&VerifyUser)
+
+	message := "Email has been verified"
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
 }

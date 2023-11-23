@@ -44,9 +44,11 @@ func main() {
 		ctx.JSON(http.StatusOK, gin.H{"HTTPstatus": http.StatusOK, "message": message})
 	})
 	register := controllers.NewUserController(initializer.DB).RegisterUser
+	confirmEmail := controllers.NewUserController(initializer.DB).VerifyAccount
 	login := controllers.NewUserController(initializer.DB).LoginAccount
 	router.POST("/register", register)
 	router.POST("/login", login)
+	router.GET("/verifyaccount", confirmEmail)
 
 	log.Fatal(server.Run(":" + config.ServerPort))
 }
