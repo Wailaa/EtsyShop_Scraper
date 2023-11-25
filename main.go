@@ -14,8 +14,6 @@ import (
 
 var server *gin.Engine
 
-var controller controllers.User
-
 func init() {
 	config, err := initializer.LoadProjConfig(".")
 	if err != nil {

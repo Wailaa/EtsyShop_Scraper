@@ -68,7 +68,7 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 			return
 		}
 	}
-	utils.SendVerificationEmail(newAccount.FirstName, newAccount.Email, EmailVerificationToken)
+	utils.SendVerificationEmail(newAccount)
 	message := "thank you for registering, please check your email inbox"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
 
@@ -155,9 +155,7 @@ func (s *User) VerifyAccount(ctx *gin.Context) {
 		return
 	}
 
-	VerifyUser.EmailVerificationToken = ""
-	VerifyUser.EmailVerified = true
-	s.DB.Save(&VerifyUser)
+	s.DB.Model(VerifyUser).Updates(map[string]interface{}{"email_verified": true, "email_verification_token": ""})
 
 	message := "Email has been verified"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
