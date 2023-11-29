@@ -11,7 +11,9 @@ type Config struct {
 	ServerPort           string `mapstructure:"PORT"`
 	ClientOrigin         string `mapstructure:"CLIENT_ORIGIN"`
 
-	JwtSecret string `mapstructure:"JWT_SECRET"`
+	JwtSecret   string `mapstructure:"JWT_SECRET"`
+	AccTokenExp int64  `mapstructure:"ACCESS_TOKEN_DUARATION"`
+	RefTokenExp int64  `mapstructure:"REFRESH_TOKEN_DUARATION"`
 
 	EmailAddress string `mapstructure:"PROJECT_EMAIL_ADDRESS"`
 	SMTPHost     string `mapstructure:"MAILTRAP_SMTP_HOST"`

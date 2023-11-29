@@ -9,7 +9,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
-func CreateJwtToken() (string, error) {
+func CreateJwtToken(exp int64) (string, error) {
 	now := time.Now().UTC()
 
 	config, err := initializer.LoadProjConfig(".")
@@ -21,7 +21,7 @@ func CreateJwtToken() (string, error) {
 
 	claims := &jwt.MapClaims{
 		"iat":       now,
-		"expiresAt": now.Add(time.Hour * 24),
+		"expiresAt": now.Add(time.Hour * time.Duration(exp)),
 	}
 
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

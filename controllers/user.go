@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	"EtsyScraper/utils"
 	"log"
@@ -95,6 +96,11 @@ func (s *User) GetAccountByEmail(email string) *models.Account {
 func (s *User) LoginAccount(ctx *gin.Context) {
 
 	var loginDetails *models.LoginRequest
+	config, err := initializer.LoadProjConfig(".")
+	if err != nil {
+		log.Fatal("Could not load environment variables", err)
+
+	}
 
 	if err := ctx.ShouldBindJSON(&loginDetails); err != nil {
 		message := "failed to fetch login details"
@@ -119,14 +125,24 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, err := utils.CreateJwtToken()
+	accessToken, err := utils.CreateJwtToken(config.AccTokenExp)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Failed", "message": err.Error()})
 	}
 
+	refreshToken, err := utils.CreateJwtToken(config.RefTokenExp)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Failed", "message": err.Error()})
+	}
+	loginResponse := &models.LoginResponse{
+		TokenType:    "Bearer",
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
 	ctx.SetCookie("accessToken", accessToken, 86400, "/", "localhost", false, true)
+	ctx.SetCookie("refreshToken", refreshToken, 604800, "/", "localhost", false, true)
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "login success", "accessToken": gin.H{"bearer": accessToken}})
+	ctx.JSON(http.StatusOK, loginResponse)
 
 }
 
