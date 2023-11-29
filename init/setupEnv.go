@@ -18,6 +18,8 @@ type Config struct {
 	SMTPPass     string `mapstructure:"MAILTRAP_SMTP_PASS"`
 	SMTPPort     int    `mapstructure:"MAILTRAP_SMTP_PORT"`
 	SMTPUser     string `mapstructure:"MAILTRAP_SMTP_USER"`
+
+	RedisURL string `mapstructure:"REDISURL"`
 }
 
 func LoadProjConfig(path string) (config Config, err error) {

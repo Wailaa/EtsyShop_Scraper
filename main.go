@@ -21,6 +21,7 @@ func init() {
 	}
 
 	initializer.DataBaseConnect(&config)
+	initializer.RedisDBConnect(&config)
 
 	initializer.DB.AutoMigrate(&models.Account{})
 	fmt.Println("Migration is completed")
