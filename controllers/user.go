@@ -4,6 +4,7 @@ import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	"EtsyScraper/utils"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -68,7 +69,11 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 			ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
 			return
 		}
+		message := "internal issue"
+		ctx.JSON(http.StatusConflict, gin.H{"status": "failed", "message": message})
+		return
 	}
+
 	utils.SendVerificationEmail(newAccount)
 	message := "thank you for registering, please check your email inbox"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
@@ -128,21 +133,51 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 	accessToken, err := utils.CreateJwtToken(config.AccTokenExp)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Failed", "message": err.Error()})
+		return
 	}
 
 	refreshToken, err := utils.CreateJwtToken(config.RefTokenExp)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Failed", "message": err.Error()})
+		return
 	}
+
 	loginResponse := &models.LoginResponse{
 		TokenType:    "Bearer",
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}
-	ctx.SetCookie("accessToken", accessToken, 86400, "/", "localhost", false, true)
-	ctx.SetCookie("refreshToken", refreshToken, 604800, "/", "localhost", false, true)
+	ctx.SetCookie("accessToken", string(*accessToken), 86400, "/", "localhost", false, true)
+	ctx.SetCookie("refreshToken", string(*refreshToken), 604800, "/", "localhost", false, true)
 
 	ctx.JSON(http.StatusOK, loginResponse)
+
+}
+
+func (s *User) LogOutAccount(ctx *gin.Context) {
+	accessToken, _ := ctx.Cookie("accessToken")
+	refreshToken, _ := ctx.Cookie("refreshToken")
+
+	if accessToken == "" || refreshToken == "" {
+		fmt.Println(fmt.Errorf("incorrect token or the session has expired"))
+		ctx.JSON(http.StatusConflict, gin.H{"status": "success", "message": "user logged out successfully"})
+		ctx.Abort()
+	}
+
+	err := utils.BlacklistJWT(accessToken)
+	if err != nil {
+		fmt.Errorf(err.Error())
+		return
+	}
+	err = utils.BlacklistJWT(refreshToken)
+	if err != nil {
+		fmt.Errorf(err.Error())
+		return
+	}
+
+	ctx.SetCookie("accessToken", "", -1, "/", "localhost", false, true)
+	ctx.SetCookie("refreshToken", "", -1, "/", "localhost", false, true)
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "user logged out successfully"})
 
 }
 
