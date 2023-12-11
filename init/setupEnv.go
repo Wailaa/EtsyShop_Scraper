@@ -1,6 +1,10 @@
 package initializer
 
-import "github.com/spf13/viper"
+import (
+	"time"
+
+	"github.com/spf13/viper"
+)
 
 type Config struct {
 	DataBaseHost         string `mapstructure:"POSTGRES_HOST"`
@@ -11,9 +15,9 @@ type Config struct {
 	ServerPort           string `mapstructure:"PORT"`
 	ClientOrigin         string `mapstructure:"CLIENT_ORIGIN"`
 
-	JwtSecret   string `mapstructure:"JWT_SECRET"`
-	AccTokenExp int64  `mapstructure:"ACCESS_TOKEN_DUARATION"`
-	RefTokenExp int64  `mapstructure:"REFRESH_TOKEN_DUARATION"`
+	JwtSecret   string        `mapstructure:"JWT_SECRET"`
+	AccTokenExp time.Duration `mapstructure:"ACCESS_TOKEN_DUARATION"`
+	RefTokenExp time.Duration `mapstructure:"REFRESH_TOKEN_DUARATION"`
 
 	EmailAddress string `mapstructure:"PROJECT_EMAIL_ADDRESS"`
 	SMTPHost     string `mapstructure:"MAILTRAP_SMTP_HOST"`
