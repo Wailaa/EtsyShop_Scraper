@@ -4,7 +4,6 @@ import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	"EtsyScraper/utils"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -38,7 +37,7 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 
 	passwardHashed, err := utils.HashPass(account.Password)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		message := "error while hashing password"
 		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
 		return
@@ -46,7 +45,7 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 
 	EmailVerificationToken, err := utils.CreateVerificationString()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		message := "error while creating the User"
 		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
 		return
@@ -109,7 +108,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&loginDetails); err != nil {
 		message := "failed to fetch login details"
-
+		log.Println(message)
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
 		return
 	}
@@ -132,12 +131,14 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 
 	accessToken, err := utils.CreateJwtToken(config.AccTokenExp)
 	if err != nil {
+		log.Println(err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Failed", "message": err.Error()})
 		return
 	}
 
 	refreshToken, err := utils.CreateJwtToken(config.RefTokenExp)
 	if err != nil {
+		log.Println(err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Failed", "message": err.Error()})
 		return
 	}
@@ -159,19 +160,20 @@ func (s *User) LogOutAccount(ctx *gin.Context) {
 	refreshToken, _ := ctx.Cookie("refreshToken")
 
 	if accessToken == "" || refreshToken == "" {
-		fmt.Println(fmt.Errorf("incorrect token or the session has expired"))
-		ctx.JSON(http.StatusConflict, gin.H{"status": "success", "message": "user logged out successfully"})
-		ctx.Abort()
+		message := "incorrect token or the session has expired"
+		log.Println(message)
+		ctx.JSON(http.StatusConflict, gin.H{"status": "failed", "message": message})
+		return
 	}
 
 	err := utils.BlacklistJWT(accessToken)
 	if err != nil {
-		fmt.Errorf(err.Error())
+		log.Println(err.Error())
 		return
 	}
 	err = utils.BlacklistJWT(refreshToken)
 	if err != nil {
-		fmt.Errorf(err.Error())
+		log.Println(err.Error())
 		return
 	}
 
@@ -188,7 +190,7 @@ func (s *User) VerifyAccount(ctx *gin.Context) {
 
 	DBCheck := s.DB.Where("email_verification_token = ?", TranID).Find(&VerifyUser).Limit(1)
 	if DBCheck.Error != nil {
-		log.Fatalln(DBCheck.Error)
+		log.Println(DBCheck.Error)
 		message := "something went wrong while verifing email"
 		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
 		return
@@ -196,12 +198,14 @@ func (s *User) VerifyAccount(ctx *gin.Context) {
 
 	if *VerifyUser == (models.Account{}) {
 		message := "Invalid verification code or account does not exists"
+		log.Println(message)
 		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
 		return
 	}
 
 	if VerifyUser.EmailVerified {
 		message := "this link is not valid anymore"
+		log.Println(message)
 		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
 		return
 	}
