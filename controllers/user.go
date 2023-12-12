@@ -130,14 +130,14 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, err := utils.CreateJwtToken(config.AccTokenExp)
+	accessToken, err := utils.CreateJwtToken(config.AccTokenExp, result.ID)
 	if err != nil {
 		log.Println(err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Failed", "message": err.Error()})
 		return
 	}
 
-	refreshToken, err := utils.CreateJwtToken(config.RefTokenExp)
+	refreshToken, err := utils.CreateJwtToken(config.RefTokenExp, result.ID)
 	if err != nil {
 		log.Println(err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Failed", "message": err.Error()})
@@ -162,6 +162,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 }
 
 func (s *User) LogOutAccount(ctx *gin.Context) {
+	now := time.Now().UTC()
 	accessToken, _ := ctx.Cookie("accessToken")
 	refreshToken, _ := ctx.Cookie("refreshToken")
 
@@ -172,7 +173,18 @@ func (s *User) LogOutAccount(ctx *gin.Context) {
 		return
 	}
 
-	err := utils.BlacklistJWT(accessToken)
+	tokenClaims, err := utils.ValidateJWT(accessToken)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	if err = s.DB.Model(&models.Account{}).Where("id = ?", tokenClaims.UserUUID).Update("last_time_logged_out", now).Error; err != nil {
+		log.Println(err)
+		return
+	}
+
+	err = utils.BlacklistJWT(accessToken)
 	if err != nil {
 		log.Println(err.Error())
 		return

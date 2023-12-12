@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 )
 
 var TokenBlacklistPrefix = "token:blacklist:"
 
-func CreateJwtToken(exp time.Duration) (*models.Token, error) {
+func CreateJwtToken(exp time.Duration, userUUID uuid.UUID) (*models.Token, error) {
 
 	now := time.Now().UTC()
 
@@ -24,6 +25,7 @@ func CreateJwtToken(exp time.Duration) (*models.Token, error) {
 	claims := jwt.MapClaims{
 		"createdAt": now.Unix(),
 		"expiresAt": now.Add(exp).Unix(),
+		"userUUID":  userUUID,
 	}
 
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
