@@ -1,19 +1,20 @@
 package models
 
 import (
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type Account struct {
 	gorm.Model
-
-	FirstName              string `gorm:"type:varchar(50);not null"`
-	LastName               string `gorm:"type:varchar(50);not null"`
-	Email                  string `gorm:"type:varchar(255) ;uniqueIndex;not null"`
-	PasswordHashed         string `gorm:"type:varchar(155)"`
-	SubscriptionType       string `gorm:"type:varchar(55)"`
-	EmailVerified          bool   `gorm:"default:false"`
-	EmailVerificationToken string `gorm:"type:varchar(255)"`
+	ID                     uuid.UUID `gorm:"primaryKey;type:uuid"`
+	FirstName              string    `gorm:"type:varchar(50);not null"`
+	LastName               string    `gorm:"type:varchar(50);not null"`
+	Email                  string    `gorm:"type:varchar(255) ;uniqueIndex;not null"`
+	PasswordHashed         string    `gorm:"type:varchar(155)"`
+	SubscriptionType       string    `gorm:"type:varchar(55)"`
+	EmailVerified          bool      `gorm:"default:false"`
+	EmailVerificationToken string    `gorm:"type:varchar(255)"`
 }
 
 type RegisterAccount struct {

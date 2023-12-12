@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -23,6 +24,7 @@ func NewUserController(DB *gorm.DB) *User {
 func (s *User) RegisterUser(ctx *gin.Context) {
 
 	var account *models.RegisterAccount
+	newUUID := uuid.New()
 
 	if err := ctx.ShouldBindJSON(&account); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
@@ -52,6 +54,7 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 	}
 
 	newAccount := &models.Account{
+		ID:                     newUUID,
 		FirstName:              account.FirstName,
 		LastName:               account.LastName,
 		Email:                  account.Email,
@@ -88,6 +91,7 @@ func (s *User) GetAccountByEmail(email string) *models.Account {
 
 	}
 	newAccount := &models.Account{
+		ID:               account.ID,
 		FirstName:        account.FirstName,
 		LastName:         account.LastName,
 		Email:            account.Email,
@@ -144,6 +148,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}
+
 	ctx.SetCookie("accessToken", string(*accessToken), 86400, "/", "localhost", false, true)
 	ctx.SetCookie("refreshToken", string(*refreshToken), 604800, "/", "localhost", false, true)
 
