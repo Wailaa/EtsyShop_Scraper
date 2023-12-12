@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -102,7 +103,7 @@ func (s *User) GetAccountByEmail(email string) *models.Account {
 }
 
 func (s *User) LoginAccount(ctx *gin.Context) {
-
+	now := time.Now().UTC()
 	var loginDetails *models.LoginRequest
 	config := initializer.LoadProjConfig(".")
 
@@ -141,6 +142,10 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		log.Println(err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Failed", "message": err.Error()})
 		return
+	}
+
+	if err = s.DB.Model(result).Where("id = ?", result.ID).Update("last_time_logged_in", now).Error; err != nil {
+		log.Println(err)
 	}
 
 	loginResponse := &models.LoginResponse{
