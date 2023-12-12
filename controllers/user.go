@@ -100,11 +100,7 @@ func (s *User) GetAccountByEmail(email string) *models.Account {
 func (s *User) LoginAccount(ctx *gin.Context) {
 
 	var loginDetails *models.LoginRequest
-	config, err := initializer.LoadProjConfig(".")
-	if err != nil {
-		log.Fatal("Could not load environment variables", err)
-
-	}
+	config := initializer.LoadProjConfig(".")
 
 	if err := ctx.ShouldBindJSON(&loginDetails); err != nil {
 		message := "failed to fetch login details"

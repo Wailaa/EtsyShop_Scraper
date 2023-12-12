@@ -1,6 +1,7 @@
 package initializer
 
 import (
+	"log"
 	"time"
 
 	"github.com/spf13/viper"
@@ -28,16 +29,20 @@ type Config struct {
 	RedisURL string `mapstructure:"REDISURL"`
 }
 
-func LoadProjConfig(path string) (config Config, err error) {
+func LoadProjConfig(path string) (config Config) {
 	viper.AddConfigPath(path)
 	viper.SetConfigType("env")
 	viper.SetConfigName("project")
 	viper.AutomaticEnv()
 
-	err = viper.ReadInConfig()
+	err := viper.ReadInConfig()
 	if err != nil {
 		return
 	}
+	config = Config{}
 	err = viper.Unmarshal(&config)
-	return
+	if err != nil {
+		log.Fatal("Unmarshalling of configuration failed.")
+	}
+	return config
 }

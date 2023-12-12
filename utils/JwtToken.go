@@ -5,7 +5,6 @@ import (
 	"EtsyScraper/models"
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -18,11 +17,8 @@ func CreateJwtToken(exp time.Duration) (*models.Token, error) {
 
 	now := time.Now().UTC()
 
-	config, err := initializer.LoadProjConfig(".")
-	if err != nil {
-		return nil, fmt.Errorf("could not load environment variables: %w", err)
+	config := initializer.LoadProjConfig(".")
 
-	}
 	JWTSecret := config.JwtSecret
 
 	claims := jwt.MapClaims{
@@ -44,10 +40,7 @@ func CreateJwtToken(exp time.Duration) (*models.Token, error) {
 
 func ValidateJWT(JWTToken string) (*models.CustomClaims, error) {
 
-	config, err := initializer.LoadProjConfig(".")
-	if err != nil {
-		log.Fatal("Could not load environment variables", err)
-	}
+	config := initializer.LoadProjConfig(".")
 
 	parcedtoken, err := jwt.Parse(JWTToken, func(Token *jwt.Token) (interface{}, error) {
 		if _, ok := Token.Method.(*jwt.SigningMethodHMAC); !ok {

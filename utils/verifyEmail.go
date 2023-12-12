@@ -34,10 +34,8 @@ func CreateVerificationString() (string, error) {
 
 func SendVerificationEmail(account *models.Account) error {
 
-	Config, err := initializer.LoadProjConfig("/")
-	if err != nil {
-		log.Fatal("Could not load environment variables", err)
-	}
+	Config := initializer.LoadProjConfig("/")
+
 	// verificationLink := Config.ClientOrigin + "/verifyaccount?TranID=" + url.QueryEscape(account.EmailVerificationToken)
 	verificationLink, err := url.Parse(Config.ClientOrigin)
 	if err != nil {

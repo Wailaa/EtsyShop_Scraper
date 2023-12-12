@@ -15,11 +15,7 @@ import (
 var server *gin.Engine
 
 func init() {
-	config, err := initializer.LoadProjConfig(".")
-	if err != nil {
-		log.Fatal("Could not load environment variables", err)
-	}
-
+	config := initializer.LoadProjConfig(".")
 	initializer.DataBaseConnect(&config)
 	initializer.RedisDBConnect(&config)
 
@@ -29,11 +25,7 @@ func init() {
 }
 func main() {
 
-	config, err := initializer.LoadProjConfig(".")
-	if err != nil {
-		log.Fatal("Could not load environment variables", err)
-
-	}
+	config := initializer.LoadProjConfig(".")
 
 	server = gin.Default()
 
