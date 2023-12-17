@@ -20,8 +20,8 @@ func NewToken(token string) *Token {
 func CreateClaims(claims jwt.MapClaims) *CustomClaims {
 	userUUID, _ := uuid.Parse(claims["userUUID"].(string))
 	return &CustomClaims{
-		CreatedAt: int64(claims["createdAt"].(float64)),
-		ExpiresAt: int64(claims["expiresAt"].(float64)),
+		CreatedAt: int64(claims["iat"].(float64)),
+		ExpiresAt: int64(claims["exp"].(float64)),
 		UserUUID:  userUUID,
 	}
 }

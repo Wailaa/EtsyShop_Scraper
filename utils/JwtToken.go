@@ -5,6 +5,7 @@ import (
 	"EtsyScraper/models"
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -23,9 +24,9 @@ func CreateJwtToken(exp time.Duration, userUUID uuid.UUID) (*models.Token, error
 	JWTSecret := config.JwtSecret
 
 	claims := jwt.MapClaims{
-		"createdAt": now.Unix(),
-		"expiresAt": now.Add(exp).Unix(),
-		"userUUID":  userUUID,
+		"iat":      now.Unix(),
+		"exp":      now.Add(exp).Unix(),
+		"userUUID": userUUID,
 	}
 
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -74,8 +75,17 @@ func BlacklistJWT(token string) error {
 
 	context := context.TODO()
 
+	checkBlackList, err := IsJWTBlackListed(token)
+	if checkBlackList {
+		return fmt.Errorf("token is alraedy Blacklisted")
+	}
+	if err != nil {
+		return err
+	}
+
 	BlacklistedJWT, err := ValidateJWT(token)
 	if err != nil {
+		log.Println("error while blacklisting token", err)
 		return err
 	}
 
