@@ -4,8 +4,10 @@ import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	"EtsyScraper/utils"
+	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 	"strings"
 	"time"
 
@@ -154,49 +156,62 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		RefreshToken: refreshToken,
 	}
 
-	ctx.SetCookie("accessToken", string(*accessToken), 86400, "/", "localhost", false, true)
-	ctx.SetCookie("refreshToken", string(*refreshToken), 604800, "/", "localhost", false, true)
+	ctx.SetCookie("access_token", string(*accessToken), 86400, "/", "localhost", false, true)
+	ctx.SetCookie("refresh_token", string(*refreshToken), 604800, "/", "localhost", false, true)
 
 	ctx.JSON(http.StatusOK, loginResponse)
 
 }
 
+func GetTokens(ctx *gin.Context) (map[string]string, error) {
+	tokens := map[string]string{}
+	if accesstoken, err := ctx.Cookie("access_token"); err == nil {
+		tokens["access_token"] = accesstoken
+	}
+	if refreshToken, err := ctx.Cookie("refresh_token"); err == nil {
+		tokens["refresh_token"] = refreshToken
+	}
+	if len(tokens) == 0 {
+		return nil, fmt.Errorf("failed to retrieve both tokens ")
+	}
+	return tokens, nil
+}
+
 func (s *User) LogOutAccount(ctx *gin.Context) {
 	now := time.Now().UTC()
-	accessToken, _ := ctx.Cookie("accessToken")
-	refreshToken, _ := ctx.Cookie("refreshToken")
+	var userUUID uuid.UUID
 
-	if accessToken == "" || refreshToken == "" {
-		message := "incorrect token or the session has expired"
-		log.Println(message)
-		ctx.JSON(http.StatusConflict, gin.H{"status": "failed", "message": message})
-		return
-	}
-
-	tokenClaims, err := utils.ValidateJWT(accessToken)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	if err = s.DB.Model(&models.Account{}).Where("id = ?", tokenClaims.UserUUID).Update("last_time_logged_out", now).Error; err != nil {
-		log.Println(err)
-		return
-	}
-
-	err = utils.BlacklistJWT(accessToken)
-	if err != nil {
-		log.Println(err.Error())
-		return
-	}
-	err = utils.BlacklistJWT(refreshToken)
+	tokenList, err := GetTokens(ctx)
 	if err != nil {
 		log.Println(err.Error())
 		return
 	}
 
-	ctx.SetCookie("accessToken", "", -1, "/", "localhost", false, true)
-	ctx.SetCookie("refreshToken", "", -1, "/", "localhost", false, true)
+	for tokenName, token := range tokenList {
+		if reflect.ValueOf(userUUID).IsZero() {
+			tokenClaims, err := utils.ValidateJWT(token)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			userUUID = tokenClaims.UserUUID
+
+			if err = s.DB.Model(&models.Account{}).Where("id = ?", userUUID).Update("last_time_logged_out", now).Error; err != nil {
+				log.Println(err)
+				ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": "failed to update logout details"})
+				return
+			}
+
+		}
+
+		err = utils.BlacklistJWT(token)
+		if err != nil {
+			log.Println(err.Error())
+		}
+
+		ctx.SetCookie(tokenName, "", -1, "/", "localhost", false, true)
+	}
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "user logged out successfully"})
 
 }
