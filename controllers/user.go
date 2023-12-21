@@ -156,20 +156,20 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		RefreshToken: refreshToken,
 	}
 
-	ctx.SetCookie("access_token", string(*accessToken), 86400, "/", "localhost", false, true)
-	ctx.SetCookie("refresh_token", string(*refreshToken), 604800, "/", "localhost", false, true)
+	ctx.SetCookie("access_token", string(*accessToken), int(config.AccTokenExp.Seconds()), "/", "localhost", false, true)
+	ctx.SetCookie("refresh_token", string(*refreshToken), int(config.RefTokenExp.Seconds()), "/", "localhost", false, true)
 
 	ctx.JSON(http.StatusOK, loginResponse)
 
 }
 
-func GetTokens(ctx *gin.Context) (map[string]string, error) {
-	tokens := map[string]string{}
+func GetTokens(ctx *gin.Context) (map[string]*models.Token, error) {
+	tokens := make(map[string]*models.Token)
 	if accesstoken, err := ctx.Cookie("access_token"); err == nil {
-		tokens["access_token"] = accesstoken
+		tokens["access_token"] = models.NewToken(accesstoken)
 	}
 	if refreshToken, err := ctx.Cookie("refresh_token"); err == nil {
-		tokens["refresh_token"] = refreshToken
+		tokens["refresh_token"] = models.NewToken(refreshToken)
 	}
 	if len(tokens) == 0 {
 		return nil, fmt.Errorf("failed to retrieve both tokens ")

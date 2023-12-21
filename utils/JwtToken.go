@@ -41,11 +41,11 @@ func CreateJwtToken(exp time.Duration, userUUID uuid.UUID) (*models.Token, error
 
 }
 
-func ValidateJWT(JWTToken string) (*models.CustomClaims, error) {
+func ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, error) {
 
 	config := initializer.LoadProjConfig(".")
-
-	parcedtoken, err := jwt.Parse(JWTToken, func(Token *jwt.Token) (interface{}, error) {
+	token := fmt.Sprint(*JWTToken)
+	parcedtoken, err := jwt.Parse(token, func(Token *jwt.Token) (interface{}, error) {
 		if _, ok := Token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected method: %s", Token.Header["alg"])
 		}
@@ -67,9 +67,9 @@ func ValidateJWT(JWTToken string) (*models.CustomClaims, error) {
 	return getClaims, nil
 }
 
-func BlacklistJWT(token string) error {
+func BlacklistJWT(token *models.Token) error {
 
-	if token == "" {
+	if token == models.NewToken("") {
 		return fmt.Errorf("token is missing")
 	}
 
@@ -89,7 +89,7 @@ func BlacklistJWT(token string) error {
 		return err
 	}
 
-	expiredToken := TokenBlacklistPrefix + token
+	expiredToken := TokenBlacklistPrefix + fmt.Sprint(token)
 
 	Now := time.Now().UTC()
 	EX := time.Unix(BlacklistedJWT.ExpiresAt, 0)
@@ -103,9 +103,9 @@ func BlacklistJWT(token string) error {
 	return nil
 }
 
-func IsJWTBlackListed(token string) (bool, error) {
+func IsJWTBlackListed(token *models.Token) (bool, error) {
 	context := context.TODO()
-	blacklistedToken := TokenBlacklistPrefix + token
+	blacklistedToken := TokenBlacklistPrefix + fmt.Sprint(token)
 
 	checkInBlackList := initializer.RedisClient.Exists(context, blacklistedToken)
 	if checkInBlackList.Err() != nil {
