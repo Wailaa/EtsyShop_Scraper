@@ -30,8 +30,8 @@ func main() {
 	server = gin.Default()
 
 	router := server.Group("/auth")
-	router.GET("/test", func(ctx *gin.Context) {
-		message := "Welcome to EtsyScraper a"
+	router.GET("/test", controllers.AuthMiddleWare(), func(ctx *gin.Context) {
+		message := "Welcome to EtsyScraper"
 		ctx.JSON(http.StatusOK, gin.H{"HTTPstatus": http.StatusOK, "message": message})
 	})
 	register := controllers.NewUserController(initializer.DB).RegisterUser
@@ -40,7 +40,7 @@ func main() {
 	logOut := controllers.NewUserController(initializer.DB).LogOutAccount
 	router.POST("/register", register)
 	router.POST("/login", login)
-	router.POST("/logout", logOut)
+	router.GET("/logout", logOut)
 	router.GET("/verifyaccount", confirmEmail)
 
 	log.Fatal(server.Run(":" + config.ServerPort))
