@@ -67,6 +67,21 @@ func ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, error) {
 	return getClaims, nil
 }
 
+func RefreshAccToken(token *models.Token) (*models.Token, error) {
+	config := initializer.LoadProjConfig(".")
+	refreshTokenClaims, err := ValidateJWT(token)
+	if err != nil {
+		return nil, err
+	}
+
+	newAccessToken, err := CreateJwtToken(config.AccTokenExp, refreshTokenClaims.UserUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	return newAccessToken, nil
+}
+
 func BlacklistJWT(token *models.Token) error {
 
 	if token == models.NewToken("") {
