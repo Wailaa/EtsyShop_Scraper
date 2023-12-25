@@ -1,6 +1,7 @@
-package main
+package scrap
 
 import (
+	"EtsyScraper/models"
 	"strconv"
 	"strings"
 
@@ -9,48 +10,9 @@ import (
 
 var link string
 
-type Shop struct {
-	Name             string   `json:"shop_name"`
-	Description      string   `json:"shop_description"`
-	Location         string   `json:"location"`
-	TotalSales       int      `json:"shop_total_sales"`
-	JoinedSince      string   `json:"joined_since"`
-	ShopMenu         ShopMenu `json:"shop_menu"`
-	LastUpdateTime   string   `json:"last_update_time"`
-	Admirers         int      `json:"admirers"`
-	Reviews          Reviews  `json:"shop_reviews"`
-	SocialMediaLinks []string `json:"social_media_links"`
-	Member           Members  `json:"shop_member"`
-}
+func ScrapShop(shopName string) (*models.Shop, error) {
 
-type MenuItem struct {
-	Category  string `json:"category_name"`
-	SectionID string `json:"selection_id"`
-	Link      string `json:"link"`
-	Amount    int    `json:"item_amount"`
-}
-
-type ShopMenu struct {
-	Menu map[int]MenuItem `json:"shop_item_id"`
-}
-type Reviews struct {
-	ShopRating   float64        `json:"shop_rate"`
-	ReviewsCount int            `json:"reviews_count"`
-	ReviewsTopic map[string]int `json:"reviews_mentions"`
-}
-
-type Members struct {
-	Amount  int             `json:"amount"`
-	Members map[int]*Member `json:"members"`
-}
-type Member struct {
-	Name string `json:"name"`
-	Role string `json:"role"`
-}
-
-func ScrapShop(shopName string) (*Shop, error) {
-
-	NewShop := &Shop{}
+	NewShop := &models.Shop{}
 	link = "https://www.etsy.com/de-en/shop/"
 	c := colly.NewCollector()
 
@@ -90,7 +52,7 @@ func ScrapShop(shopName string) (*Shop, error) {
 	return NewShop, nil
 }
 
-func scrapShopDetails(c *colly.Collector, shop *Shop) error {
+func scrapShopDetails(c *colly.Collector, shop *models.Shop) error {
 	c.OnHTML("div.shop-home-header-info", func(e *colly.HTMLElement) {
 
 		shop.Name = e.ChildText("div.shop-name-and-title-container h1")
@@ -107,9 +69,9 @@ func scrapShopDetails(c *colly.Collector, shop *Shop) error {
 	return nil
 }
 
-func scrapShopMenu(c *colly.Collector, shop *Shop) error {
+func scrapShopMenu(c *colly.Collector, shop *models.Shop) error {
 	c.OnHTML(`div[data-appears-component-name="shop_home_listings_section"]`, func(e *colly.HTMLElement) {
-		shop.ShopMenu = ShopMenu{make(map[int]MenuItem)}
+		shop.ShopMenu = &models.ShopMenu{Menu: make(map[int]*models.MenuItem)}
 		e.ForEach("li[data-wt-tab]", func(i int, h *colly.HTMLElement) {
 
 			key := h.ChildText("span:nth-child(1)")
@@ -118,7 +80,7 @@ func scrapShopMenu(c *colly.Collector, shop *Shop) error {
 			dataSectionId := h.Attr("data-section-id")
 			dataSectionId_link := link + shop.Name + "?ref=shop_sugg_market&section_id=" + dataSectionId
 
-			shop.ShopMenu.Menu[i+1] = MenuItem{
+			shop.ShopMenu.Menu[i+1] = &models.MenuItem{
 				Category:  key,
 				Link:      dataSectionId_link,
 				Amount:    valueToInt,
@@ -130,7 +92,7 @@ func scrapShopMenu(c *colly.Collector, shop *Shop) error {
 	return nil
 }
 
-func scrapShopAdmirers(c *colly.Collector, shop *Shop) error {
+func scrapShopAdmirers(c *colly.Collector, shop *models.Shop) error {
 
 	c.OnHTML("div.wt-mt-lg-5", func(e *colly.HTMLElement) {
 
@@ -144,7 +106,7 @@ func scrapShopAdmirers(c *colly.Collector, shop *Shop) error {
 	return nil
 }
 
-func scrapShopReviews(c *colly.Collector, shop *Shop) error {
+func scrapShopReviews(c *colly.Collector, shop *models.Shop) error {
 	shop.Reviews.ReviewsTopic = make(map[string]int)
 	c.OnHTML("div.reviews-total", func(e *colly.HTMLElement) {
 
@@ -172,14 +134,14 @@ func scrapShopReviews(c *colly.Collector, shop *Shop) error {
 	return nil
 }
 
-func scrapShopLastUpdate(c *colly.Collector, shop *Shop) error {
+func scrapShopLastUpdate(c *colly.Collector, shop *models.Shop) error {
 	c.OnHTML("span[data-more-last-updated]", func(e *colly.HTMLElement) {
 		shop.LastUpdateTime = e.Text
 	})
 	return nil
 }
 
-func scrapShopJoinedSince(c *colly.Collector, shop *Shop) error {
+func scrapShopJoinedSince(c *colly.Collector, shop *models.Shop) error {
 	c.OnHTML("#about .shop-home-wider-sections", func(e *colly.HTMLElement) {
 		shop.JoinedSince = e.DOM.Find("span").Eq(1).Text()
 
@@ -187,14 +149,14 @@ func scrapShopJoinedSince(c *colly.Collector, shop *Shop) error {
 	return nil
 }
 
-func scrapShopMembers(c *colly.Collector, shop *Shop) error {
-	shop.Member.Members = make(map[int]*Member)
+func scrapShopMembers(c *colly.Collector, shop *models.Shop) error {
+	shop.Member.Members = make(map[int]*models.Member)
 
 	c.OnHTML("div#shop-members", func(e *colly.HTMLElement) {
 		e.ForEach(`li[data-region="shop-member"]`, func(i int, h *colly.HTMLElement) {
 			name := h.ChildText(`h6[data-region="member-name"]`)
 			role := h.ChildText(`p[data-region="member-role"]`)
-			newMember := &Member{Name: name, Role: role}
+			newMember := &models.Member{Name: name, Role: role}
 			shop.Member.Members[i+1] = newMember
 			shop.Member.Amount = len(shop.Member.Members)
 		})
@@ -202,7 +164,7 @@ func scrapShopMembers(c *colly.Collector, shop *Shop) error {
 	return nil
 }
 
-func scrapShopSocialMediaAcc(c *colly.Collector, shop *Shop) error {
+func scrapShopSocialMediaAcc(c *colly.Collector, shop *models.Shop) error {
 	c.OnHTML("#about div.wt-mb-xs-6", func(e *colly.HTMLElement) {
 		shop.SocialMediaLinks = e.ChildAttrs("a", "href")
 	})
