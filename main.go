@@ -19,7 +19,7 @@ func init() {
 	initializer.DataBaseConnect(&config)
 	initializer.RedisDBConnect(&config)
 
-	initializer.DB.AutoMigrate(&models.Account{})
+	initializer.DB.AutoMigrate(&models.Account{}, &models.Shop{}, &models.ShopMenu{}, &models.MenuItem{})
 	fmt.Println("Migration is completed")
 
 }
@@ -42,6 +42,11 @@ func main() {
 	router.POST("/login", login)
 	router.GET("/logout", logOut)
 	router.GET("/verifyaccount", confirmEmail)
+
+	shopRoute := server.Group("/shop")
+	createShop := controllers.NewShopController(initializer.DB).CreateNewShop
+
+	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(), createShop)
 
 	log.Fatal(server.Run(":" + config.ServerPort))
 }
