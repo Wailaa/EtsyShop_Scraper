@@ -4,7 +4,6 @@ import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	"EtsyScraper/utils"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -35,7 +34,7 @@ func AuthMiddleWare() gin.HandlerFunc {
 					ctx.Abort()
 					return
 				}
-				ctx.Set("account", result)
+				ctx.Set("currentUserUUID", user.ID)
 				ctx.Next()
 				return
 			}
@@ -67,9 +66,7 @@ func AuthMiddleWare() gin.HandlerFunc {
 			return
 		}
 
-		fmt.Println("userClaims are: ", userClaims)
-
-		fmt.Println("user are: ", &user.ID)
+		ctx.Set("currentUserUUID", user.ID)
 		ctx.Next()
 	}
 }
