@@ -118,7 +118,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 
 	result := s.GetAccountByEmail(loginDetails.Email)
 
-	if *result == (models.Account{}) {
+	if reflect.DeepEqual(*result, models.Account{}) {
 		message := "user not found"
 		log.Println(message)
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
@@ -229,7 +229,7 @@ func (s *User) VerifyAccount(ctx *gin.Context) {
 		return
 	}
 
-	if *VerifyUser == (models.Account{}) {
+	if reflect.DeepEqual(*VerifyUser, models.Account{}) {
 		message := "Invalid verification code or account does not exists"
 		log.Println(message)
 		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
