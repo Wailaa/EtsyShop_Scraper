@@ -2,6 +2,7 @@ package scrap
 
 import (
 	"EtsyScraper/models"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -14,12 +15,14 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 
 	NewShop := &models.Shop{}
 	link = "https://www.etsy.com/de-en/shop/"
+
 	c := colly.NewCollector()
 
-	c.Visit(link + shopName)
-	c.Wait()
-
 	if err := scrapShopDetails(c, NewShop); err != nil {
+		return nil, err
+	}
+
+	if err := scrapShopTotalSales(c, NewShop); err != nil {
 		return nil, err
 	}
 
@@ -49,6 +52,25 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 		return nil, err
 	}
 
+	c.OnRequest(func(r *colly.Request) {
+		fmt.Println("Visiting", r.URL)
+	})
+
+	c.OnResponse(func(r *colly.Response) {
+		fmt.Println("Got a response from", r.Request.URL)
+	})
+
+	c.OnError(func(r *colly.Response, err error) {
+		fmt.Println("Got this error:", err)
+	})
+
+	c.OnScraped(func(r *colly.Response) {
+		fmt.Println("Finished", r.Request.URL)
+	})
+
+	c.Visit(link + shopName)
+	c.Wait()
+
 	return NewShop, nil
 }
 
@@ -58,9 +80,14 @@ func scrapShopDetails(c *colly.Collector, shop *models.Shop) error {
 		shop.Name = e.ChildText("div.shop-name-and-title-container h1")
 		shop.Description = e.ChildText("div.shop-name-and-title-container p")
 		shop.Location = e.ChildText("span.shop-location")
-		TotalSales := e.ChildText("span.wt-text-caption a")
 
-		TotalSales = strings.Split(TotalSales, " ")[0]
+	})
+	return nil
+}
+func scrapShopTotalSales(c *colly.Collector, shop *models.Shop) error {
+	c.OnHTML(`div[data-appears-component-name="shop_home_about_section"]`, func(e *colly.HTMLElement) {
+
+		TotalSales := e.ChildText("div.wt-mr-xs-6 span")
 		TotalSales = strings.Replace(TotalSales, ",", "", -1)
 		TotalSalesToInt, _ := strconv.Atoi(TotalSales)
 
@@ -71,7 +98,7 @@ func scrapShopDetails(c *colly.Collector, shop *models.Shop) error {
 
 func scrapShopMenu(c *colly.Collector, shop *models.Shop) error {
 	c.OnHTML(`div[data-appears-component-name="shop_home_listings_section"]`, func(e *colly.HTMLElement) {
-		shop.ShopMenu = &models.ShopMenu{Menu: make(map[int]*models.MenuItem)}
+		Menu := []models.MenuItem{}
 		e.ForEach("li[data-wt-tab]", func(i int, h *colly.HTMLElement) {
 
 			key := h.ChildText("span:nth-child(1)")
@@ -80,13 +107,17 @@ func scrapShopMenu(c *colly.Collector, shop *models.Shop) error {
 			dataSectionId := h.Attr("data-section-id")
 			dataSectionId_link := link + shop.Name + "?ref=shop_sugg_market&section_id=" + dataSectionId
 
-			shop.ShopMenu.Menu[i+1] = &models.MenuItem{
-				Category:  key,
-				Link:      dataSectionId_link,
-				Amount:    valueToInt,
-				SectionID: dataSectionId,
+			if i == 0 {
+				shop.ShopMenu.TotalItemsAmmount = valueToInt
+			} else {
+				Menu = append(Menu, models.MenuItem{
+					Category:  key,
+					Link:      dataSectionId_link,
+					Amount:    valueToInt,
+					SectionID: dataSectionId,
+				})
 			}
-
+			shop.ShopMenu.Menu = Menu
 		})
 	})
 	return nil
@@ -107,7 +138,7 @@ func scrapShopAdmirers(c *colly.Collector, shop *models.Shop) error {
 }
 
 func scrapShopReviews(c *colly.Collector, shop *models.Shop) error {
-	shop.Reviews.ReviewsTopic = make(map[string]int)
+
 	c.OnHTML("div.reviews-total", func(e *colly.HTMLElement) {
 
 		ratings := e.ChildAttr("input", "value")
@@ -117,20 +148,24 @@ func scrapShopReviews(c *colly.Collector, shop *models.Shop) error {
 		totalReviews = totalReviews[1 : len(totalReviews)-1]
 		totalReviewsToInt, _ := strconv.Atoi(totalReviews)
 
-		shop.Reviews.ReviewsCount = totalReviewsToInt
-		shop.Reviews.ShopRating = ratingsToFloat
+		shop.Reviews = models.Reviews{
+			ReviewsCount: totalReviewsToInt,
+			ShopRating:   ratingsToFloat,
+		}
 	})
 
-	c.OnHTML(`div[data-appears-component-name="keyword_filters_reviews_page"] button`, func(e *colly.HTMLElement) {
+	c.OnHTML(`div[data-appears-component-name="keyword_filters_reviews_page"]`, func(e *colly.HTMLElement) {
+		shop.Reviews.ReviewsTopic = make(map[string]int)
+		e.ForEach("button", func(i int, h *colly.HTMLElement) {
+			keys := h.Attr("data-keyword-filter")
+			value := h.ChildText("span")
 
-		keys := e.Attr("data-keyword-filter")
-		value := e.ChildText("span")
+			valueToInt, _ := strconv.Atoi(value)
 
-		valueToInt, _ := strconv.Atoi(value)
+			shop.Reviews.ReviewsTopic[keys] = valueToInt
 
-		shop.Reviews.ReviewsTopic[keys] = valueToInt
+		})
 	})
-
 	return nil
 }
 
@@ -150,14 +185,15 @@ func scrapShopJoinedSince(c *colly.Collector, shop *models.Shop) error {
 }
 
 func scrapShopMembers(c *colly.Collector, shop *models.Shop) error {
-	shop.Member.Members = make(map[int]*models.Member)
 
 	c.OnHTML("div#shop-members", func(e *colly.HTMLElement) {
+		shop.Member.Members = make(map[int]*models.Member)
 		e.ForEach(`li[data-region="shop-member"]`, func(i int, h *colly.HTMLElement) {
+
 			name := h.ChildText(`h6[data-region="member-name"]`)
 			role := h.ChildText(`p[data-region="member-role"]`)
-			newMember := &models.Member{Name: name, Role: role}
-			shop.Member.Members[i+1] = newMember
+
+			shop.Member.Members[i+1] = &models.Member{Name: name, Role: role}
 			shop.Member.Amount = len(shop.Member.Members)
 		})
 	})
