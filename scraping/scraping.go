@@ -11,6 +11,8 @@ import (
 
 var link string
 
+var MissingInfo string = "INFORMATION_NOT_AVAILABLE"
+
 func ScrapShop(shopName string) (*models.Shop, error) {
 
 	NewShop := &models.Shop{}
@@ -79,20 +81,33 @@ func scrapShopDetails(c *colly.Collector, shop *models.Shop) error {
 
 		shop.Name = e.ChildText("div.shop-name-and-title-container h1")
 		shop.Description = e.ChildText("div.shop-name-and-title-container p")
+		if shop.Description == "" {
+			shop.Description = MissingInfo
+		}
+
 		shop.Location = e.ChildText("span.shop-location")
+		if shop.Location == "" {
+			shop.Location = MissingInfo
+		}
 
 	})
 	return nil
 }
 func scrapShopTotalSales(c *colly.Collector, shop *models.Shop) error {
-	c.OnHTML(`div[data-appears-component-name="shop_home_about_section"]`, func(e *colly.HTMLElement) {
+	IsElementFound := false
+	c.OnHTML(`div[data-appears-component-name="shop_home_listings_section"]`, func(e *colly.HTMLElement) {
+		IsElementFound = true
 
-		TotalSales := e.ChildText("div.wt-mr-xs-6 span")
+		TotalSales := e.ChildText("div.wt-mt-lg-5 div:first-child")
+		TotalSales = strings.Split(TotalSales, " ")[0]
 		TotalSales = strings.Replace(TotalSales, ",", "", -1)
 		TotalSalesToInt, _ := strconv.Atoi(TotalSales)
 
 		shop.TotalSales = TotalSalesToInt
 	})
+	if !IsElementFound {
+		shop.TotalSales = 0
+	}
 	return nil
 }
 
@@ -101,22 +116,33 @@ func scrapShopMenu(c *colly.Collector, shop *models.Shop) error {
 		Menu := []models.MenuItem{}
 		e.ForEach("li[data-wt-tab]", func(i int, h *colly.HTMLElement) {
 
-			key := h.ChildText("span:nth-child(1)")
-			value := h.ChildText("span:nth-child(2)")
+			var key, value string
+
+			attValue := h.ChildText("span[data-shop-pretranslations-translation]")
+
+			if attValue != "" {
+				key = h.ChildText("span[data-shop-pretranslations-translation]")
+				value = h.ChildText("span.wt-mr-md-2")
+			} else {
+				key = h.ChildText("span:first-child")
+				value = h.ChildText("span:last-child")
+			}
+
 			valueToInt, _ := strconv.Atoi(value)
+
 			dataSectionId := h.Attr("data-section-id")
 			dataSectionId_link := link + shop.Name + "?ref=shop_sugg_market&section_id=" + dataSectionId
 
 			if i == 0 {
 				shop.ShopMenu.TotalItemsAmmount = valueToInt
-			} else {
-				Menu = append(Menu, models.MenuItem{
-					Category:  key,
-					Link:      dataSectionId_link,
-					Amount:    valueToInt,
-					SectionID: dataSectionId,
-				})
 			}
+			Menu = append(Menu, models.MenuItem{
+				Category:  key,
+				Link:      dataSectionId_link,
+				Amount:    valueToInt,
+				SectionID: dataSectionId,
+			})
+
 			shop.ShopMenu.Menu = Menu
 		})
 	})
@@ -124,9 +150,10 @@ func scrapShopMenu(c *colly.Collector, shop *models.Shop) error {
 }
 
 func scrapShopAdmirers(c *colly.Collector, shop *models.Shop) error {
-
+	IsElementFound := false
 	c.OnHTML("div.wt-mt-lg-5", func(e *colly.HTMLElement) {
 
+		IsElementFound = true
 		Admirers := e.ChildText("div:nth-child(2)")
 		Admirers = strings.Split(Admirers, " ")[0]
 		AdmirersToInt, _ := strconv.Atoi(Admirers)
@@ -134,6 +161,9 @@ func scrapShopAdmirers(c *colly.Collector, shop *models.Shop) error {
 		shop.Admirers = AdmirersToInt
 
 	})
+	if !IsElementFound {
+		shop.Admirers = 0
+	}
 	return nil
 }
 
@@ -146,6 +176,7 @@ func scrapShopReviews(c *colly.Collector, shop *models.Shop) error {
 
 		totalReviews := e.ChildText("div:last-child")
 		totalReviews = totalReviews[1 : len(totalReviews)-1]
+
 		totalReviewsToInt, _ := strconv.Atoi(totalReviews)
 
 		shop.Reviews = models.Reviews{
@@ -155,54 +186,82 @@ func scrapShopReviews(c *colly.Collector, shop *models.Shop) error {
 	})
 
 	c.OnHTML(`div[data-appears-component-name="keyword_filters_reviews_page"]`, func(e *colly.HTMLElement) {
-		shop.Reviews.ReviewsTopic = make(map[string]int)
+
+		ShopReviewTopic := []models.ReviewsTopic{}
+
 		e.ForEach("button", func(i int, h *colly.HTMLElement) {
 			keys := h.Attr("data-keyword-filter")
 			value := h.ChildText("span")
 
 			valueToInt, _ := strconv.Atoi(value)
 
-			shop.Reviews.ReviewsTopic[keys] = valueToInt
+			ShopReviewTopic = append(ShopReviewTopic, models.ReviewsTopic{
+				Keyword:      keys,
+				KeywordCount: valueToInt,
+			})
 
 		})
+		shop.Reviews.ReviewsTopic = ShopReviewTopic
 	})
+
 	return nil
 }
 
 func scrapShopLastUpdate(c *colly.Collector, shop *models.Shop) error {
+	IsElementFound := false
+
 	c.OnHTML("span[data-more-last-updated]", func(e *colly.HTMLElement) {
+		IsElementFound = true
+
 		shop.LastUpdateTime = e.Text
 	})
+
+	if !IsElementFound {
+		shop.LastUpdateTime = MissingInfo
+	}
+
 	return nil
 }
 
 func scrapShopJoinedSince(c *colly.Collector, shop *models.Shop) error {
+	IsElementFound := false
 	c.OnHTML("#about .shop-home-wider-sections", func(e *colly.HTMLElement) {
+		IsElementFound = true
 		shop.JoinedSince = e.DOM.Find("span").Eq(1).Text()
 
 	})
+	if !IsElementFound {
+		shop.JoinedSince = MissingInfo
+	}
 	return nil
 }
 
 func scrapShopMembers(c *colly.Collector, shop *models.Shop) error {
 
 	c.OnHTML("div#shop-members", func(e *colly.HTMLElement) {
-		shop.Member.Members = make(map[int]*models.Member)
+		Members := []models.ShopMember{}
 		e.ForEach(`li[data-region="shop-member"]`, func(i int, h *colly.HTMLElement) {
 
 			name := h.ChildText(`h6[data-region="member-name"]`)
 			role := h.ChildText(`p[data-region="member-role"]`)
 
-			shop.Member.Members[i+1] = &models.Member{Name: name, Role: role}
-			shop.Member.Amount = len(shop.Member.Members)
+			Members = append(Members, models.ShopMember{Name: name, Role: role})
+
 		})
+
 	})
+
 	return nil
 }
 
 func scrapShopSocialMediaAcc(c *colly.Collector, shop *models.Shop) error {
+	IsElementFound := false
 	c.OnHTML("#about div.wt-mb-xs-6", func(e *colly.HTMLElement) {
+		IsElementFound = true
 		shop.SocialMediaLinks = e.ChildAttrs("a", "href")
 	})
+	if !IsElementFound {
+		shop.SocialMediaLinks = []string{MissingInfo}
+	}
 	return nil
 }
