@@ -1,25 +1,31 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
 
 type Shop struct {
 	gorm.Model
-	Name             string   `json:"shop_name" gorm:"type:varchar(100);not null"`
-	Description      string   `json:"shop_description" gorm:"type:varchar(255);not null"`
-	Location         string   `json:"location" gorm:"type:varchar(50);not null"`
-	TotalSales       int      `json:"shop_total_sales" gorm:"not null"`
-	JoinedSince      string   `json:"joined_since" gorm:"type:varchar(100);not null"`
-	ShopMenu         ShopMenu `json:"shop_menu" gorm:"-"`
-	LastUpdateTime   string   `json:"last_update_time" gorm:"type:varchar(155);not null"`
-	Admirers         int      `json:"admirers" gorm:"not null"`
-	Reviews          Reviews  `json:"shop_reviews" gorm:"-"`
-	SocialMediaLinks []string `json:"social_media_links" gorm:"serializer:json"`
-	Member           Members  `json:"shop_member" gorm:"-"`
+	Name        string `json:"shop_name" gorm:"type:varchar(100);not null"`
+	Description string `json:"shop_description" gorm:"type:varchar(255);not null"`
+	Location    string `json:"location" gorm:"type:varchar(50);not null"`
+	TotalSales  int    `json:"shop_total_sales" gorm:"not null"`
+	JoinedSince string `json:"joined_since" gorm:"type:varchar(100);not null"`
+
+	LastUpdateTime  string    `json:"last_update_time" gorm:"type:varchar(155);not null"`
+	Admirers        int       `json:"admirers" gorm:"not null"`
+	CreatedByUserID uuid.UUID `gorm:"type:uuid"`
+
+	SocialMediaLinks []string     `json:"social_media_links" gorm:"serializer:json"`
+	Member           []ShopMember `json:"shop_member" gorm:"foreignKey:ShopID"`
+	ShopMenu         ShopMenu     `json:"shop_menu" gorm:"foreignKey:ShopID;references:ID"`
+	Reviews          Reviews      `json:"shop_reviews" gorm:"foreignKey:ShopID;references:ID"`
 }
 
 type MenuItem struct {
 	gorm.Model
-	ShopMenuID uint
+	ShopMenuID uint   `json:"-"`
 	Category   string `json:"category_name"`
 	SectionID  string `json:"selection_id"`
 	Link       string `json:"link"`
@@ -28,25 +34,86 @@ type MenuItem struct {
 
 type ShopMenu struct {
 	gorm.Model
-	ShopID            uint
+	ShopID            uint       `json:"-"`
 	TotalItemsAmmount int        `json:"total_items_amount"`
-	Menu              []MenuItem `json:"shop_item_id" gorm:"serializer:json"`
+	Menu              []MenuItem `json:"shop_item" gorm:"foreignKey:ShopMenuID"`
 }
 type Reviews struct {
+	gorm.Model
+	ShopID       uint           `json:"-"`
 	ShopRating   float64        `json:"shop_rate"`
 	ReviewsCount int            `json:"reviews_count"`
-	ReviewsTopic map[string]int `json:"reviews_mentions"`
+	ReviewsTopic []ReviewsTopic `json:"reviews_mentions" gorm:"foreignKey:ReviewsID"`
 }
 
-type Members struct {
-	Amount  int             `json:"amount"`
-	Members map[int]*Member `json:"members"`
+type ReviewsTopic struct {
+	gorm.Model
+	ReviewsID    uint   `json:"-"`
+	Keyword      string `json:"keyword"`
+	KeywordCount int    `json:"keyword_count"`
 }
-type Member struct {
-	Name string `json:"name"`
-	Role string `json:"role"`
+
+type ShopMember struct {
+	gorm.Model
+	ShopID uint   `json:"-"`
+	Name   string `json:"name"`
+	Role   string `json:"role"`
 }
 
 type CreateNewShopReuest struct {
 	ShopName string `json:"new_shop_name"`
+}
+
+func CreateShop(newShop *Shop) *Shop {
+	Shop := &Shop{
+		Name:             newShop.Name,
+		Description:      newShop.Description,
+		Location:         newShop.Location,
+		TotalSales:       newShop.TotalSales,
+		JoinedSince:      newShop.JoinedSince,
+		LastUpdateTime:   newShop.LastUpdateTime,
+		CreatedByUserID:  newShop.CreatedByUserID,
+		Admirers:         newShop.Admirers,
+		SocialMediaLinks: newShop.SocialMediaLinks,
+	}
+	return Shop
+}
+
+func CreateShopMenu(newShopMenu *ShopMenu) *ShopMenu {
+	NewShopMenu := &ShopMenu{
+		ShopID:            newShopMenu.ShopID,
+		TotalItemsAmmount: newShopMenu.TotalItemsAmmount,
+		Menu:              newShopMenu.Menu,
+	}
+	return NewShopMenu
+}
+
+func CreateMenuItem(menuItem *MenuItem) *MenuItem {
+	newMenuItem := &MenuItem{
+		ShopMenuID: menuItem.ShopMenuID,
+		Category:   menuItem.Category,
+		SectionID:  menuItem.SectionID,
+		Link:       menuItem.Link,
+		Amount:     menuItem.Amount,
+	}
+	return newMenuItem
+}
+
+func CreateShopReviews(shopReviews *Reviews) *Reviews {
+	newShopReviews := &Reviews{
+		ShopID:       shopReviews.ShopID,
+		ShopRating:   shopReviews.ShopRating,
+		ReviewsCount: shopReviews.ReviewsCount,
+		ReviewsTopic: shopReviews.ReviewsTopic,
+	}
+	return newShopReviews
+}
+
+func CreateShopMember(shopMember *ShopMember) *ShopMember {
+	NewMember := &ShopMember{
+		ShopID: shopMember.ShopID,
+		Name:   shopMember.Name,
+		Role:   shopMember.Role,
+	}
+	return NewMember
 }
