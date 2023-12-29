@@ -19,7 +19,7 @@ type Account struct {
 	EmailVerificationToken string    `gorm:"type:varchar(255)"`
 	LastTimeLoggedIn       time.Time `gorm:"type.TIMESTAMP"`
 	LastTimeLoggedOut      time.Time `gorm:"type.TIMESTAMP"`
-	ShopsFollowing         []uint    `gorm:"serializer:json"`
+	ShopsFollowing         []Shop    `gorm:"many2many:account_shop_following;"`
 }
 
 type RegisterAccount struct {
