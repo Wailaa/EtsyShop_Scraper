@@ -26,52 +26,19 @@ func (s *Shop) CreateNewShop(ctx *gin.Context) {
 		return
 	}
 
-	shopCreated, err := scrap.ScrapShop(shop.ShopName)
+	scrappedShop, err := scrap.ScrapShop(shop.ShopName)
 	if err != nil {
 		log.Println(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
 	}
 
-	shopMenu := shopCreated.ShopMenu
-	shopMenuItem := shopMenu.Menu
+	scrappedShop.CreatedByUserID = currentUserUUID
 
 	tx := s.DB.Begin()
 
-	result := tx.Create(&shopCreated)
+	result := tx.Create(scrappedShop)
 	if result.Error != nil {
-		tx.Rollback()
-		log.Println(err)
-		return
-	}
-
-	shopMenu.ShopID = shopCreated.ID
-	if err := tx.Create(&shopMenu).Error; err != nil {
-		tx.Rollback()
-		log.Println(err)
-		return
-	}
-
-	for _, menuItem := range shopMenuItem {
-		menuItem.ShopMenuID = shopMenu.ID
-		if err := tx.Create(&menuItem).Error; err != nil {
-			tx.Rollback()
-			log.Println(err)
-			return
-		}
-	}
-
-	account := &models.Account{}
-
-	if err := tx.First(&account, currentUserUUID).Error; err != nil {
-		tx.Rollback()
-		log.Println(err)
-		return
-	}
-
-	account.ShopsFollowing = append(account.ShopsFollowing, shopCreated.ID)
-
-	if err := tx.Save(&account).Error; err != nil {
 		tx.Rollback()
 		log.Println(err)
 		return
@@ -79,6 +46,6 @@ func (s *Shop) CreateNewShop(ctx *gin.Context) {
 
 	tx.Commit()
 
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": shopCreated})
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": scrappedShop})
 
 }
