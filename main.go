@@ -45,8 +45,12 @@ func main() {
 
 	shopRoute := server.Group("/shop")
 	createShop := controllers.NewShopController(initializer.DB).CreateNewShop
+	followShop := controllers.NewShopController(initializer.DB).FollowShop
+	unFollowShop := controllers.NewShopController(initializer.DB).UnFollowShop
 
 	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(), createShop)
+	shopRoute.GET("/follow_shop", controllers.AuthMiddleWare(), followShop)
+	shopRoute.GET("/unfollow_shop", controllers.AuthMiddleWare(), unFollowShop)
 
 	log.Fatal(server.Run(":" + config.ServerPort))
 }

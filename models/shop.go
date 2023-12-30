@@ -16,7 +16,7 @@ type Shop struct {
 	Admirers         int      `json:"admirers" gorm:"not null"`
 	SocialMediaLinks []string `json:"social_media_links" gorm:"serializer:json"`
 
-	Member   []ShopMember `json:"shop_member" gorm:"foreignKey:ShopID"`
+	Member   []ShopMember `json:"shop_member" gorm:"foreignKey:ShopID;references:ID"`
 	ShopMenu ShopMenu     `json:"shop_menu" gorm:"foreignKey:ShopID;references:ID"`
 	Reviews  Reviews      `json:"shop_reviews" gorm:"foreignKey:ShopID;references:ID"`
 
@@ -63,6 +63,14 @@ type ShopMember struct {
 
 type CreateNewShopReuest struct {
 	ShopName string `json:"new_shop_name"`
+}
+
+type FollowShopRequest struct {
+	FollowShopName string `json:"follow_shop"`
+}
+
+type UnFollowShopRequest struct {
+	UnFollowShopName string `json:"unfollow_shop"`
 }
 
 func CreateShop(newShop *Shop) *Shop {
