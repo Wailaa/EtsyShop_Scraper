@@ -84,6 +84,16 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
 
 }
+
+func (s *Shop) GetAccountByID(ID uuid.UUID) (account *models.Account, err error) {
+
+	if err := s.DB.Where("ID = ?", ID).First(&account).Error; err != nil {
+		log.Println("no account was Found ,error :", err)
+		return nil, err
+	}
+	return
+}
+
 func (s *User) GetAccountByEmail(email string) *models.Account {
 	account := &models.Account{}
 
