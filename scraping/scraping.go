@@ -246,9 +246,8 @@ func scrapShopMembers(c *colly.Collector, shop *models.Shop) error {
 			role := h.ChildText(`p[data-region="member-role"]`)
 
 			Members = append(Members, models.ShopMember{Name: name, Role: role})
-
 		})
-
+		shop.Member = Members
 	})
 
 	return nil
