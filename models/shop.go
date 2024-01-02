@@ -24,20 +24,34 @@ type Shop struct {
 	Followers       []Account `gorm:"many2many:account_shop_following;"`
 }
 
+type Item struct {
+	gorm.Model
+	Name           string
+	OriginalPrice  float64
+	CurrencySymbol string
+	SalePrice      float64
+	DiscoutPercent string
+	ItemLink       string
+	MenuItemID     uint
+	ListingID      string
+	DataShopID     string
+}
+
 type MenuItem struct {
 	gorm.Model
-	ShopMenuID uint   `json:"-"`
-	Category   string `json:"category_name"`
-	SectionID  string `json:"selection_id"`
-	Link       string `json:"link"`
-	Amount     int    `json:"item_amount"`
+	ShopMenuID uint    `json:"-"`
+	Category   string  `json:"category_name"`
+	SectionID  string  `json:"selection_id"`
+	Link       string  `json:"link"`
+	Amount     int     `json:"item_amount"`
+	Items      *[]Item `json:"category_item" gorm:"foreignKey:MenuItemID;"`
 }
 
 type ShopMenu struct {
 	gorm.Model
 	ShopID            uint       `json:"-"`
 	TotalItemsAmmount int        `json:"total_items_amount"`
-	Menu              []MenuItem `json:"shop_item" gorm:"foreignKey:ShopMenuID"`
+	Menu              []MenuItem `json:"items_category" gorm:"foreignKey:ShopMenuID"`
 }
 type Reviews struct {
 	gorm.Model

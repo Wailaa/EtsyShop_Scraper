@@ -35,9 +35,11 @@ func (s *Shop) CreateNewShop(ctx *gin.Context) {
 
 	scrappedShop.CreatedByUserID = currentUserUUID
 
+	secondStage := scrap.ScrapAllMenuItems(scrappedShop)
+
 	tx := s.DB.Begin()
 
-	result := tx.Create(scrappedShop)
+	result := tx.Create(secondStage)
 	if result.Error != nil {
 		tx.Rollback()
 		log.Println(err)
@@ -46,7 +48,7 @@ func (s *Shop) CreateNewShop(ctx *gin.Context) {
 
 	tx.Commit()
 
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": scrappedShop})
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": secondStage})
 
 }
 
