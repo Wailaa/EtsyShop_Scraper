@@ -26,6 +26,18 @@ func (s *Shop) CreateNewShop(ctx *gin.Context) {
 		return
 	}
 
+	IsShop, err := s.GetShopByName(shop.ShopName)
+	if err != nil && err.Error() != "record not found" {
+		log.Println(err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		return
+	}
+
+	if IsShop != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "Shop exists"})
+		return
+	}
+
 	scrappedShop, err := scrap.ScrapShop(shop.ShopName)
 	if err != nil {
 		log.Println(err)
