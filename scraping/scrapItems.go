@@ -129,7 +129,7 @@ func scrapShopItems(c *colly.Collector, shopMenu *models.MenuItem) *[]models.Ite
 			newItem.Name = h.ChildText(divID)
 
 			OriginalPrice := h.ChildText("span.currency-value")
-			SalesPrice := "0"
+			SalesPrice := "-1"
 			h.ForEachWithBreak("p.search-collage-promotion-price", func(i int, g *colly.HTMLElement) bool {
 				SalesPrice = h.DOM.Find("span.currency-value").Eq(0).Text()
 				OriginalPrice = g.ChildText("span.currency-value")
