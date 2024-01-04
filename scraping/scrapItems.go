@@ -52,34 +52,36 @@ func scrapMenuItems(Menu *models.MenuItem) *models.MenuItem {
 	c.OnError(func(r *colly.Response, err error) {
 		fmt.Println("Got this error:", err)
 	})
+	items := scrapShopItems(c, Menu)
+	Menu.Items = items
 
 	c.OnScraped(func(r *colly.Response) {
+		fmt.Println("Done scraping")
 		pageToScrap := ""
 		if len(pages.scrapURLs) != 0 {
 			pageToScrap = pages.scrapURLs[0]
 			pages.scrapURLs = pages.scrapURLs[1:]
+
+			c.Visit(pageToScrap)
+
 		}
-		c.Visit(pageToScrap)
+
 	})
 
-	items := scrapShopItems(c, Menu)
-	Menu.Items = items
+	scrapNextItemPage(c, Menu)
 
-	scrapNextItemPage(c)
-
-	c.Visit(Menu.Link)
+	c.Visit(Menu.Link + "&sort_order=price_desc")
 	c.Wait()
 
 	return Menu
 }
 
-func scrapNextItemPage(c *colly.Collector) {
+func scrapNextItemPage(c *colly.Collector, shopMenu *models.MenuItem) {
 
-	link := "https://www.etsy.com/de-en/shop/WoodenCraftedGoods?ref=items-pagination&section_id=1&sort_order=date_desc"
 	pages.scrapURLs = []string{}
 	lastpage := ""
-	c.OnHTML(`div[data-item-pagination]`, func(h *colly.HTMLElement) {
 
+	c.OnHTML(`div[data-item-pagination]`, func(h *colly.HTMLElement) {
 		h.ForEachWithBreak("nav", func(i int, g *colly.HTMLElement) bool {
 			justaslice := []string{}
 			if i == 1 {
@@ -96,15 +98,17 @@ func scrapNextItemPage(c *colly.Collector) {
 			}
 			return true
 		})
+		splitLink := strings.Split(shopMenu.Link, "?")
 
-		lastPageInt, _ := strconv.Atoi(lastpage)
+		link = splitLink[0]
+
 		i := 2
-		for i <= lastPageInt {
-			Param := fmt.Sprint("&param=", i, "#items")
+		for i <= pages.pagesCount {
+			Param := fmt.Sprint("?ref=items-pagination&page=", i, "&section_id=", shopMenu.SectionID, "&sort_order=price_desc")
 			link += Param
 			pages.scrapURLs = append(pages.scrapURLs, link)
 
-			link = "https://www.etsy.com/de-en/shop/WoodenCraftedGoods?ref=items-pagination&section_id=1&sort_order=date_desc"
+			link = splitLink[0]
 
 			i++
 		}
