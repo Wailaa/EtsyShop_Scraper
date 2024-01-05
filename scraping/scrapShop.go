@@ -1,6 +1,7 @@
 package scrap
 
 import (
+	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	"fmt"
 	"strconv"
@@ -10,14 +11,14 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
-var link string
+var config = initializer.LoadProjConfig(".")
+var Shoplink = config.ScrapShopURL
 
 var MissingInfo string = "INFORMATION_NOT_AVAILABLE"
 
 func ScrapShop(shopName string) (*models.Shop, error) {
 
 	NewShop := &models.Shop{}
-	link = "https://www.etsy.com/de-en/shop/"
 
 	c := colly.NewCollector()
 
@@ -76,7 +77,7 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 		fmt.Println("Finished", r.Request.URL)
 	})
 
-	c.Visit(link + shopName)
+	c.Visit(Shoplink + shopName)
 	c.Wait()
 
 	return NewShop, nil
@@ -137,7 +138,7 @@ func scrapShopMenu(c *colly.Collector, shop *models.Shop) error {
 			valueToInt, _ := strconv.Atoi(value)
 
 			dataSectionId := h.Attr("data-section-id")
-			dataSectionId_link := link + shop.Name + "?&section_id=" + dataSectionId
+			dataSectionId_link := Shoplink + shop.Name + "?&section_id=" + dataSectionId
 
 			if i == 0 {
 				shop.ShopMenu.TotalItemsAmmount = valueToInt

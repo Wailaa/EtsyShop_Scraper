@@ -107,7 +107,7 @@ func scrapNextItemPage(c *colly.Collector, shopMenu *models.MenuItem) {
 		})
 		splitLink := strings.Split(shopMenu.Link, "?")
 
-		link = splitLink[0]
+		link := splitLink[0]
 
 		i := 2
 		for i <= pages.pagesCount {

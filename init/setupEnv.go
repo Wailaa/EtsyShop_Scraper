@@ -27,6 +27,8 @@ type Config struct {
 	SMTPUser     string `mapstructure:"MAILTRAP_SMTP_USER"`
 
 	RedisURL string `mapstructure:"REDISURL"`
+
+	ScrapShopURL string `mapstructure:"SCRAP_SHOP_URL"`
 }
 
 func LoadProjConfig(path string) (config Config) {
