@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gocolly/colly/v2"
 )
@@ -37,9 +38,14 @@ func ScrapAllMenuItems(shop *models.Shop) *models.Shop {
 
 func scrapMenuItems(Menu *models.MenuItem) *models.MenuItem {
 
-	c := colly.NewCollector()
+	c := colly.NewCollector(
+		colly.ParseHTTPErrorResponse(),
+	)
 
-	c.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
+	c.Limit(&colly.LimitRule{
+		Delay:       5 * time.Second,
+		RandomDelay: 5 * time.Second,
+	})
 
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL)
@@ -50,7 +56,8 @@ func scrapMenuItems(Menu *models.MenuItem) *models.MenuItem {
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
-		fmt.Println("Got this error:", err)
+		fmt.Println("Request URL: ", r.Request.URL, " failed with response: ", r, "\nError: ", err)
+
 	})
 	items := scrapShopItems(c, Menu)
 	Menu.Items = items

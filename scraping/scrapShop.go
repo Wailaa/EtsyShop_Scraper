@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gocolly/colly/v2"
 )
@@ -20,7 +21,10 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 
 	c := colly.NewCollector()
 
-	c.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
+	c.Limit(&colly.LimitRule{
+		Delay:       5 * time.Second,
+		RandomDelay: 5 * time.Second,
+	})
 
 	if err := scrapShopDetails(c, NewShop); err != nil {
 		return nil, err
@@ -65,7 +69,7 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
-		fmt.Println("Got this error:", err)
+		fmt.Println("Request URL: ", r.Request.URL, " failed with response: ", r, "\nError: ", err)
 	})
 
 	c.OnScraped(func(r *colly.Response) {
@@ -133,7 +137,7 @@ func scrapShopMenu(c *colly.Collector, shop *models.Shop) error {
 			valueToInt, _ := strconv.Atoi(value)
 
 			dataSectionId := h.Attr("data-section-id")
-			dataSectionId_link := link + shop.Name + "?ref=shop_sugg_market&section_id=" + dataSectionId
+			dataSectionId_link := link + shop.Name + "?&section_id=" + dataSectionId
 
 			if i == 0 {
 				shop.ShopMenu.TotalItemsAmmount = valueToInt
