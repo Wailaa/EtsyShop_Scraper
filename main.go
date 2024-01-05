@@ -5,6 +5,7 @@ import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -47,10 +48,26 @@ func main() {
 	createShop := controllers.NewShopController(initializer.DB).CreateNewShop
 	followShop := controllers.NewShopController(initializer.DB).FollowShop
 	unFollowShop := controllers.NewShopController(initializer.DB).UnFollowShop
+	getShopByID := controllers.NewShopController(initializer.DB).GetShopByID
 
 	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(), createShop)
 	shopRoute.GET("/follow_shop", controllers.AuthMiddleWare(), followShop)
 	shopRoute.GET("/unfollow_shop", controllers.AuthMiddleWare(), unFollowShop)
+	shopRoute.GET("/:shopID", controllers.AuthMiddleWare(), func(ctx *gin.Context) {
+		ShopID := ctx.Param("shopID")
+		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+			return
+		}
+		Shop, err := getShopByID(uint(ShopIDToUint))
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+			return
+		}
+
+		ctx.JSON(http.StatusOK, Shop)
+	})
 
 	log.Fatal(server.Run(":" + config.ServerPort))
 }

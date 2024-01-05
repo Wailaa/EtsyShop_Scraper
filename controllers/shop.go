@@ -158,8 +158,10 @@ func (s *Shop) GetShopByName(ShopName string) (shop *models.Shop, err error) {
 
 func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 
-	if err = s.DB.Where("ID = ?", ID).First(&shop).Error; err != nil {
+	shop = &models.Shop{}
+	if err := s.DB.Preload("Member").Preload("ShopMenu.Menu.Items").Preload("Reviews.ReviewsTopic").Where("id = ?", ID).First(&shop).Error; err != nil {
 		log.Println("no Shop was Found ,error :", err)
+
 		return nil, err
 	}
 	return
