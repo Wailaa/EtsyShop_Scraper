@@ -19,7 +19,7 @@ func init() {
 	initializer.DataBaseConnect(&config)
 	initializer.RedisDBConnect(&config)
 
-	initializer.DB.AutoMigrate(&models.Account{}, &models.Shop{}, &models.ShopMenu{}, &models.MenuItem{}, &models.Reviews{}, &models.ShopMember{}, &models.ReviewsTopic{}, &models.Item{})
+	initializer.DB.AutoMigrate(models.ModelsGroup...)
 	fmt.Println("Migration is completed")
 
 }

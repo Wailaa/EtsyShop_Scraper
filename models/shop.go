@@ -5,6 +5,18 @@ import (
 	"gorm.io/gorm"
 )
 
+var ModelsGroup = []interface{}{
+	&Account{},
+	&Shop{},
+	&ShopMenu{},
+	&MenuItem{},
+	&Reviews{},
+	&ShopMember{},
+	&ReviewsTopic{},
+	&Item{},
+	&SoldCount{},
+}
+
 type Shop struct {
 	gorm.Model
 	Name             string   `json:"shop_name" gorm:"type:varchar(100);not null"`
@@ -22,6 +34,12 @@ type Shop struct {
 
 	CreatedByUserID uuid.UUID `gorm:"type:uuid"`
 	Followers       []Account `gorm:"many2many:account_shop_following;"`
+}
+
+type SoldCount struct {
+	gorm.Model
+	ListingID int `gorm:"uniqueIndex;foreignKey:ListingID;references:ListingID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Count     int `gorm:"not null"`
 }
 
 type Item struct {
