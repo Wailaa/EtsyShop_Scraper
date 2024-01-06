@@ -60,8 +60,38 @@ func (s *Shop) CreateNewShop(ctx *gin.Context) {
 
 	tx.Commit()
 
+	if err := s.UpdateSellingHistory(secondStage.Name, secondStage.ID); err != nil {
+		log.Println(err)
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to create history"})
+		return
+
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": secondStage})
 
+}
+
+func (s *Shop) UpdateSellingHistory(ShopName string, ShopID uint) error {
+	scrapSoldItems := scrap.ScrapSalesHistory(ShopName)
+
+	getAllItems, err := s.GetItemsByShopID(ShopID)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	for _, SoldUnit := range scrapSoldItems {
+		for _, item := range getAllItems {
+			if SoldUnit.ListingID == item.ListingID {
+				SoldUnit.ItemID = item.ID
+				if err := s.DB.Create(&SoldUnit).Error; err != nil {
+					log.Println(err)
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func (s *Shop) FollowShop(ctx *gin.Context) {
