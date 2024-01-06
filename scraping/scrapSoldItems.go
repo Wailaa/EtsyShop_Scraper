@@ -4,6 +4,7 @@ import (
 	"EtsyScraper/models"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"sync"
 	"time"
@@ -16,6 +17,13 @@ var pagination = []string{}
 func ScrapSalesHistory(ShopName string) []models.SoldItems {
 
 	c := colly.NewCollector()
+
+	c.SetProxy(config.ProxyHostURL)
+
+	c.WithTransport(&http.Transport{
+		DisableKeepAlives: true,
+	})
+
 	c.Limit(&colly.LimitRule{
 		Delay:       5 * time.Second,
 		RandomDelay: 5 * time.Second,
@@ -37,6 +45,7 @@ func ScrapSalesHistory(ShopName string) []models.SoldItems {
 	scrapSoldItemPages(c, ShopName)
 
 	c.OnScraped(func(r *colly.Response) {
+		fmt.Println("done scrapping sales history")
 		pageToScrap := ""
 		if len(pagination) != 0 {
 			pageToScrap = pagination[0]

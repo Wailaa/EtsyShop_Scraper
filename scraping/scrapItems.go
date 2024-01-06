@@ -4,6 +4,7 @@ import (
 	"EtsyScraper/models"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -41,6 +42,12 @@ func scrapMenuItems(Menu *models.MenuItem) *models.MenuItem {
 	c := colly.NewCollector(
 		colly.ParseHTTPErrorResponse(),
 	)
+
+	c.SetProxy(config.ProxyHostURL)
+
+	c.WithTransport(&http.Transport{
+		DisableKeepAlives: true,
+	})
 
 	c.Limit(&colly.LimitRule{
 		Delay:       5 * time.Second,

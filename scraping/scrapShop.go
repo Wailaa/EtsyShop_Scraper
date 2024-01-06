@@ -4,6 +4,7 @@ import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +22,12 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 	NewShop := &models.Shop{}
 
 	c := colly.NewCollector()
+
+	c.SetProxy(config.ProxyHostURL)
+
+	c.WithTransport(&http.Transport{
+		DisableKeepAlives: true,
+	})
 
 	c.Limit(&colly.LimitRule{
 		Delay:       5 * time.Second,

@@ -29,6 +29,8 @@ type Config struct {
 	RedisURL string `mapstructure:"REDISURL"`
 
 	ScrapShopURL string `mapstructure:"SCRAP_SHOP_URL"`
+
+	ProxyHostURL string `mapstructure:"PROXY_HOST_URL"`
 }
 
 func LoadProjConfig(path string) (config Config) {
