@@ -49,6 +49,7 @@ func main() {
 	followShop := controllers.NewShopController(initializer.DB).FollowShop
 	unFollowShop := controllers.NewShopController(initializer.DB).UnFollowShop
 	getShopByID := controllers.NewShopController(initializer.DB).GetShopByID
+	getAllItemsByShopID := controllers.NewShopController(initializer.DB).GetItemsByShopID
 
 	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(), createShop)
 	shopRoute.GET("/follow_shop", controllers.AuthMiddleWare(), followShop)
@@ -57,7 +58,7 @@ func main() {
 		ShopID := ctx.Param("shopID")
 		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
 		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
 			return
 		}
 		Shop, err := getShopByID(uint(ShopIDToUint))
@@ -67,6 +68,21 @@ func main() {
 		}
 
 		ctx.JSON(http.StatusOK, Shop)
+	})
+
+	shopRoute.GET("/:shopID/all_items", controllers.AuthMiddleWare(), func(ctx *gin.Context) {
+		ShopID := ctx.Param("shopID")
+		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+			return
+		}
+		Items, err := getAllItemsByShopID(uint(ShopIDToUint))
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusOK, Items)
 	})
 
 	log.Fatal(server.Run(":" + config.ServerPort))

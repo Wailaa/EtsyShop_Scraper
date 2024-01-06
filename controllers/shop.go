@@ -158,11 +158,24 @@ func (s *Shop) GetShopByName(ShopName string) (shop *models.Shop, err error) {
 
 func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 
-	shop = &models.Shop{}
 	if err := s.DB.Preload("Member").Preload("ShopMenu.Menu.Items").Preload("Reviews.ReviewsTopic").Where("id = ?", ID).First(&shop).Error; err != nil {
 		log.Println("no Shop was Found ,error :", err)
 
 		return nil, err
+	}
+	return
+}
+
+func (s *Shop) GetItemsByShopID(ID uint) (items []models.Item, err error) {
+	shop := &models.Shop{}
+	if err := s.DB.Preload("ShopMenu.Menu.Items").Where("id = ?", ID).First(shop).Error; err != nil {
+		log.Println("no Shop was Found ,error :", err)
+
+		return nil, err
+	}
+
+	for _, menu := range shop.ShopMenu.Menu {
+		items = append(items, *menu.Items...)
 	}
 	return
 }
