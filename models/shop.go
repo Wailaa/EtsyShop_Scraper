@@ -14,7 +14,7 @@ var ModelsGroup = []interface{}{
 	&ShopMember{},
 	&ReviewsTopic{},
 	&Item{},
-	&SoldCount{},
+	&SoldItems{},
 }
 
 type Shop struct {
@@ -36,10 +36,10 @@ type Shop struct {
 	Followers       []Account `gorm:"many2many:account_shop_following;"`
 }
 
-type SoldCount struct {
+type SoldItems struct {
 	gorm.Model
-	ListingID int `gorm:"uniqueIndex;foreignKey:ListingID;references:ListingID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Count     int `gorm:"not null"`
+	ItemID    uint
+	ListingID uint
 }
 
 type Item struct {
@@ -51,8 +51,9 @@ type Item struct {
 	DiscoutPercent string
 	ItemLink       string
 	MenuItemID     uint
-	ListingID      string
+	ListingID      uint
 	DataShopID     string
+	SoldUnits      []SoldItems `gorm:"foreignKey:ItemID;"`
 }
 
 type MenuItem struct {

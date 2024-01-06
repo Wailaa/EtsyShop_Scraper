@@ -132,11 +132,18 @@ func scrapShopItems(c *colly.Collector, shopMenu *models.MenuItem) *[]models.Ite
 		e.ForEach("div.js-merch-stash-check-listing", func(i int, h *colly.HTMLElement) {
 
 			newItem := models.Item{}
-			newItem.ListingID = h.Attr("data-listing-id")
+
+			ListingID := h.Attr("data-listing-id")
+			ListingIDToUint64, err := strconv.ParseUint(ListingID, 10, 64)
+			if err != nil {
+				log.Println(err.Error())
+				return
+			}
+			newItem.ListingID = uint(ListingIDToUint64)
 			newItem.DataShopID = h.Attr("data-shop-id")
 			newItem.MenuItemID = shopMenu.ID
 
-			divID := "h3#listing-title-" + newItem.ListingID
+			divID := "h3#listing-title-" + ListingID
 			newItem.Name = h.ChildText(divID)
 
 			OriginalPrice := h.ChildText("span.currency-value")
