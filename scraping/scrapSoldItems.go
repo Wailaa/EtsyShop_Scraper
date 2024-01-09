@@ -63,8 +63,9 @@ func ScrapSalesHistory(ShopName string) []models.SoldItems {
 func scrapSoldItems(c *colly.Collector) *[]models.SoldItems {
 	itemsSold := models.SoldItems{}
 	TotalItemSold := &[]models.SoldItems{}
-	ReversedTotalItems := &[]models.SoldItems{}
+
 	c.OnHTML("div#content", func(e *colly.HTMLElement) {
+		itemsSold := models.SoldItems{}
 
 		e.ForEach("div[data-shop-id]", func(i int, h *colly.HTMLElement) {
 
@@ -78,18 +79,23 @@ func scrapSoldItems(c *colly.Collector) *[]models.SoldItems {
 
 			itemsSold.ListingID = ListingIDToUint
 
+			itemsSold.DataShopID = h.Attr("data-shop-id")
+
+			divID := "h3#listing-title-" + ListingID
+			itemsSold.Name = h.ChildText(divID)
+
+			itemsSold.ItemLink = h.ChildAttr("a.listing-link", "href")
+
 			*TotalItemSold = append(*TotalItemSold, itemsSold)
 
 		})
 
-		length := len(*TotalItemSold)
-
-		for i := 0; i <= length-1; i++ {
-			*ReversedTotalItems = append(*ReversedTotalItems, (*TotalItemSold)[len(*TotalItemSold)-1-i])
-		}
-
 	})
-	return ReversedTotalItems
+	for i, j := 0, len(*TotalItemSold)-1; i < j; i, j = i+1, j-1 {
+		(*TotalItemSold)[i], (*TotalItemSold)[j] = (*TotalItemSold)[j], (*TotalItemSold)[i]
+	}
+
+	return TotalItemSold
 }
 
 func scrapSoldItemPages(c *colly.Collector, ShopName string) {

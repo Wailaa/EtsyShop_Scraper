@@ -48,8 +48,11 @@ type ResponseSoldItemInfo struct {
 }
 type SoldItems struct {
 	gorm.Model
-	ItemID    uint
-	ListingID uint
+	Name       string
+	ItemLink   string
+	ItemID     uint `gorm:"index"`
+	ListingID  uint
+	DataShopID string
 }
 
 type Item struct {
