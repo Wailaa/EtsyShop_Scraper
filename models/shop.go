@@ -62,6 +62,7 @@ type Item struct {
 	CurrencySymbol string
 	SalePrice      float64
 	DiscoutPercent string
+	Available      bool
 	ItemLink       string
 	MenuItemID     uint
 	ListingID      uint

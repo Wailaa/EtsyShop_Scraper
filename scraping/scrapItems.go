@@ -19,21 +19,52 @@ type PagesToScrap struct {
 
 var pages = &PagesToScrap{}
 
+var ListingIdCount = map[uint]int{}
+
 func ScrapAllMenuItems(shop *models.Shop) *models.Shop {
 
 	newModifiedMenuItem := []models.MenuItem{}
+	AllItemCategory := models.MenuItem{}
+	UnCategorizedItems := []models.Item{}
+
 	for _, Menu := range shop.ShopMenu.Menu {
 
-		if len(shop.ShopMenu.Menu) > 1 && (Menu.Category == "All" || Menu.Category == "On sale") {
-			continue
-		} else {
-			ModifiedMenu := scrapMenuItems(&Menu)
+		if Menu.Category != "On sale" {
 
-			newModifiedMenuItem = append(newModifiedMenuItem, *ModifiedMenu)
+			ModifiedMenu := scrapMenuItems(&Menu)
+			if Menu.Category == "All" {
+				AllItemCategory = *ModifiedMenu
+			} else {
+				newModifiedMenuItem = append(newModifiedMenuItem, *ModifiedMenu)
+			}
 		}
 	}
-	shop.ShopMenu.Menu = newModifiedMenuItem
 
+	if len(shop.ShopMenu.Menu) > 1 {
+		for ListingID, Amount := range ListingIdCount {
+			if Amount == 1 {
+				for _, item := range *AllItemCategory.Items {
+					if item.ListingID == ListingID {
+						UnCategorizedItems = append(UnCategorizedItems, item)
+					}
+				}
+			}
+		}
+		UnCategorizedMenu := models.MenuItem{
+			ShopMenuID: AllItemCategory.ShopMenuID,
+			Category:   "UnCategorized",
+			SectionID:  AllItemCategory.SectionID,
+			Link:       AllItemCategory.Link,
+			Amount:     len(UnCategorizedItems),
+			Items:      &UnCategorizedItems,
+		}
+
+		AllItemCategory.Items = &[]models.Item{}
+
+		newModifiedMenuItem = append(newModifiedMenuItem, UnCategorizedMenu)
+	}
+	newModifiedMenuItem = append(newModifiedMenuItem, AllItemCategory)
+	shop.ShopMenu.Menu = newModifiedMenuItem
 	return shop
 }
 
@@ -41,6 +72,7 @@ func scrapMenuItems(Menu *models.MenuItem) *models.MenuItem {
 
 	c := colly.NewCollector(
 		colly.ParseHTTPErrorResponse(),
+		colly.MaxDepth(5),
 	)
 
 	c.SetProxy(config.ProxyHostURL)
@@ -147,6 +179,9 @@ func scrapShopItems(c *colly.Collector, shopMenu *models.MenuItem) *[]models.Ite
 				return
 			}
 			newItem.ListingID = uint(ListingIDToUint64)
+
+			ListingIdCount[newItem.ListingID]++
+
 			newItem.DataShopID = h.Attr("data-shop-id")
 			newItem.MenuItemID = shopMenu.ID
 
@@ -184,6 +219,7 @@ func scrapShopItems(c *colly.Collector, shopMenu *models.MenuItem) *[]models.Ite
 			newItem.DiscoutPercent = getDiscoutPrice
 
 			newItem.ItemLink = h.ChildAttr("a.listing-link", "href")
+			newItem.Available = true
 
 			*testingItems = append(*testingItems, newItem)
 		})
