@@ -179,7 +179,7 @@ func (s *Shop) UnFollowShop(ctx *gin.Context) {
 
 func (s *Shop) GetShopByName(ShopName string) (shop *models.Shop, err error) {
 
-	if err = s.DB.Where("name = ?", ShopName).First(&shop).Error; err != nil {
+	if err = s.DB.Preload("Member").Preload("ShopMenu.Menu.Items").Preload("Reviews.ReviewsTopic").Where("name = ?", ShopName).First(&shop).Error; err != nil {
 		log.Println("no Shop was Found ,error :", err)
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func (s *Shop) GetShopByName(ShopName string) (shop *models.Shop, err error) {
 func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 
 	if err := s.DB.Preload("Member").Preload("ShopMenu.Menu.Items").Preload("Reviews.ReviewsTopic").Where("id = ?", ID).First(&shop).Error; err != nil {
-		log.Println("no Shop was Found ,error :", err)
+		log.Println("no Shop was Found ")
 
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 func (s *Shop) GetItemsByShopID(ID uint) (items []models.Item, err error) {
 	shop := &models.Shop{}
 	if err := s.DB.Preload("ShopMenu.Menu.Items").Where("id = ?", ID).First(shop).Error; err != nil {
-		log.Println("no Shop was Found ,error :", err)
+		log.Println("no Shop was Found")
 
 		return nil, err
 	}
@@ -207,5 +207,44 @@ func (s *Shop) GetItemsByShopID(ID uint) (items []models.Item, err error) {
 	for _, menu := range shop.ShopMenu.Menu {
 		items = append(items, *menu.Items...)
 	}
+	return
+}
+
+func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []models.ResponseSoldItemInfo, err error) {
+	listingIDs := []uint{}
+	Solditems := []models.SoldItems{}
+
+	AllItems, err := s.GetItemsByShopID(ID)
+	if err != nil {
+		log.Println("items where not found ")
+		return nil, err
+	}
+
+	for _, item := range AllItems {
+		listingIDs = append(listingIDs, item.ListingID)
+	}
+
+	result := s.DB.Where("listing_id IN ?", listingIDs).Find(&Solditems)
+	if result.Error != nil {
+		log.Println("items where not found ")
+		return nil, err
+	}
+
+	soldQauntity := map[uint]int{}
+	for _, SoldItem := range Solditems {
+		soldQauntity[SoldItem.ItemID]++
+	}
+
+	for key, value := range soldQauntity {
+		for _, item := range AllItems {
+			if key == item.ID {
+				SoldItemInfo := models.CreateSoldItemInfo(&item)
+				SoldItemInfo.SoldQauntity = value
+				SoldItemInfos = append(SoldItemInfos, *SoldItemInfo)
+			}
+		}
+
+	}
+
 	return
 }

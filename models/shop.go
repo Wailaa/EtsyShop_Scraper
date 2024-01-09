@@ -36,6 +36,16 @@ type Shop struct {
 	Followers       []Account `gorm:"many2many:account_shop_following;"`
 }
 
+type ResponseSoldItemInfo struct {
+	Name           string
+	ItemID         uint
+	OriginalPrice  float64
+	CurrencySymbol string
+	SalePrice      float64
+	DiscoutPercent string
+	ItemLink       string
+	SoldQauntity   int
+}
 type SoldItems struct {
 	gorm.Model
 	ItemID    uint
@@ -158,4 +168,17 @@ func CreateShopMember(shopMember *ShopMember) *ShopMember {
 		Role:   shopMember.Role,
 	}
 	return NewMember
+}
+
+func CreateSoldItemInfo(Item *Item) *ResponseSoldItemInfo {
+	newSoldItem := &ResponseSoldItemInfo{
+		Name:           Item.Name,
+		ItemID:         Item.ID,
+		OriginalPrice:  Item.OriginalPrice,
+		CurrencySymbol: Item.CurrencySymbol,
+		SalePrice:      Item.SalePrice,
+		DiscoutPercent: Item.DiscoutPercent,
+		ItemLink:       Item.ItemLink,
+	}
+	return newSoldItem
 }
