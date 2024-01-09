@@ -2,6 +2,7 @@ package scrap
 
 import (
 	"EtsyScraper/models"
+	"EtsyScraper/utils"
 	"fmt"
 	"log"
 	"net/http"
@@ -23,9 +24,13 @@ func ScrapSalesHistory(ShopName string) []models.SoldItems {
 
 	c.SetProxy(config.ProxyHostURL)
 
+	userAgent := utils.CreateUserAgent()
+
 	c.WithTransport(&http.Transport{
 		DisableKeepAlives: true,
 	})
+
+	c.UserAgent = userAgent
 
 	c.Limit(&colly.LimitRule{
 		Delay:       5 * time.Second,

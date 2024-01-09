@@ -3,6 +3,7 @@ package scrap
 import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
+	"EtsyScraper/utils"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -21,6 +22,8 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 
 	NewShop := &models.Shop{}
 
+	userAgent := utils.CreateUserAgent()
+
 	c := colly.NewCollector(
 		colly.ParseHTTPErrorResponse(),
 		colly.MaxDepth(5),
@@ -31,6 +34,8 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 	c.WithTransport(&http.Transport{
 		DisableKeepAlives: true,
 	})
+
+	c.UserAgent = userAgent
 
 	c.Limit(&colly.LimitRule{
 		Delay:       5 * time.Second,
