@@ -60,11 +60,13 @@ func (s *Shop) CreateNewShop(ctx *gin.Context) {
 
 	tx.Commit()
 
-	if err := s.UpdateSellingHistory(secondStage); err != nil {
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to create history"})
-		return
+	if secondStage.HasSoldHistory && secondStage.TotalSales > 0 {
+		if err := s.UpdateSellingHistory(secondStage); err != nil {
+			log.Println(err)
+			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to create history"})
+			return
 
+		}
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": secondStage})

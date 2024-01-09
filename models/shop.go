@@ -27,13 +27,14 @@ type Shop struct {
 	LastUpdateTime   string   `json:"last_update_time" gorm:"type:varchar(155);not null"`
 	Admirers         int      `json:"admirers" gorm:"not null"`
 	SocialMediaLinks []string `json:"social_media_links" gorm:"serializer:json"`
+	HasSoldHistory   bool     `json:"-" `
 
 	Member   []ShopMember `json:"shop_member" gorm:"foreignKey:ShopID;references:ID"`
 	ShopMenu ShopMenu     `json:"shop_menu" gorm:"foreignKey:ShopID;references:ID"`
 	Reviews  Reviews      `json:"shop_reviews" gorm:"foreignKey:ShopID;references:ID"`
 
-	CreatedByUserID uuid.UUID `gorm:"type:uuid"`
-	Followers       []Account `gorm:"many2many:account_shop_following;"`
+	CreatedByUserID uuid.UUID `json:"-" gorm:"type:uuid"`
+	Followers       []Account `json:"-" gorm:"many2many:account_shop_following;"`
 }
 
 type ResponseSoldItemInfo struct {
@@ -48,9 +49,9 @@ type ResponseSoldItemInfo struct {
 }
 type SoldItems struct {
 	gorm.Model
-	Name       string
-	ItemLink   string
-	ItemID     uint `gorm:"index"`
+	Name       string `gorm:"-"`
+	ItemLink   string `gorm:"-"`
+	ItemID     uint   `gorm:"index"`
 	ListingID  uint
 	DataShopID string
 }
@@ -67,7 +68,7 @@ type Item struct {
 	MenuItemID     uint
 	ListingID      uint
 	DataShopID     string
-	SoldUnits      []SoldItems `gorm:"foreignKey:ItemID;"`
+	SoldUnits      []SoldItems `gorm:"foreignKey:ItemID"`
 }
 
 type MenuItem struct {

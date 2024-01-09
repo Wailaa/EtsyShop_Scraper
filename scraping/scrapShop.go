@@ -23,7 +23,8 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 
 	c := colly.NewCollector(
 		colly.ParseHTTPErrorResponse(),
-		colly.MaxDepth(5))
+		colly.MaxDepth(5),
+	)
 
 	c.SetProxy(config.ProxyHostURL)
 
@@ -120,6 +121,11 @@ func scrapShopTotalSales(c *colly.Collector, shop *models.Shop) error {
 		TotalSalesToInt, _ := strconv.Atoi(TotalSales)
 
 		shop.TotalSales = TotalSalesToInt
+
+		Href := e.ChildAttr("div.wt-mt-lg-5 a", "href")
+		if strings.Contains(Href, "sold") {
+			shop.HasSoldHistory = true
+		}
 	})
 	if !IsElementFound {
 		shop.TotalSales = 0
