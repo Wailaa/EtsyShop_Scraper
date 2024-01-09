@@ -60,7 +60,7 @@ func (s *Shop) CreateNewShop(ctx *gin.Context) {
 
 	tx.Commit()
 
-	if err := s.UpdateSellingHistory(secondStage.Name, secondStage.ID); err != nil {
+	if err := s.UpdateSellingHistory(secondStage); err != nil {
 		log.Println(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to create history"})
 		return
@@ -71,27 +71,78 @@ func (s *Shop) CreateNewShop(ctx *gin.Context) {
 
 }
 
-func (s *Shop) UpdateSellingHistory(ShopName string, ShopID uint) error {
-	scrapSoldItems := scrap.ScrapSalesHistory(ShopName)
+func (s *Shop) UpdateSellingHistory(Shop *models.Shop) error {
 
-	getAllItems, err := s.GetItemsByShopID(ShopID)
+	ScrappedSoldItems, err := s.UpdateDiscontinuedItems(Shop)
 	if err != nil {
+		log.Println(err)
+
+		return err
+	}
+
+	AllItems, _ := s.GetItemsByShopID(Shop.ID)
+
+	for i, ScrappedSoldItem := range ScrappedSoldItems {
+		for _, item := range AllItems {
+			if ScrappedSoldItem.ListingID == item.ListingID {
+				ScrappedSoldItems[i].ItemID = item.ID
+				break
+			}
+		}
+	}
+	result := s.DB.Create(ScrappedSoldItems)
+	if result.Error != nil {
 		log.Println(err)
 		return err
 	}
 
-	for _, SoldUnit := range scrapSoldItems {
+	return nil
+}
+
+func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop) ([]models.SoldItems, error) {
+
+	SoldOutItems := []models.Item{}
+	FilterSoldItems := map[uint]struct{}{}
+	scrapSoldItems := scrap.ScrapSalesHistory(Shop.Name)
+
+	getAllItems, err := s.GetItemsByShopID(Shop.ID)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	for i, scrapedItem := range scrapSoldItems {
 		for _, item := range getAllItems {
-			if SoldUnit.ListingID == item.ListingID {
-				SoldUnit.ItemID = item.ID
-				if err := s.DB.Create(&SoldUnit).Error; err != nil {
-					log.Println(err)
-					return err
-				}
+			if scrapedItem.ListingID == item.ListingID && scrapedItem.ItemID == 0 {
+				scrapSoldItems[i].ItemID = item.ID
+				break
+			}
+
+		}
+		if scrapedItem.ItemID == 0 {
+			if _, exists := FilterSoldItems[scrapedItem.ListingID]; !exists {
+				FilterSoldItems[scrapedItem.ListingID] = struct{}{}
+				SoldItem := models.CreateSoldOutItem(&scrapedItem)
+				SoldOutItems = append(SoldOutItems, *SoldItem)
 			}
 		}
+
 	}
-	return nil
+
+	if len(SoldOutItems) != 0 {
+		Menu := models.MenuItem{
+			ShopMenuID: Shop.ShopMenu.ID,
+			Category:   "Out Of Production",
+			SectionID:  "0",
+			Amount:     len(SoldOutItems),
+			Items:      &SoldOutItems,
+		}
+
+		Shop.ShopMenu.Menu = append(Shop.ShopMenu.Menu, Menu)
+		s.DB.Save(Shop)
+
+	}
+	return scrapSoldItems, nil
 }
 
 func (s *Shop) FollowShop(ctx *gin.Context) {

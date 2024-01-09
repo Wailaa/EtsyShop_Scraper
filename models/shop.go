@@ -186,3 +186,13 @@ func CreateSoldItemInfo(Item *Item) *ResponseSoldItemInfo {
 	}
 	return newSoldItem
 }
+func CreateSoldOutItem(item *SoldItems) *Item {
+	SoldOutItem := &Item{
+		Name:       item.Name,
+		ItemLink:   item.ItemLink,
+		Available:  false,
+		ListingID:  item.ListingID,
+		DataShopID: item.DataShopID,
+	}
+	return SoldOutItem
+}
