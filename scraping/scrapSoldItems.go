@@ -92,9 +92,6 @@ func scrapSoldItems(c *colly.Collector) *[]models.SoldItems {
 		})
 
 	})
-	for i, j := 0, len(*TotalItemSold)-1; i < j; i, j = i+1, j-1 {
-		(*TotalItemSold)[i], (*TotalItemSold)[j] = (*TotalItemSold)[j], (*TotalItemSold)[i]
-	}
 
 	return TotalItemSold
 }

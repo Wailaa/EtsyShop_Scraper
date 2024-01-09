@@ -90,6 +90,11 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop) error {
 			}
 		}
 	}
+
+	for i, j := 0, len(ScrappedSoldItems)-1; i < j; i, j = i+1, j-1 {
+		ScrappedSoldItems[i], ScrappedSoldItems[j] = ScrappedSoldItems[j], ScrappedSoldItems[i]
+	}
+
 	result := s.DB.Create(ScrappedSoldItems)
 	if result.Error != nil {
 		log.Println(err)
