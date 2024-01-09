@@ -50,18 +50,20 @@ func ScrapAllMenuItems(shop *models.Shop) *models.Shop {
 				}
 			}
 		}
-		UnCategorizedMenu := models.MenuItem{
-			ShopMenuID: AllItemCategory.ShopMenuID,
-			Category:   "UnCategorized",
-			SectionID:  AllItemCategory.SectionID,
-			Link:       AllItemCategory.Link,
-			Amount:     len(UnCategorizedItems),
-			Items:      &UnCategorizedItems,
+		if len(UnCategorizedItems) > 0 {
+			UnCategorizedMenu := models.MenuItem{
+				ShopMenuID: AllItemCategory.ShopMenuID,
+				Category:   "UnCategorized",
+				SectionID:  AllItemCategory.SectionID,
+				Link:       AllItemCategory.Link,
+				Amount:     len(UnCategorizedItems),
+				Items:      &UnCategorizedItems,
+			}
+
+			newModifiedMenuItem = append(newModifiedMenuItem, UnCategorizedMenu)
 		}
 
 		AllItemCategory.Items = &[]models.Item{}
-
-		newModifiedMenuItem = append(newModifiedMenuItem, UnCategorizedMenu)
 	}
 	newModifiedMenuItem = append(newModifiedMenuItem, AllItemCategory)
 	shop.ShopMenu.Menu = newModifiedMenuItem
