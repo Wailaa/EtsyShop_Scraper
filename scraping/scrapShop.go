@@ -21,7 +21,9 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 
 	NewShop := &models.Shop{}
 
-	c := colly.NewCollector()
+	c := colly.NewCollector(
+		colly.ParseHTTPErrorResponse(),
+		colly.MaxDepth(5))
 
 	c.SetProxy(config.ProxyHostURL)
 

@@ -16,7 +16,10 @@ var pagination = []string{}
 
 func ScrapSalesHistory(ShopName string) []models.SoldItems {
 
-	c := colly.NewCollector()
+	c := colly.NewCollector(
+		colly.ParseHTTPErrorResponse(),
+		colly.MaxDepth(5),
+	)
 
 	c.SetProxy(config.ProxyHostURL)
 
@@ -61,7 +64,6 @@ func ScrapSalesHistory(ShopName string) []models.SoldItems {
 }
 
 func scrapSoldItems(c *colly.Collector) *[]models.SoldItems {
-	itemsSold := models.SoldItems{}
 	TotalItemSold := &[]models.SoldItems{}
 
 	c.OnHTML("div#content", func(e *colly.HTMLElement) {
@@ -76,7 +78,6 @@ func scrapSoldItems(c *colly.Collector) *[]models.SoldItems {
 				return
 			}
 			ListingIDToUint := uint(ListingIDToUint64)
-
 			itemsSold.ListingID = ListingIDToUint
 
 			itemsSold.DataShopID = h.Attr("data-shop-id")
