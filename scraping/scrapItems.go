@@ -2,7 +2,6 @@ package scrap
 
 import (
 	"EtsyScraper/models"
-	"EtsyScraper/utils"
 	"fmt"
 	"log"
 	"net/http"
@@ -73,14 +72,10 @@ func ScrapAllMenuItems(shop *models.Shop) *models.Shop {
 
 func scrapMenuItems(Menu *models.MenuItem) *models.MenuItem {
 
-	userAgent := utils.CreateUserAgent()
-
 	c := colly.NewCollector(
 		colly.ParseHTTPErrorResponse(),
 		colly.MaxDepth(5),
 	)
-
-	c.UserAgent = userAgent
 
 	c.SetProxy(config.ProxyHostURL)
 

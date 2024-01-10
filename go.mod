@@ -13,7 +13,6 @@ require (
 )
 
 require (
-	github.com/EDDYCJY/fake-useragent v0.2.0
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/google/uuid v1.4.0
 )
