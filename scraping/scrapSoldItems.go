@@ -10,16 +10,17 @@ import (
 	"time"
 
 	"github.com/gocolly/colly/v2"
+	"github.com/gocolly/colly/v2/extensions"
 )
 
 var pagination = []string{}
 
 func ScrapSalesHistory(ShopName string) []models.SoldItems {
 
-	c := colly.NewCollector(
-		colly.ParseHTTPErrorResponse(),
-		colly.MaxDepth(5),
-	)
+	c := colly.NewCollector()
+
+	extensions.RandomUserAgent(c)
+	extensions.Referer(c)
 
 	c.SetProxy(config.ProxyHostURL)
 
@@ -34,10 +35,22 @@ func ScrapSalesHistory(ShopName string) []models.SoldItems {
 
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL)
+
+		for key, value := range *r.Headers {
+			fmt.Printf("%s: %s\n", key, value)
+		}
 	})
 
 	c.OnResponse(func(r *colly.Response) {
-		fmt.Println("Got a response from", r.Request.URL)
+		fmt.Println("-----------------------------")
+		fmt.Println("Responce on Scraping a Sold Items")
+		fmt.Println(r.StatusCode)
+		if r.StatusCode != 200 {
+			for key, value := range *r.Headers {
+				fmt.Printf("%s: %s\n", key, value)
+			}
+		}
+
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
