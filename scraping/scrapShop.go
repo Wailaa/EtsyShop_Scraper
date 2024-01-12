@@ -3,6 +3,8 @@ package scrap
 import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
+	"EtsyScraper/utils"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/extensions"
+	"github.com/imroc/req/v3"
 )
 
 var config = initializer.LoadProjConfig(".")
@@ -22,20 +25,59 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 
 	NewShop := &models.Shop{}
 
-	c := colly.NewCollector()
+	Chrome := req.DefaultClient().ImpersonateChrome()
 
-	extensions.RandomUserAgent(c)
+	c := colly.NewCollector(colly.AllowURLRevisit())
+
+	c.UserAgent = utils.GetRandomUserAgent()
+
 	extensions.Referer(c)
-
-	c.SetProxy(config.ProxyHostURL)
-
-	c.WithTransport(&http.Transport{
-		DisableKeepAlives: true,
-	})
 
 	c.Limit(&colly.LimitRule{
 		Delay:       5 * time.Second,
 		RandomDelay: 5 * time.Second,
+	})
+
+	c.OnRequest(func(r *colly.Request) {
+
+		c.SetProxy(config.ProxyHostURL)
+		c.WithTransport(&http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		})
+
+		c.UserAgent = utils.GetRandomUserAgent()
+
+		c.SetClient(&http.Client{
+			Transport: Chrome.Transport,
+		})
+		fmt.Println("-----------------------------")
+		fmt.Println("Visiting", r.URL)
+		r.Headers.Set("Accept-Language", "en-US,en;q=0.9")
+		r.Headers.Set("Accept", "test/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+		r.Headers.Set("Accept-Encoding", "gzip, deflate, br")
+		for key, value := range *r.Headers {
+			fmt.Printf("%s: %s\n", key, value)
+		}
+	})
+
+	c.OnResponse(func(r *colly.Response) {
+		fmt.Println("-----------------------------")
+		fmt.Println("Responce on Scraping a Shop")
+		fmt.Println(r.StatusCode)
+		if r.StatusCode != 200 {
+			for key, value := range *r.Headers {
+				fmt.Printf("%s: %s\n", key, value)
+			}
+		}
+
+	})
+
+	c.OnError(func(r *colly.Response, err error) {
+		fmt.Println("Request URL: ", r.Request.URL, " failed with response: ", r, "\nError: ", err)
+	})
+
+	c.OnScraped(func(r *colly.Response) {
+		fmt.Println("Finished", r.Request.URL)
 	})
 
 	if err := scrapShopDetails(c, NewShop); err != nil {
@@ -71,34 +113,6 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 	if err := scrapShopSocialMediaAcc(c, NewShop); err != nil {
 		return nil, err
 	}
-
-	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL)
-
-		for key, value := range *r.Headers {
-			fmt.Printf("%s: %s\n", key, value)
-		}
-	})
-
-	c.OnResponse(func(r *colly.Response) {
-		fmt.Println("-----------------------------")
-		fmt.Println("Responce on Scraping a Shop")
-		fmt.Println(r.StatusCode)
-		if r.StatusCode != 200 {
-			for key, value := range *r.Headers {
-				fmt.Printf("%s: %s\n", key, value)
-			}
-		}
-
-	})
-
-	c.OnError(func(r *colly.Response, err error) {
-		fmt.Println("Request URL: ", r.Request.URL, " failed with response: ", r, "\nError: ", err)
-	})
-
-	c.OnScraped(func(r *colly.Response) {
-		fmt.Println("Finished", r.Request.URL)
-	})
 
 	c.Visit(Shoplink + shopName)
 	c.Wait()

@@ -2,15 +2,19 @@ package scrap
 
 import (
 	"EtsyScraper/models"
+	"EtsyScraper/utils"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/extensions"
+	"github.com/imroc/req/v3"
 )
 
 type PagesToScrap struct {
@@ -72,26 +76,38 @@ func ScrapAllMenuItems(shop *models.Shop) *models.Shop {
 }
 
 func scrapMenuItems(Menu *models.MenuItem) *models.MenuItem {
+	Chrome := req.DefaultClient().ImpersonateChrome()
 
-	c := colly.NewCollector()
+	c := colly.NewCollector(colly.AllowURLRevisit())
 
-	extensions.RandomUserAgent(c)
 	extensions.Referer(c)
-
-	c.SetProxy(config.ProxyHostURL)
-
-	c.WithTransport(&http.Transport{
-		DisableKeepAlives: true,
-	})
 
 	c.Limit(&colly.LimitRule{
 		Delay:       5 * time.Second,
 		RandomDelay: 5 * time.Second,
 	})
 
-	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL)
+	c.UserAgent = utils.GetRandomUserAgent()
 
+	c.OnRequest(func(r *colly.Request) {
+		c.SetProxy(config.ProxyHostURL)
+
+		c.WithTransport(&http.Transport{
+			DisableKeepAlives: true,
+			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		})
+
+		c.UserAgent = utils.GetRandomUserAgent()
+
+		c.SetClient(&http.Client{
+			Transport: Chrome.Transport,
+		})
+
+		fmt.Println("-----------------------------")
+		fmt.Println("Visiting", r.URL)
+		r.Headers.Set("Accept-Language", "en-US,en;q=0.9")
+		r.Headers.Set("Accept", "test/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+		r.Headers.Set("Accept-Encoding", "gzip, deflate, br")
 		for key, value := range *r.Headers {
 			fmt.Printf("%s: %s\n", key, value)
 		}
@@ -99,7 +115,6 @@ func scrapMenuItems(Menu *models.MenuItem) *models.MenuItem {
 
 	c.OnResponse(func(r *colly.Response) {
 		fmt.Println("-----------------------------")
-		fmt.Println("Responce on Scraping a Shop Items")
 		fmt.Println(r.StatusCode)
 		if r.StatusCode != 200 {
 			for key, value := range *r.Headers {
@@ -123,8 +138,9 @@ func scrapMenuItems(Menu *models.MenuItem) *models.MenuItem {
 			pageToScrap = pages.scrapURLs[0]
 			pages.scrapURLs = pages.scrapURLs[1:]
 
-			c.Visit(pageToScrap)
-
+			if pageToScrap != "" {
+				r.Request.Visit(pageToScrap)
+			}
 		}
 
 	})
@@ -138,42 +154,51 @@ func scrapMenuItems(Menu *models.MenuItem) *models.MenuItem {
 }
 
 func scrapNextItemPage(c *colly.Collector, shopMenu *models.MenuItem) {
+	var onHTMLExecuted bool
+	var onHTMLMutex sync.Mutex
 
 	pages.scrapURLs = []string{}
 	lastpage := ""
 
 	c.OnHTML(`div[data-item-pagination]`, func(h *colly.HTMLElement) {
-		h.ForEachWithBreak("nav", func(i int, g *colly.HTMLElement) bool {
-			justaslice := []string{}
-			if i == 1 {
-				g.ForEach("li", func(i int, k *colly.HTMLElement) {
-					page := k.ChildAttr("a", "data-page")
 
-					justaslice = append(justaslice, page)
+		onHTMLMutex.Lock()
+		defer onHTMLMutex.Unlock()
 
-				})
-				lastpage = justaslice[len(justaslice)-2]
-				lastPageInt, _ := strconv.Atoi(lastpage)
-				pages.pagesCount = lastPageInt
-				return false
+		if !onHTMLExecuted {
+			onHTMLExecuted = true
+
+			h.ForEachWithBreak("nav", func(i int, g *colly.HTMLElement) bool {
+				justaslice := []string{}
+				if i == 1 {
+					g.ForEach("li", func(i int, k *colly.HTMLElement) {
+						page := k.ChildAttr("a", "data-page")
+
+						justaslice = append(justaslice, page)
+
+					})
+					lastpage = justaslice[len(justaslice)-2]
+					lastPageInt, _ := strconv.Atoi(lastpage)
+					pages.pagesCount = lastPageInt
+					return false
+				}
+				return true
+			})
+			splitLink := strings.Split(shopMenu.Link, "?")
+
+			link := splitLink[0]
+
+			i := 2
+			for i <= pages.pagesCount {
+				Param := fmt.Sprint("?ref=items-pagination&page=", i, "&section_id=", shopMenu.SectionID, "&sort_order=price_desc")
+				link += Param
+				pages.scrapURLs = append(pages.scrapURLs, link)
+
+				link = splitLink[0]
+
+				i++
 			}
-			return true
-		})
-		splitLink := strings.Split(shopMenu.Link, "?")
-
-		link := splitLink[0]
-
-		i := 2
-		for i <= pages.pagesCount {
-			Param := fmt.Sprint("?ref=items-pagination&page=", i, "&section_id=", shopMenu.SectionID, "&sort_order=price_desc")
-			link += Param
-			pages.scrapURLs = append(pages.scrapURLs, link)
-
-			link = splitLink[0]
-
-			i++
 		}
-
 	})
 
 }

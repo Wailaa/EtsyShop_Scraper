@@ -2,6 +2,8 @@ package scrap
 
 import (
 	"EtsyScraper/models"
+	"EtsyScraper/utils"
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,31 +13,45 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/extensions"
+	"github.com/imroc/req/v3"
 )
 
 var pagination = []string{}
 
 func ScrapSalesHistory(ShopName string) []models.SoldItems {
 
-	c := colly.NewCollector()
+	Chrome := req.DefaultClient().ImpersonateChrome()
 
-	extensions.RandomUserAgent(c)
+	c := colly.NewCollector(colly.AllowURLRevisit())
+
+	c.UserAgent = utils.GetRandomUserAgent()
+
 	extensions.Referer(c)
 
-	c.SetProxy(config.ProxyHostURL)
-
-	c.WithTransport(&http.Transport{
-		DisableKeepAlives: true,
-	})
-
 	c.Limit(&colly.LimitRule{
+		DomainGlob:  "*",
 		Delay:       5 * time.Second,
 		RandomDelay: 5 * time.Second,
 	})
 
 	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL)
+		c.SetProxy(config.ProxyHostURL)
 
+		c.WithTransport(&http.Transport{
+			DisableKeepAlives: true,
+			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		})
+		c.UserAgent = utils.GetRandomUserAgent()
+
+		c.SetClient(&http.Client{
+			Transport: Chrome.Transport,
+		})
+
+		fmt.Println("-----------------------------")
+		fmt.Println("Visiting", r.URL)
+		r.Headers.Set("Accept-Language", "en-US,en;q=0.9")
+		r.Headers.Set("Accept", "test/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+		r.Headers.Set("Accept-Encoding", "gzip, deflate, br")
 		for key, value := range *r.Headers {
 			fmt.Printf("%s: %s\n", key, value)
 		}
@@ -54,7 +70,18 @@ func ScrapSalesHistory(ShopName string) []models.SoldItems {
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
-		fmt.Println("Request URL: ", r.Request.URL, " failed with response: ", r, "\nError: ", err)
+		fmt.Println("Request URL: ", r.Request.URL, "\nProxy handled the request", r.Request.ProxyURL, "\nfailed with response: ", r.Body, "\nError: ", err)
+
+		for key, value := range *r.Headers {
+			fmt.Printf("%s: %s\n", key, value)
+		}
+
+		c.UserAgent = utils.GetRandomUserAgent()
+
+		failedURL := "https://" + r.Request.URL.Host + r.Request.URL.RequestURI()
+		time.Sleep(50 * time.Second)
+
+		r.Request.Visit(failedURL)
 	})
 
 	Items := scrapSoldItems(c)
@@ -67,7 +94,9 @@ func ScrapSalesHistory(ShopName string) []models.SoldItems {
 			pageToScrap = pagination[0]
 			pagination = pagination[1:]
 		}
-		c.Visit(pageToScrap)
+		if pageToScrap != "" {
+			r.Request.Visit(pageToScrap)
+		}
 	})
 
 	c.Visit(Shoplink + ShopName + "/sold")

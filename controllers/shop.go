@@ -126,7 +126,7 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop) ([]models.SoldItems, e
 			}
 
 		}
-		if scrapedItem.ItemID == 0 {
+		if scrapSoldItems[i].ItemID == 0 {
 			if _, exists := FilterSoldItems[scrapedItem.ListingID]; !exists {
 				FilterSoldItems[scrapedItem.ListingID] = struct{}{}
 				SoldItem := models.CreateSoldOutItem(&scrapedItem)
