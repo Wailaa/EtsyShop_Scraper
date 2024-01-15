@@ -2,11 +2,12 @@ package scrap
 
 import (
 	"EtsyScraper/models"
-	"EtsyScraper/utils"
 	"crypto/tls"
+	"net/http"
+
+	"EtsyScraper/utils"
 	"fmt"
 	"log"
-	"net/http"
 	"strconv"
 	"sync"
 	"time"
@@ -26,31 +27,30 @@ func ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.Sol
 
 	c.UserAgent = utils.GetRandomUserAgent()
 
+	c.WithTransport(&http.Transport{
+		DisableKeepAlives: true,
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+	})
+
+	c.SetProxy(config.ProxyHostURL)
+
+	c.SetClient(&http.Client{
+		Transport: Chrome.Transport,
+	})
+
 	extensions.Referer(c)
 
 	c.Limit(&colly.LimitRule{
 		DomainGlob:  "*",
-		Delay:       5 * time.Second,
-		RandomDelay: 5 * time.Second,
+		Delay:       3 * time.Second,
+		RandomDelay: 3 * time.Second,
 	})
 
 	c.OnRequest(func(r *colly.Request) {
-		c.SetProxy(config.ProxyHostURL)
-
-		c.WithTransport(&http.Transport{
-			DisableKeepAlives: true,
-			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		})
-		c.UserAgent = utils.GetRandomUserAgent()
-
-		c.SetClient(&http.Client{
-			Transport: Chrome.Transport,
-		})
-
 		fmt.Println("-----------------------------")
 		fmt.Println("Visiting", r.URL)
-		r.Headers.Set("Accept-Language", "en-US,en;q=0.9")
-		r.Headers.Set("Accept", "test/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+		r.Headers.Set("Accept-Language", "en-US,en;q=0.9,de;q=0.7")
+		r.Headers.Set("Accept", "test/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.7")
 		r.Headers.Set("Accept-Encoding", "gzip, deflate, br")
 		for key, value := range *r.Headers {
 			fmt.Printf("%s: %s\n", key, value)
@@ -66,7 +66,6 @@ func ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.Sol
 				fmt.Printf("%s: %s\n", key, value)
 			}
 		}
-
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
@@ -75,10 +74,21 @@ func ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.Sol
 		for key, value := range *r.Headers {
 			fmt.Printf("%s: %s\n", key, value)
 		}
+		c.WithTransport(&http.Transport{
+			DisableKeepAlives: true,
+			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		})
+
+		c.SetProxy(config.ProxyHostURL)
 
 		c.UserAgent = utils.GetRandomUserAgent()
 
+		c.SetClient(&http.Client{
+			Transport: Chrome.Transport,
+		})
+
 		failedURL := "https://" + r.Request.URL.Host + r.Request.URL.RequestURI()
+
 		time.Sleep(50 * time.Second)
 
 		r.Request.Visit(failedURL)

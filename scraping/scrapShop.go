@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/extensions"
@@ -33,16 +32,12 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 
 	extensions.Referer(c)
 
-	c.Limit(&colly.LimitRule{
-		Delay:       5 * time.Second,
-		RandomDelay: 5 * time.Second,
-	})
-
 	c.OnRequest(func(r *colly.Request) {
 
 		c.SetProxy(config.ProxyHostURL)
 		c.WithTransport(&http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			DisableKeepAlives: true,
+			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 		})
 
 		c.UserAgent = utils.GetRandomUserAgent()

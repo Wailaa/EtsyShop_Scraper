@@ -80,28 +80,28 @@ func scrapMenuItems(Menu *models.MenuItem) *models.MenuItem {
 
 	c := colly.NewCollector(colly.AllowURLRevisit())
 
+	c.WithTransport(&http.Transport{
+		DisableKeepAlives: true,
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+	})
+
+	c.SetProxy(config.ProxyHostURL)
+
+	c.UserAgent = utils.GetRandomUserAgent()
+
+	c.SetClient(&http.Client{
+		Transport: Chrome.Transport,
+	})
+
 	extensions.Referer(c)
 
 	c.Limit(&colly.LimitRule{
+		DomainGlob:  "*",
 		Delay:       5 * time.Second,
 		RandomDelay: 5 * time.Second,
 	})
 
-	c.UserAgent = utils.GetRandomUserAgent()
-
 	c.OnRequest(func(r *colly.Request) {
-		c.SetProxy(config.ProxyHostURL)
-
-		c.WithTransport(&http.Transport{
-			DisableKeepAlives: true,
-			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		})
-
-		c.UserAgent = utils.GetRandomUserAgent()
-
-		c.SetClient(&http.Client{
-			Transport: Chrome.Transport,
-		})
 
 		fmt.Println("-----------------------------")
 		fmt.Println("Visiting", r.URL)
@@ -126,6 +126,27 @@ func scrapMenuItems(Menu *models.MenuItem) *models.MenuItem {
 
 	c.OnError(func(r *colly.Response, err error) {
 		fmt.Println("Request URL: ", r.Request.URL, " failed with response: ", r, "\nError: ", err)
+		for key, value := range *r.Headers {
+			fmt.Printf("%s: %s\n", key, value)
+		}
+
+		c.WithTransport(&http.Transport{
+			DisableKeepAlives: true,
+			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		})
+
+		c.SetProxy(config.ProxyHostURL)
+
+		c.UserAgent = utils.GetRandomUserAgent()
+
+		c.SetClient(&http.Client{
+			Transport: Chrome.Transport,
+		})
+
+		failedURL := "https://" + r.Request.URL.Host + r.Request.URL.RequestURI()
+		time.Sleep(50 * time.Second)
+
+		r.Request.Visit(failedURL)
 
 	})
 	items := scrapShopItems(c, Menu)
