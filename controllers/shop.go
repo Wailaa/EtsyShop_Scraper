@@ -1,8 +1,13 @@
 package controllers
 
 import (
+	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	scrap "EtsyScraper/scraping"
+	"fmt"
+	"reflect"
+	"time"
+
 	"log"
 	"net/http"
 
@@ -18,6 +23,9 @@ type Shop struct {
 func NewShopController(DB *gorm.DB) *Shop {
 	return &Shop{DB}
 }
+
+var config = initializer.LoadProjConfig(".")
+
 func (s *Shop) CreateNewShop(ctx *gin.Context) {
 	currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 	var shop *models.CreateNewShopReuest
@@ -60,8 +68,13 @@ func (s *Shop) CreateNewShop(ctx *gin.Context) {
 
 	tx.Commit()
 
+	Task := &models.TaskSchedule{
+		FirstPage: 2,
+		LastPage:  config.MaxPageLimit,
+	}
+
 	if secondStage.HasSoldHistory && secondStage.TotalSales > 0 {
-		if err := s.UpdateSellingHistory(secondStage); err != nil {
+		if err := s.UpdateSellingHistory(secondStage, Task); err != nil {
 			log.Println(err)
 			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to create history"})
 			return
@@ -73,9 +86,9 @@ func (s *Shop) CreateNewShop(ctx *gin.Context) {
 
 }
 
-func (s *Shop) UpdateSellingHistory(Shop *models.Shop) error {
+func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule) error {
 
-	ScrappedSoldItems, err := s.UpdateDiscontinuedItems(Shop)
+	ScrappedSoldItems, err := s.UpdateDiscontinuedItems(Shop, Task)
 	if err != nil {
 		log.Println(err)
 
@@ -106,11 +119,16 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop) error {
 	return nil
 }
 
-func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop) ([]models.SoldItems, error) {
+func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule) ([]models.SoldItems, error) {
 
 	SoldOutItems := []models.Item{}
 	FilterSoldItems := map[uint]struct{}{}
-	scrapSoldItems := scrap.ScrapSalesHistory(Shop.Name)
+
+	scrapSoldItems, NewTask := scrap.ScrapSalesHistory(Shop.Name, Task)
+	if !reflect.DeepEqual(NewTask, &models.TaskSchedule{}) {
+		fmt.Println("inside tge condition")
+		go s.SoldItemsTask(Shop, NewTask)
+	}
 
 	getAllItems, err := s.GetItemsByShopID(Shop.ID)
 	if err != nil {
@@ -135,8 +153,17 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop) ([]models.SoldItems, e
 		}
 
 	}
+	isOutOfProduction := false
+	for index, menu := range Shop.ShopMenu.Menu {
+		if menu.Category == "Out Of Production" {
+			isOutOfProduction = true
+			Shop.ShopMenu.Menu[index].Amount = +len(SoldOutItems)
+			*Shop.ShopMenu.Menu[index].Items = append(*Shop.ShopMenu.Menu[index].Items, SoldOutItems...)
+			s.DB.Save(Shop)
+		}
+	}
 
-	if len(SoldOutItems) != 0 {
+	if len(SoldOutItems) != 0 && !isOutOfProduction {
 		Menu := models.MenuItem{
 			ShopMenuID: Shop.ShopMenu.ID,
 			Category:   "Out Of Production",
@@ -305,4 +332,15 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []models.ResponseSol
 	}
 
 	return
+}
+
+func (s *Shop) SoldItemsTask(Shop *models.Shop, Task *models.TaskSchedule) error {
+	fmt.Println("inside SoldItemsTask()")
+	durationUntilNextHour := time.Until(time.Now().Add(2 * time.Minute))
+
+	time.AfterFunc(durationUntilNextHour, func() {
+		fmt.Println("inside AfterFunc()")
+		s.UpdateSellingHistory(Shop, Task)
+	})
+	return nil
 }

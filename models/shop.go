@@ -120,6 +120,10 @@ type FollowShopRequest struct {
 type UnFollowShopRequest struct {
 	UnFollowShopName string `json:"unfollow_shop"`
 }
+type TaskSchedule struct {
+	FirstPage int
+	LastPage  int
+}
 
 func CreateShop(newShop *Shop) *Shop {
 	Shop := &Shop{

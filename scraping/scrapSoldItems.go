@@ -18,7 +18,7 @@ import (
 
 var pagination = []string{}
 
-func ScrapSalesHistory(ShopName string) []models.SoldItems {
+func ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.SoldItems, *models.TaskSchedule) {
 
 	Chrome := req.DefaultClient().ImpersonateChrome()
 
@@ -85,7 +85,7 @@ func ScrapSalesHistory(ShopName string) []models.SoldItems {
 	})
 
 	Items := scrapSoldItems(c)
-	scrapSoldItemPages(c, ShopName)
+	Task = scrapSoldItemPages(c, ShopName, Task)
 
 	c.OnScraped(func(r *colly.Response) {
 		fmt.Println("done scrapping sales history")
@@ -94,15 +94,18 @@ func ScrapSalesHistory(ShopName string) []models.SoldItems {
 			pageToScrap = pagination[0]
 			pagination = pagination[1:]
 		}
-		if pageToScrap != "" {
-			r.Request.Visit(pageToScrap)
-		}
+		c.Visit(pageToScrap)
 	})
 
-	c.Visit(Shoplink + ShopName + "/sold")
+	if Task.FirstPage > 2 {
+		pageString := fmt.Sprint(Task.FirstPage)
+		c.Visit(Shoplink + ShopName + "/sold?ref=pagination&page=" + pageString)
+	} else {
+		c.Visit(Shoplink + ShopName + "/sold")
+	}
 	c.Wait()
 
-	return *Items
+	return *Items, Task
 }
 
 func scrapSoldItems(c *colly.Collector) *[]models.SoldItems {
@@ -138,7 +141,7 @@ func scrapSoldItems(c *colly.Collector) *[]models.SoldItems {
 	return TotalItemSold
 }
 
-func scrapSoldItemPages(c *colly.Collector, ShopName string) {
+func scrapSoldItemPages(c *colly.Collector, ShopName string, Task *models.TaskSchedule) *models.TaskSchedule {
 	var onHTMLExecuted bool
 	var onHTMLMutex sync.Mutex
 
@@ -166,17 +169,38 @@ func scrapSoldItemPages(c *colly.Collector, ShopName string) {
 					return
 				}
 
-				i := 2
-				for i <= lastPageInt {
+				loopStart := Task.FirstPage
+				if Task.FirstPage != 2 {
+					loopStart = Task.FirstPage + 1
+				}
+				loopEnds := Task.LastPage
+
+				if lastPageInt > Task.LastPage {
+					Task.FirstPage = Task.LastPage + 1
+					if lastPageInt-Task.LastPage >= config.MaxPageLimit {
+						Task.LastPage += config.MaxPageLimit
+					} else {
+						Task.LastPage = lastPageInt
+					}
+				} else {
+					loopEnds = lastPageInt
+					Task.FirstPage = 0
+					Task.LastPage = 0
+				}
+
+				for loopStart <= loopEnds {
 					link := Shoplink + ShopName + "/sold?ref=pagination&page="
-					Param := fmt.Sprint(i)
+					Param := fmt.Sprint(loopStart)
 					link += Param
 
 					pagination = append(pagination, link)
-					i++
+					loopStart++
 				}
+
 			}
 		}
-	})
 
+	})
+	fmt.Println("modified Task", Task)
+	return Task
 }

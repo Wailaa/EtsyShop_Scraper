@@ -29,6 +29,7 @@ type Config struct {
 	RedisURL string `mapstructure:"REDISURL"`
 
 	ScrapShopURL string `mapstructure:"SCRAP_SHOP_URL"`
+	MaxPageLimit int    `mapstructure:"SCRAP_MAX_PAGE_LIMIT"`
 
 	ProxyHostURL string `mapstructure:"PROXY_HOST_URL"`
 }
