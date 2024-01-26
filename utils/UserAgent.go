@@ -13,12 +13,28 @@ func GetRandomUserAgent() string {
 		browser.Firefox(),
 		browser.Safari(),
 		browser.Android(),
-		browser.MacOSX(),
-	}
-	NewUserAgent := userAgents[rand.Intn(len(userAgents))]
-	for strings.Contains(NewUserAgent, "Windows NT") {
-		NewUserAgent = userAgents[rand.Intn(len(userAgents))]
 	}
 
-	return NewUserAgent
+	exclude := []string{
+		"windows nt",
+		"iphone",
+		"ipad",
+	}
+
+	for {
+		newUserAgent := userAgents[rand.Intn(len(userAgents))]
+		newUserAgentToLower := strings.ToLower(newUserAgent)
+		matched := false
+
+		for _, sub := range exclude {
+			if strings.Contains(newUserAgentToLower, sub) {
+				matched = true
+				break
+			}
+		}
+
+		if !matched {
+			return newUserAgent
+		}
+	}
 }
