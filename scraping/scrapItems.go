@@ -1,54 +1,77 @@
 package scrap
 
 import (
+	"EtsyScraper/collector"
 	"EtsyScraper/models"
-	"EtsyScraper/utils"
-	"crypto/tls"
 	"fmt"
 	"log"
-	"net/http"
+	"math/rand"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gocolly/colly/v2"
-	"github.com/gocolly/colly/v2/extensions"
-	"github.com/imroc/req/v3"
+	"github.com/gocolly/colly/v2/queue"
 )
 
-type PagesToScrap struct {
-	pagesCount int
-	scrapURLs  []string
-}
-
-var pages = &PagesToScrap{}
-
+var SectionIdPages = map[string]struct{}{}
 var ListingIdCount = map[uint]int{}
 
 func ScrapAllMenuItems(shop *models.Shop) *models.Shop {
-
-	newModifiedMenuItem := []models.MenuItem{}
-	AllItemCategory := models.MenuItem{}
+	HasSalesCategory := false
+	AllItemCategoryIndex := 0
 	UnCategorizedItems := []models.Item{}
 
-	for _, Menu := range shop.ShopMenu.Menu {
+	c := collector.NewCollyCollector().C
+	c.AllowURLRevisit = true
+
+	OriginalQueue, _ := queue.New(
+		1,
+		&queue.InMemoryQueueStorage{MaxSize: 10000},
+	)
+
+	backUpQueue, _ := queue.New(
+		1,
+		&queue.InMemoryQueueStorage{MaxSize: 10000},
+	)
+
+	c.OnError(func(r *colly.Response, err error) {
+		failedURL := r.Request.URL.String()
+		log.Println("failed url is :", failedURL)
+
+		randTimeSet := time.Duration(rand.Intn(89-10) + 10)
+		time.Sleep(randTimeSet * time.Second)
+
+		backUpQueue.AddURL(failedURL)
+		log.Println("Url is added to queue :", failedURL)
+
+	})
+
+	for index, Menu := range shop.ShopMenu.Menu {
 
 		if Menu.Category != "On sale" {
-
-			ModifiedMenu := scrapMenuItems(&Menu)
-			if Menu.Category == "All" {
-				AllItemCategory = *ModifiedMenu
-			} else {
-				newModifiedMenuItem = append(newModifiedMenuItem, *ModifiedMenu)
-			}
+			OriginalQueue.AddURL(Menu.Link + "&sort_order=price_desc")
+		} else {
+			HasSalesCategory = true
+		}
+		if Menu.Category == "All" {
+			AllItemCategoryIndex = index
 		}
 	}
 
-	if len(shop.ShopMenu.Menu) > 1 {
+	scrapShopItems(c, shop)
+	scrapNextItemPage(c, OriginalQueue)
+
+	OriginalQueue.Run(c)
+	c.Wait()
+
+	backUpQueue.Run(c)
+	c.Wait()
+
+	if (len(shop.ShopMenu.Menu) > 1 && !HasSalesCategory) || (len(shop.ShopMenu.Menu) > 2 && HasSalesCategory) {
 		for ListingID, Amount := range ListingIdCount {
 			if Amount == 1 {
-				for _, item := range *AllItemCategory.Items {
+				for _, item := range shop.ShopMenu.Menu[AllItemCategoryIndex].Items {
 					if item.ListingID == ListingID {
 						UnCategorizedItems = append(UnCategorizedItems, item)
 					}
@@ -57,181 +80,82 @@ func ScrapAllMenuItems(shop *models.Shop) *models.Shop {
 		}
 		if len(UnCategorizedItems) > 0 {
 			UnCategorizedMenu := models.MenuItem{
-				ShopMenuID: AllItemCategory.ShopMenuID,
+				ShopMenuID: shop.ShopMenu.Menu[AllItemCategoryIndex].ShopMenuID,
 				Category:   "UnCategorized",
-				SectionID:  AllItemCategory.SectionID,
-				Link:       AllItemCategory.Link,
+				SectionID:  shop.ShopMenu.Menu[AllItemCategoryIndex].SectionID,
+				Link:       shop.ShopMenu.Menu[AllItemCategoryIndex].Link,
 				Amount:     len(UnCategorizedItems),
-				Items:      &UnCategorizedItems,
+				Items:      UnCategorizedItems,
 			}
 
-			newModifiedMenuItem = append(newModifiedMenuItem, UnCategorizedMenu)
+			shop.ShopMenu.Menu = append(shop.ShopMenu.Menu, UnCategorizedMenu)
 		}
 
-		AllItemCategory.Items = &[]models.Item{}
+		shop.ShopMenu.Menu[AllItemCategoryIndex].Items = []models.Item{}
 	}
-	newModifiedMenuItem = append(newModifiedMenuItem, AllItemCategory)
-	shop.ShopMenu.Menu = newModifiedMenuItem
+
 	return shop
 }
 
-func scrapMenuItems(Menu *models.MenuItem) *models.MenuItem {
-	Chrome := req.DefaultClient().ImpersonateChrome()
-
-	c := colly.NewCollector(colly.AllowURLRevisit())
-
-	c.WithTransport(&http.Transport{
-		DisableKeepAlives: true,
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-	})
-
-	c.SetProxy(config.ProxyHostURL)
-
-	c.UserAgent = utils.GetRandomUserAgent()
-
-	c.SetClient(&http.Client{
-		Transport: Chrome.Transport,
-	})
-
-	extensions.Referer(c)
-
-	c.Limit(&colly.LimitRule{
-		DomainGlob:  "*",
-		Delay:       5 * time.Second,
-		RandomDelay: 5 * time.Second,
-	})
-
-	c.OnRequest(func(r *colly.Request) {
-
-		fmt.Println("-----------------------------")
-		fmt.Println("Visiting", r.URL)
-		r.Headers.Set("Accept-Language", "en-US,en;q=0.9")
-		r.Headers.Set("Accept", "test/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-		r.Headers.Set("Accept-Encoding", "gzip, deflate, br")
-		for key, value := range *r.Headers {
-			fmt.Printf("%s: %s\n", key, value)
-		}
-	})
-
-	c.OnResponse(func(r *colly.Response) {
-		fmt.Println("-----------------------------")
-		fmt.Println(r.StatusCode)
-		if r.StatusCode != 200 {
-			for key, value := range *r.Headers {
-				fmt.Printf("%s: %s\n", key, value)
-			}
-		}
-
-	})
-
-	c.OnError(func(r *colly.Response, err error) {
-		fmt.Println("Request URL: ", r.Request.URL, " failed with response: ", r, "\nError: ", err)
-		for key, value := range *r.Headers {
-			fmt.Printf("%s: %s\n", key, value)
-		}
-
-		c.WithTransport(&http.Transport{
-			DisableKeepAlives: true,
-			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		})
-
-		c.SetProxy(config.ProxyHostURL)
-
-		c.UserAgent = utils.GetRandomUserAgent()
-
-		c.SetClient(&http.Client{
-			Transport: Chrome.Transport,
-		})
-
-		failedURL := "https://" + r.Request.URL.Host + r.Request.URL.RequestURI()
-		time.Sleep(50 * time.Second)
-
-		r.Request.Visit(failedURL)
-
-	})
-	items := scrapShopItems(c, Menu)
-	Menu.Items = items
-
-	c.OnScraped(func(r *colly.Response) {
-		fmt.Println("Done scraping")
-		pageToScrap := ""
-		if len(pages.scrapURLs) != 0 {
-			pageToScrap = pages.scrapURLs[0]
-			pages.scrapURLs = pages.scrapURLs[1:]
-
-			if pageToScrap != "" {
-				r.Request.Visit(pageToScrap)
-			}
-		}
-
-	})
-
-	scrapNextItemPage(c, Menu)
-
-	c.Visit(Menu.Link + "&sort_order=price_desc")
-	c.Wait()
-
-	return Menu
-}
-
-func scrapNextItemPage(c *colly.Collector, shopMenu *models.MenuItem) {
-	var onHTMLExecuted bool
-	var onHTMLMutex sync.Mutex
-
-	pages.scrapURLs = []string{}
-	lastpage := ""
+func scrapNextItemPage(c *colly.Collector, q *queue.Queue) {
 
 	c.OnHTML(`div[data-item-pagination]`, func(h *colly.HTMLElement) {
+		CurrentQueueURL := "https://" + h.Request.URL.Host + h.Request.URL.RequestURI()
+		link := strings.Split(CurrentQueueURL, "?")[0]
+		lastpage := ""
+		pagesCount := 0
 
-		onHTMLMutex.Lock()
-		defer onHTMLMutex.Unlock()
+		h.ForEachWithBreak("nav", func(i int, g *colly.HTMLElement) bool {
+			justaslice := []string{}
+			if i == 1 {
+				g.ForEach("li", func(i int, k *colly.HTMLElement) {
+					page := k.ChildAttr("a", "data-page")
 
-		if !onHTMLExecuted {
-			onHTMLExecuted = true
+					justaslice = append(justaslice, page)
 
-			h.ForEachWithBreak("nav", func(i int, g *colly.HTMLElement) bool {
-				justaslice := []string{}
-				if i == 1 {
-					g.ForEach("li", func(i int, k *colly.HTMLElement) {
-						page := k.ChildAttr("a", "data-page")
+				})
+				lastpage = justaslice[len(justaslice)-2]
+				lastPageInt, _ := strconv.Atoi(lastpage)
+				pagesCount = lastPageInt
+				return false
+			}
+			return true
+		})
+		SectionID := GetSectionID(CurrentQueueURL)
 
-						justaslice = append(justaslice, page)
+		if _, ok := SectionIdPages[SectionID]; !ok {
+			for i := 2; i <= pagesCount; i++ {
+				SectionIdPages[SectionID] = struct{}{}
 
-					})
-					lastpage = justaslice[len(justaslice)-2]
-					lastPageInt, _ := strconv.Atoi(lastpage)
-					pages.pagesCount = lastPageInt
-					return false
-				}
-				return true
-			})
-			splitLink := strings.Split(shopMenu.Link, "?")
+				QueueURL := fmt.Sprint(link, "?ref=items-pagination&page=", i, "&section_id=", SectionID, "&sort_order=price_desc")
 
-			link := splitLink[0]
+				q.AddURL(QueueURL)
 
-			i := 2
-			for i <= pages.pagesCount {
-				Param := fmt.Sprint("?ref=items-pagination&page=", i, "&section_id=", shopMenu.SectionID, "&sort_order=price_desc")
-				link += Param
-				pages.scrapURLs = append(pages.scrapURLs, link)
-
-				link = splitLink[0]
-
-				i++
 			}
 		}
+
 	})
 
 }
 
-func scrapShopItems(c *colly.Collector, shopMenu *models.MenuItem) *[]models.Item {
-	testingItems := &[]models.Item{}
+func scrapShopItems(c *colly.Collector, shop *models.Shop) *models.Shop {
 
 	c.OnHTML(`div[data-appears-component-name="shop_home_listing_grid"]`, func(e *colly.HTMLElement) {
 
-		e.ForEach("div.js-merch-stash-check-listing", func(i int, h *colly.HTMLElement) {
+		newItem := models.Item{}
+		newItemsSlice := []models.Item{}
 
-			newItem := models.Item{}
+		MenuIndex := 0
+		CurrentQueueURL := "https://" + e.Request.URL.Host + e.Request.URL.RequestURI()
+		Section_ID := GetSectionID(CurrentQueueURL)
+
+		for index, menu := range shop.ShopMenu.Menu {
+			if Section_ID == menu.SectionID {
+				MenuIndex = index
+			}
+		}
+
+		e.ForEach("div.js-merch-stash-check-listing", func(i int, h *colly.HTMLElement) {
 
 			ListingID := h.Attr("data-listing-id")
 			ListingIDToUint64, err := strconv.ParseUint(ListingID, 10, 64)
@@ -244,16 +168,20 @@ func scrapShopItems(c *colly.Collector, shopMenu *models.MenuItem) *[]models.Ite
 			ListingIdCount[newItem.ListingID]++
 
 			newItem.DataShopID = h.Attr("data-shop-id")
-			newItem.MenuItemID = shopMenu.ID
+			newItem.MenuItemID = shop.ShopMenu.Menu[MenuIndex].ID
 
 			divID := "h3#listing-title-" + ListingID
 			newItem.Name = h.ChildText(divID)
 
 			OriginalPrice := h.ChildText("span.currency-value")
+			OriginalPrice = strings.Replace(OriginalPrice, ",", "", -1)
 			SalesPrice := "-1"
 			h.ForEachWithBreak("p.search-collage-promotion-price", func(i int, g *colly.HTMLElement) bool {
 				SalesPrice = h.DOM.Find("span.currency-value").Eq(0).Text()
+				SalesPrice = strings.Replace(SalesPrice, ",", "", -1)
+
 				OriginalPrice = g.ChildText("span.currency-value")
+				OriginalPrice = strings.Replace(OriginalPrice, ",", "", -1)
 
 				return false
 			})
@@ -282,10 +210,24 @@ func scrapShopItems(c *colly.Collector, shopMenu *models.MenuItem) *[]models.Ite
 			newItem.ItemLink = h.ChildAttr("a.listing-link", "href")
 			newItem.Available = true
 
-			*testingItems = append(*testingItems, newItem)
-		})
+			newItemsSlice = append(newItemsSlice, newItem)
 
+		})
+		shop.ShopMenu.Menu[MenuIndex].Items = append(shop.ShopMenu.Menu[MenuIndex].Items, newItemsSlice...)
 	})
 
-	return testingItems
+	return shop
+}
+func GetSectionID(link string) (SectionID string) {
+	linkSplit := strings.Split(link, "?")
+	if len(linkSplit) > 1 {
+		linkSplit = strings.Split(linkSplit[1], "&")
+		for _, param := range linkSplit {
+			if strings.Contains(param, "section_id") {
+				SectionID = strings.Split(param, "=")[1]
+				return SectionID
+			}
+		}
+	}
+	return ""
 }
