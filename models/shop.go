@@ -73,12 +73,12 @@ type Item struct {
 
 type MenuItem struct {
 	gorm.Model
-	ShopMenuID uint    `json:"-"`
-	Category   string  `json:"category_name"`
-	SectionID  string  `json:"selection_id"`
-	Link       string  `json:"link"`
-	Amount     int     `json:"item_amount"`
-	Items      *[]Item `json:"category_item" gorm:"foreignKey:MenuItemID;"`
+	ShopMenuID uint   `json:"-"`
+	Category   string `json:"category_name"`
+	SectionID  string `json:"selection_id"`
+	Link       string `json:"link"`
+	Amount     int    `json:"item_amount"`
+	Items      []Item `json:"category_item" gorm:"foreignKey:MenuItemID;"`
 }
 
 type ShopMenu struct {
@@ -121,8 +121,9 @@ type UnFollowShopRequest struct {
 	UnFollowShopName string `json:"unfollow_shop"`
 }
 type TaskSchedule struct {
-	FirstPage int
-	LastPage  int
+	IsScrapped bool
+	FirstPage  int
+	LastPage   int
 }
 
 func CreateShop(newShop *Shop) *Shop {
