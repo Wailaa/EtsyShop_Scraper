@@ -75,18 +75,10 @@ func NewCollyCollector() *DefaultCollector {
 		}
 
 		r.Headers.Del("Cookie")
-		c.WithTransport(&http.Transport{
-			DisableKeepAlives: true,
-			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-		})
 
 		c.SetProxy(config.ProxyHostURL)
 
 		c.UserAgent = utils.GetRandomUserAgent()
-
-		c.SetClient(&http.Client{
-			Transport: Chrome.Transport,
-		})
 
 	})
 
