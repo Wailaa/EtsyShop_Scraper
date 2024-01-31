@@ -15,6 +15,10 @@ var ModelsGroup = []interface{}{
 	&ReviewsTopic{},
 	&Item{},
 	&SoldItems{},
+	&ProcessStage{},
+type ProcessStage struct {
+	gorm.Model
+	Name string `gorm:"not null;unique"`
 }
 
 type Shop struct {
@@ -37,15 +41,12 @@ type Shop struct {
 	Followers       []Account `json:"-" gorm:"many2many:account_shop_following;"`
 }
 
-type ResponseSoldItemInfo struct {
-	Name           string
-	ItemID         uint
-	OriginalPrice  float64
-	CurrencySymbol string
-	SalePrice      float64
-	DiscoutPercent string
-	ItemLink       string
-	SoldQauntity   int
+type ScrapingStep struct {
+	gorm.Model
+	ShopRequestID uint
+	Step          string
+	Status        string
+	Progress      string
 }
 type SoldItems struct {
 	gorm.Model
@@ -201,4 +202,17 @@ func CreateSoldOutItem(item *SoldItems) *Item {
 		DataShopID: item.DataShopID,
 	}
 	return SoldOutItem
+}
+
+func SeedFixedStages(db *gorm.DB) {
+	stages := []ProcessStage{
+		{Name: "Pending"},
+		{Name: "Fetching Data"},
+		{Name: "Processing Data"},
+		{Name: "Save Data to Database"},
+	}
+
+	for _, stage := range stages {
+		db.FirstOrCreate(&stage, stage)
+	}
 }

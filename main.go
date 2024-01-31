@@ -21,6 +21,7 @@ func init() {
 	initializer.RedisDBConnect(&config)
 
 	initializer.DB.AutoMigrate(models.ModelsGroup...)
+	models.SeedFixedStages(initializer.DB)
 	fmt.Println("Migration is completed")
 
 }
@@ -45,14 +46,14 @@ func main() {
 	router.GET("/verifyaccount", confirmEmail)
 
 	shopRoute := server.Group("/shop")
-	createShop := controllers.NewShopController(initializer.DB).CreateNewShop
+	createNewShopRequest := controllers.NewShopController(initializer.DB).CreateNewShopRequest
 	followShop := controllers.NewShopController(initializer.DB).FollowShop
 	unFollowShop := controllers.NewShopController(initializer.DB).UnFollowShop
 	getShopByID := controllers.NewShopController(initializer.DB).GetShopByID
 	getAllItemsByShopID := controllers.NewShopController(initializer.DB).GetItemsByShopID
 	getAllSoldItemsByShopID := controllers.NewShopController(initializer.DB).GetSoldItemsByShopID
 
-	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(), createShop)
+	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(), createNewShopRequest)
 	shopRoute.GET("/follow_shop", controllers.AuthMiddleWare(), followShop)
 	shopRoute.GET("/unfollow_shop", controllers.AuthMiddleWare(), unFollowShop)
 	shopRoute.GET("/:shopID", controllers.AuthMiddleWare(), func(ctx *gin.Context) {
