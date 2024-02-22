@@ -1,7 +1,6 @@
 package collector
 
 import (
-	initializer "EtsyScraper/init"
 	"EtsyScraper/utils"
 	"crypto/tls"
 	"fmt"
@@ -12,13 +11,12 @@ import (
 	"github.com/imroc/req/v3"
 )
 
-var config = initializer.LoadProjConfig(".")
-
 type DefaultCollector struct {
 	C *colly.Collector
 }
 
 func NewCollyCollector() *DefaultCollector {
+	ProxyProvider := utils.PickProxyProvider()
 	Chrome := req.DefaultClient().ImpersonateChrome()
 
 	c := colly.NewCollector()
@@ -31,7 +29,7 @@ func NewCollyCollector() *DefaultCollector {
 		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 	})
 
-	c.SetProxy(config.ProxyHostURL)
+	c.SetProxy(ProxyProvider)
 
 	c.UserAgent = utils.GetRandomUserAgent()
 
@@ -76,7 +74,7 @@ func NewCollyCollector() *DefaultCollector {
 
 		r.Headers.Del("Cookie")
 
-		c.SetProxy(config.ProxyHostURL)
+		c.SetProxy(ProxyProvider)
 
 		c.UserAgent = utils.GetRandomUserAgent()
 
