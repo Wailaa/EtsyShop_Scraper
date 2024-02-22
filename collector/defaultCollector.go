@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gocolly/colly/v2"
-	"github.com/gocolly/colly/v2/extensions"
 	"github.com/imroc/req/v3"
 )
 
@@ -24,6 +23,9 @@ func NewCollyCollector() *DefaultCollector {
 
 	c := colly.NewCollector()
 
+	c.SetClient(&http.Client{
+		Transport: Chrome.Transport,
+	})
 	c.WithTransport(&http.Transport{
 		DisableKeepAlives: true,
 		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
@@ -33,17 +35,12 @@ func NewCollyCollector() *DefaultCollector {
 
 	c.UserAgent = utils.GetRandomUserAgent()
 
-	c.SetClient(&http.Client{
-		Transport: Chrome.Transport,
-	})
-
-	extensions.Referer(c)
-
 	c.Limit(&colly.LimitRule{
 		DomainGlob:  "*",
 		Delay:       5 * time.Second,
 		RandomDelay: 5 * time.Second,
 	})
+
 	c.OnRequest(func(r *colly.Request) {
 
 		fmt.Println("-----------------------------")
@@ -70,8 +67,11 @@ func NewCollyCollector() *DefaultCollector {
 
 	c.OnError(func(r *colly.Response, err error) {
 		fmt.Println("Request URL: ", r.Request.URL, " failed with response: ", r, "\nError: ", err)
-		for key, value := range *r.Headers {
-			fmt.Printf("%s: %s\n", key, value)
+
+		if len(*r.Headers) != 0 {
+			for key, value := range *r.Headers {
+				fmt.Printf("%s: %s\n", key, value)
+			}
 		}
 
 		r.Headers.Del("Cookie")
