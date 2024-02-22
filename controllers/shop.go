@@ -24,9 +24,45 @@ func NewShopController(DB *gorm.DB) *Shop {
 	return &Shop{DB}
 }
 
-func (s *Shop) CreateNewShop(ctx *gin.Context) {
+type NewShopRequest struct {
+	ShopName string `json:"new_shop_name"`
+}
+
+type FollowShopRequest struct {
+	FollowShopName string `json:"follow_shop"`
+}
+
+type UnFollowShopRequest struct {
+	UnFollowShopName string `json:"unfollow_shop"`
+}
+
+type ResponseSoldItemInfo struct {
+	Name           string
+	ItemID         uint
+	OriginalPrice  float64
+	CurrencySymbol string
+	SalePrice      float64
+	DiscoutPercent string
+	ItemLink       string
+	SoldQauntity   int
+}
+
+func CreateSoldItemInfo(Item *models.Item) *ResponseSoldItemInfo {
+	newSoldItem := &ResponseSoldItemInfo{
+		Name:           Item.Name,
+		ItemID:         Item.ID,
+		OriginalPrice:  Item.OriginalPrice,
+		CurrencySymbol: Item.CurrencySymbol,
+		SalePrice:      Item.SalePrice,
+		DiscoutPercent: Item.DiscoutPercent,
+		ItemLink:       Item.ItemLink,
+	}
+	return newSoldItem
+}
+
 	currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
-	var shop *models.CreateNewShopReuest
+	var shop NewShopRequest
+
 	if err := ctx.ShouldBindJSON(&shop); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
@@ -189,7 +225,7 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 
 func (s *Shop) FollowShop(ctx *gin.Context) {
 
-	var shopToFollow *models.FollowShopRequest
+	var shopToFollow *FollowShopRequest
 	if err := ctx.ShouldBindJSON(&shopToFollow); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
@@ -229,7 +265,7 @@ func (s *Shop) FollowShop(ctx *gin.Context) {
 
 func (s *Shop) UnFollowShop(ctx *gin.Context) {
 
-	var unFollowShop *models.UnFollowShopRequest
+	var unFollowShop *UnFollowShopRequest
 	if err := ctx.ShouldBindJSON(&unFollowShop); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
@@ -331,7 +367,7 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []models.ResponseSol
 	for key, value := range soldQauntity {
 		for _, item := range AllItems {
 			if key == item.ID {
-				SoldItemInfo := models.CreateSoldItemInfo(&item)
+				SoldItemInfo := CreateSoldItemInfo(&item)
 				SoldItemInfo.SoldQauntity = value
 				SoldItemInfos = append(SoldItemInfos, *SoldItemInfo)
 			}

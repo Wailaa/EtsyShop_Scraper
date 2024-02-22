@@ -15,10 +15,12 @@ var ModelsGroup = []interface{}{
 	&ReviewsTopic{},
 	&Item{},
 	&SoldItems{},
+	&CreateShopTaskQueue{},
+	&ShopRequest{},
 	&ProcessStage{},
-type ProcessStage struct {
-	gorm.Model
-	Name string `gorm:"not null;unique"`
+	&ProcessStatus{},
+	&Process{},
+	&ScrapeProcess{},
 }
 
 type Shop struct {
@@ -33,21 +35,49 @@ type Shop struct {
 	SocialMediaLinks []string `json:"social_media_links" gorm:"serializer:json"`
 	HasSoldHistory   bool     `json:"-" `
 
-	Member   []ShopMember `json:"shop_member" gorm:"foreignKey:ShopID;references:ID"`
-	ShopMenu ShopMenu     `json:"shop_menu" gorm:"foreignKey:ShopID;references:ID"`
-	Reviews  Reviews      `json:"shop_reviews" gorm:"foreignKey:ShopID;references:ID"`
+	Member   []ShopMember `json:"shop_member" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
+	ShopMenu ShopMenu     `json:"shop_menu" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
+	Reviews  Reviews      `json:"shop_reviews" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
 
 	CreatedByUserID uuid.UUID `json:"-" gorm:"type:uuid"`
-	Followers       []Account `json:"-" gorm:"many2many:account_shop_following;"`
+	Followers       []Account `json:"-" gorm:"many2many:account_shop_following;constraint:OnDelete:CASCADE;"`
 }
 
-type ScrapingStep struct {
+type Process struct {
 	gorm.Model
-	ShopRequestID uint
-	Step          string
-	Status        string
-	Progress      string
+	Name string
 }
+type ProcessStage struct {
+	gorm.Model
+	Name        string `gorm:"not null;unique"`
+	Description string `gorm:"not null;unique"`
+}
+
+type ProcessStatus struct {
+	gorm.Model
+	Status string
+}
+type ScrapeProcess struct {
+	gorm.Model
+	ShopRequestID   uint `gorm:"foreignKey:ScrapeProcessID"`
+	ProcessID       uint `gorm:"foreignKey:ScrapeProcessID"`
+	ProcessStageID  uint `gorm:"foreignKey:ScrapeProcessID"`
+	ProcessStatusID uint `gorm:"foreignKey:ScrapeProcessID"`
+}
+type ShopRequest struct {
+	gorm.Model
+	AccountID uuid.UUID
+	ShopName  string `json:"shop_name"`
+	Status    string
+}
+
+type CreateShopTaskQueue struct {
+	gorm.Model
+	ShopName  string `json:"shop_name"`
+	ShopID    uint
+	AccountID uuid.UUID `json:"-" gorm:"type:uuid"`
+}
+
 type SoldItems struct {
 	gorm.Model
 	Name       string `gorm:"-"`
@@ -69,7 +99,7 @@ type Item struct {
 	MenuItemID     uint
 	ListingID      uint
 	DataShopID     string
-	SoldUnits      []SoldItems `gorm:"foreignKey:ItemID"`
+	SoldUnits      []SoldItems `gorm:"foreignKey:ItemID;constraint:OnDelete:CASCADE;"`
 }
 
 type MenuItem struct {
@@ -79,21 +109,21 @@ type MenuItem struct {
 	SectionID  string `json:"selection_id"`
 	Link       string `json:"link"`
 	Amount     int    `json:"item_amount"`
-	Items      []Item `json:"category_item" gorm:"foreignKey:MenuItemID;"`
+	Items      []Item `json:"category_item" gorm:"foreignKey:MenuItemID;constraint:OnDelete:CASCADE;"`
 }
 
 type ShopMenu struct {
 	gorm.Model
-	ShopID            uint       `json:"-"`
+	ShopID            uint       `json:"-" `
 	TotalItemsAmmount int        `json:"total_items_amount"`
-	Menu              []MenuItem `json:"items_category" gorm:"foreignKey:ShopMenuID"`
+	Menu              []MenuItem `json:"items_category" gorm:"foreignKey:ShopMenuID;constraint:OnDelete:CASCADE;"`
 }
 type Reviews struct {
 	gorm.Model
 	ShopID       uint           `json:"-"`
 	ShopRating   float64        `json:"shop_rate"`
 	ReviewsCount int            `json:"reviews_count"`
-	ReviewsTopic []ReviewsTopic `json:"reviews_mentions" gorm:"foreignKey:ReviewsID"`
+	ReviewsTopic []ReviewsTopic `json:"reviews_mentions" gorm:"foreignKey:ReviewsID;constraint:OnDelete:CASCADE;"`
 }
 
 type ReviewsTopic struct {
@@ -110,21 +140,11 @@ type ShopMember struct {
 	Role   string `json:"role"`
 }
 
-type CreateNewShopReuest struct {
-	ShopName string `json:"new_shop_name"`
-}
-
-type FollowShopRequest struct {
-	FollowShopName string `json:"follow_shop"`
-}
-
-type UnFollowShopRequest struct {
-	UnFollowShopName string `json:"unfollow_shop"`
-}
 type TaskSchedule struct {
-	IsScrapped bool
-	FirstPage  int
-	LastPage   int
+	IsScrapeFinished     bool
+	IsPaginationScrapped bool
+	CurrentPage          int
+	LastPage             int
 }
 
 func CreateShop(newShop *Shop) *Shop {
@@ -181,18 +201,6 @@ func CreateShopMember(shopMember *ShopMember) *ShopMember {
 	return NewMember
 }
 
-func CreateSoldItemInfo(Item *Item) *ResponseSoldItemInfo {
-	newSoldItem := &ResponseSoldItemInfo{
-		Name:           Item.Name,
-		ItemID:         Item.ID,
-		OriginalPrice:  Item.OriginalPrice,
-		CurrencySymbol: Item.CurrencySymbol,
-		SalePrice:      Item.SalePrice,
-		DiscoutPercent: Item.DiscoutPercent,
-		ItemLink:       Item.ItemLink,
-	}
-	return newSoldItem
-}
 func CreateSoldOutItem(item *SoldItems) *Item {
 	SoldOutItem := &Item{
 		Name:       item.Name,
@@ -204,15 +212,39 @@ func CreateSoldOutItem(item *SoldItems) *Item {
 	return SoldOutItem
 }
 
-func SeedFixedStages(db *gorm.DB) {
+func SeedFixedTabels(db *gorm.DB) {
+	processes := []Process{
+		{Name: "Scraping initiated"},
+		{Name: "General shop info"},
+		{Name: "Shop's Menu"},
+		{Name: "Selling history"},
+		{Name: "Writing to Database"},
+	}
+
 	stages := []ProcessStage{
-		{Name: "Pending"},
-		{Name: "Fetching Data"},
-		{Name: "Processing Data"},
-		{Name: "Save Data to Database"},
+		{Name: "Fetching Data", Description: "Fetching data from the source"},
+		{Name: "Processing Data", Description: "Processing and analyzing data"},
+		{Name: "Saving Data to Database", Description: "Saving Data to designated DB tables"},
+	}
+
+	statuses := []ProcessStatus{
+		{Status: "Pending"},
+		{Status: "In progress"},
+		{Status: "Finished"},
+		{Status: "Denied"},
+		{Status: "Rejected"},
+		{Status: "Failed"},
 	}
 
 	for _, stage := range stages {
 		db.FirstOrCreate(&stage, stage)
+	}
+
+	for _, process := range processes {
+		db.FirstOrCreate(&process, process)
+	}
+
+	for _, status := range statuses {
+		db.FirstOrCreate(&status, status)
 	}
 }
