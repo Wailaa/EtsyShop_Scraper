@@ -24,9 +24,29 @@ func NewUserController(DB *gorm.DB) *User {
 	return &User{DB}
 }
 
+type RegisterAccount struct {
+	FirstName        string `json:"first_name" binding:"required"`
+	LastName         string `json:"last_name" binding:"required"`
+	Email            string `json:"email" binding:"required"`
+	Password         string `json:"password" binding:"required,min=8"`
+	PasswordConfirm  string `json:"password_confirm" binding:"required"`
+	SubscriptionType string `json:"subscription_type"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+type LoginResponse struct {
+	TokenType    string        `json:"token_type"`
+	AccessToken  *models.Token `json:"access_token"`
+	RefreshToken *models.Token `json:"refresh_token"`
+}
+
 func (s *User) RegisterUser(ctx *gin.Context) {
 
-	var account *models.RegisterAccount
+	var account *RegisterAccount
 	newUUID := uuid.New()
 
 	if err := ctx.ShouldBindJSON(&account); err != nil {
@@ -116,7 +136,7 @@ func (s *User) GetAccountByEmail(email string) *models.Account {
 
 func (s *User) LoginAccount(ctx *gin.Context) {
 	now := time.Now().UTC()
-	var loginDetails *models.LoginRequest
+	var loginDetails *LoginRequest
 	config := initializer.LoadProjConfig(".")
 
 	if err := ctx.ShouldBindJSON(&loginDetails); err != nil {
@@ -160,7 +180,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		log.Println(err)
 	}
 
-	loginResponse := &models.LoginResponse{
+	loginResponse := &LoginResponse{
 		TokenType:    "Bearer",
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
