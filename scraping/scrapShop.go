@@ -29,9 +29,9 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 		failedURL := "https://" + r.Request.URL.Host + r.Request.URL.RequestURI()
 
 		randTimeSet := time.Duration(rand.Intn(89-10) + 10)
-		NewShopCollector.SetRequestTimeout(randTimeSet * time.Second)
+		time.Sleep(randTimeSet * time.Second)
 
-		r.Request.Visit(failedURL)
+		NewShopCollector.Visit(failedURL)
 	})
 
 	if err := scrapShopDetails(NewShopCollector, NewShop); err != nil {

@@ -4,7 +4,6 @@ import (
 	"EtsyScraper/collector"
 	"EtsyScraper/models"
 	"strings"
-	"sync"
 
 	"fmt"
 	"log"
@@ -16,7 +15,6 @@ import (
 
 func ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.SoldItems, *models.TaskSchedule) {
 	TerminateCollector := false
-	var TerminateCollectorMutex sync.Mutex
 
 	c := collector.NewCollyCollector().C
 
@@ -27,27 +25,21 @@ func ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.Sol
 		&queue.InMemoryQueueStorage{MaxSize: 10000},
 	)
 
-	// backUpQueue, _ := queue.New(
-	// 	1,
-	// 	&queue.InMemoryQueueStorage{MaxSize: 10000},
-	// )
-
 	c.OnRequest(func(r *colly.Request) {
+
 		if TerminateCollector {
 			r.Abort()
+			log.Println("Request is aborted")
 		}
+
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
 		failedURL := r.Request.URL.String()
 		log.Println("failed url is :", failedURL)
 
-		// randTimeSet := time.Duration(rand.Intn(89-10) + 10)
-		// time.Sleep(randTimeSet * time.Second)
-
-		Task = ExtractFailedPage(failedURL, Task)
+		Task = ExtractPageNumber(failedURL, Task)
 		TerminateCollector = true
-		// backUpQueue.AddURL(failedURL)
 
 	})
 
@@ -55,21 +47,17 @@ func ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.Sol
 
 	Task = scrapSoldItemPages(c, ShopName, Task, OriginalQueue)
 
-	if Task.FirstPage > 2 {
-		pageString := fmt.Sprint(Task.FirstPage)
-		OriginalQueue.AddURL(Shoplink + ShopName + "/sold?ref=pagination&page=" + pageString)
+	if Task.CurrentPage != 2 {
+		AddURLtoQueue(ShopName, Task, OriginalQueue)
+
 	} else {
 		OriginalQueue.AddURL(Shoplink + ShopName + "/sold")
+
 	}
 
-	for !TerminateCollector && !OriginalQueue.IsEmpty() {
-		TerminateCollectorMutex.Lock()
-		defer TerminateCollectorMutex.Unlock()
-		OriginalQueue.Run(c)
-		c.Wait()
-	}
-	// backUpQueue.Run(c)
-	// c.Wait()
+	OriginalQueue.Run(c)
+
+	c.Wait()
 
 	return *Items, Task
 }
@@ -112,37 +100,23 @@ func scrapSoldItemPages(c *colly.Collector, ShopName string, Task *models.TaskSc
 	c.OnHTML("div#content", func(h *colly.HTMLElement) {
 
 		SoldPages := []string{}
-		if !Task.IsScrapped && Task.FirstPage != Task.LastPage {
-			if Task.LastPage == 0 {
-				h.ForEach("li", func(i int, k *colly.HTMLElement) {
-					page := k.ChildAttr("a", "data-page")
-					SoldPages = append(SoldPages, page)
-				})
+		IsPagination := false
+		if !Task.IsPaginationScrapped {
 
+			h.ForEach("li", func(i int, k *colly.HTMLElement) {
+
+				page := k.ChildAttr("a", "data-page")
+				SoldPages = append(SoldPages, page)
+				IsPagination = true
+			})
+
+			if IsPagination {
 				lastpage := SoldPages[len(SoldPages)-2]
 				Task.LastPage, _ = strconv.Atoi(lastpage)
-			}
-			Task.IsScrapped = true
-
-			loopStart := Task.FirstPage
-			if Task.FirstPage != 2 {
-				loopStart = Task.FirstPage + 1
-			}
-
-			loopEnds := 0
-			if Task.LastPage > Task.FirstPage+config.MaxPageLimit {
-				loopEnds = Task.FirstPage + config.MaxPageLimit
-				Task.FirstPage = loopEnds + 1
+				Task.IsPaginationScrapped = true
+				AddURLtoQueue(ShopName, Task, OriginalQueue)
 			} else {
-				loopEnds = Task.LastPage
-				Task.FirstPage = 0
-				Task.LastPage = 0
-			}
-
-			for pageNum := loopStart; pageNum <= loopEnds; pageNum++ {
-				link := fmt.Sprintf("%s%s/sold?ref=pagination&page=%d", Shoplink, ShopName, pageNum)
-				OriginalQueue.AddURL(link)
-
+				Task.IsScrapeFinished = true
 			}
 
 		}
@@ -152,7 +126,26 @@ func scrapSoldItemPages(c *colly.Collector, ShopName string, Task *models.TaskSc
 	return Task
 }
 
-func ExtractFailedPage(url string, Task *models.TaskSchedule) *models.TaskSchedule {
+func AddURLtoQueue(ShopName string, Task *models.TaskSchedule, OriginalQueue *queue.Queue) *models.TaskSchedule {
+
+	loopStart := Task.CurrentPage
+
+	loopEnds := Task.CurrentPage + config.MaxPageLimit
+
+	for pageNum := loopStart; pageNum < loopEnds; pageNum++ {
+		link := fmt.Sprintf("%s%s/sold?ref=pagination&page=%d", Shoplink, ShopName, pageNum)
+		OriginalQueue.AddURL(link)
+		Task.CurrentPage = pageNum + 1
+		if pageNum == Task.LastPage {
+			Task.IsScrapeFinished = true
+			break
+		}
+	}
+
+	return Task
+}
+
+func ExtractPageNumber(url string, Task *models.TaskSchedule) *models.TaskSchedule {
 	splitURL := strings.Split(url, "ref=pagination&page=")
 	if len(splitURL) == 1 {
 		return Task
@@ -162,7 +155,8 @@ func ExtractFailedPage(url string, Task *models.TaskSchedule) *models.TaskSchedu
 		log.Println("error while extracting page number", err)
 		return nil
 	}
-	Task.FirstPage = page
+	Task.CurrentPage = page
+	Task.IsScrapeFinished = false
 
 	return Task
 }
