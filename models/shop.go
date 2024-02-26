@@ -17,10 +17,6 @@ var ModelsGroup = []interface{}{
 	&SoldItems{},
 	&CreateShopTaskQueue{},
 	&ShopRequest{},
-	&ProcessStage{},
-	&ProcessStatus{},
-	&Process{},
-	&ScrapeProcess{},
 }
 
 type Shop struct {
@@ -43,27 +39,6 @@ type Shop struct {
 	Followers       []Account `json:"-" gorm:"many2many:account_shop_following;constraint:OnDelete:CASCADE;"`
 }
 
-type Process struct {
-	gorm.Model
-	Name string
-}
-type ProcessStage struct {
-	gorm.Model
-	Name        string `gorm:"not null;unique"`
-	Description string `gorm:"not null;unique"`
-}
-
-type ProcessStatus struct {
-	gorm.Model
-	Status string
-}
-type ScrapeProcess struct {
-	gorm.Model
-	ShopRequestID   uint `gorm:"foreignKey:ScrapeProcessID"`
-	ProcessID       uint `gorm:"foreignKey:ScrapeProcessID"`
-	ProcessStageID  uint `gorm:"foreignKey:ScrapeProcessID"`
-	ProcessStatusID uint `gorm:"foreignKey:ScrapeProcessID"`
-}
 type ShopRequest struct {
 	gorm.Model
 	AccountID uuid.UUID
@@ -210,41 +185,4 @@ func CreateSoldOutItem(item *SoldItems) *Item {
 		DataShopID: item.DataShopID,
 	}
 	return SoldOutItem
-}
-
-func SeedFixedTabels(db *gorm.DB) {
-	processes := []Process{
-		{Name: "Scraping initiated"},
-		{Name: "General shop info"},
-		{Name: "Shop's Menu"},
-		{Name: "Selling history"},
-		{Name: "Writing to Database"},
-	}
-
-	stages := []ProcessStage{
-		{Name: "Fetching Data", Description: "Fetching data from the source"},
-		{Name: "Processing Data", Description: "Processing and analyzing data"},
-		{Name: "Saving Data to Database", Description: "Saving Data to designated DB tables"},
-	}
-
-	statuses := []ProcessStatus{
-		{Status: "Pending"},
-		{Status: "In progress"},
-		{Status: "Finished"},
-		{Status: "Denied"},
-		{Status: "Rejected"},
-		{Status: "Failed"},
-	}
-
-	for _, stage := range stages {
-		db.FirstOrCreate(&stage, stage)
-	}
-
-	for _, process := range processes {
-		db.FirstOrCreate(&process, process)
-	}
-
-	for _, status := range statuses {
-		db.FirstOrCreate(&status, status)
-	}
 }

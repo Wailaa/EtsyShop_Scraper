@@ -21,7 +21,6 @@ func init() {
 	initializer.RedisDBConnect(&config)
 
 	initializer.DB.AutoMigrate(models.ModelsGroup...)
-	models.SeedFixedStages(initializer.DB)
 	fmt.Println("Migration is completed")
 
 }
