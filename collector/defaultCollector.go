@@ -4,6 +4,7 @@ import (
 	"EtsyScraper/utils"
 	"crypto/tls"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -16,7 +17,7 @@ type DefaultCollector struct {
 }
 
 func NewCollyCollector() *DefaultCollector {
-	ProxyProvider := utils.PickProxyProvider()
+
 	Chrome := req.DefaultClient().ImpersonateChrome()
 
 	c := colly.NewCollector()
@@ -29,7 +30,7 @@ func NewCollyCollector() *DefaultCollector {
 		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 	})
 
-	c.SetProxy(ProxyProvider)
+	c.SetProxy(utils.PickProxyProvider())
 
 	c.UserAgent = utils.GetRandomUserAgent()
 
@@ -64,20 +65,16 @@ func NewCollyCollector() *DefaultCollector {
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
-		fmt.Println("Request URL: ", r.Request.URL, " failed with response: ", r, "\nError: ", err)
+		if r.StatusCode == 404 {
+			r.Request.Abort()
+			log.Println("shop was not found. error 404 was returned")
+		} else {
+			fmt.Println("Request URL: ", r.Request.URL, " failed with response: ", r, "\nError: ", err)
 
-		if len(*r.Headers) != 0 {
-			for key, value := range *r.Headers {
-				fmt.Printf("%s: %s\n", key, value)
-			}
+			c.SetProxy(utils.PickProxyProvider())
+
+			c.UserAgent = utils.GetRandomUserAgent()
 		}
-
-		r.Headers.Del("Cookie")
-
-		c.SetProxy(ProxyProvider)
-
-		c.UserAgent = utils.GetRandomUserAgent()
-
 	})
 
 	c.OnScraped(func(r *colly.Response) {

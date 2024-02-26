@@ -4,6 +4,7 @@ import (
 	"EtsyScraper/collector"
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
+	"log"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -26,12 +27,17 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 	NewShopCollector.AllowURLRevisit = true
 
 	NewShopCollector.OnError(func(r *colly.Response, err error) {
-		failedURL := "https://" + r.Request.URL.Host + r.Request.URL.RequestURI()
+		if r.StatusCode == 404 {
+			r.Request.Abort()
+			log.Println("shop was not found. error 404 was returned")
+		} else {
+			failedURL := "https://" + r.Request.URL.Host + r.Request.URL.RequestURI()
 
-		randTimeSet := time.Duration(rand.Intn(89-10) + 10)
-		time.Sleep(randTimeSet * time.Second)
+			randTimeSet := time.Duration(rand.Intn(89-10) + 10)
+			time.Sleep(randTimeSet * time.Second)
 
-		NewShopCollector.Visit(failedURL)
+			NewShopCollector.Visit(failedURL)
+		}
 	})
 
 	if err := scrapShopDetails(NewShopCollector, NewShop); err != nil {

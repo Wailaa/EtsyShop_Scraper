@@ -47,7 +47,7 @@ func ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.Sol
 
 	Task = scrapSoldItemPages(c, ShopName, Task, OriginalQueue)
 
-	if Task.CurrentPage != 2 {
+	if Task.CurrentPage != 0 {
 		AddURLtoQueue(ShopName, Task, OriginalQueue)
 
 	} else {
@@ -111,7 +111,9 @@ func scrapSoldItemPages(c *colly.Collector, ShopName string, Task *models.TaskSc
 			})
 
 			if IsPagination {
+
 				lastpage := SoldPages[len(SoldPages)-2]
+				Task.CurrentPage = 2
 				Task.LastPage, _ = strconv.Atoi(lastpage)
 				Task.IsPaginationScrapped = true
 				AddURLtoQueue(ShopName, Task, OriginalQueue)
