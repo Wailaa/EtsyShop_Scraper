@@ -19,6 +19,7 @@ type DefaultCollector struct {
 func NewCollyCollector() *DefaultCollector {
 
 	Chrome := req.DefaultClient().ImpersonateChrome()
+	getProxy := utils.PickProxyProvider()
 
 	c := colly.NewCollector()
 
@@ -30,7 +31,7 @@ func NewCollyCollector() *DefaultCollector {
 		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 	})
 
-	c.SetProxy(utils.PickProxyProvider())
+	c.SetProxy(getProxy.Url)
 
 	c.UserAgent = utils.GetRandomUserAgent()
 
@@ -56,6 +57,9 @@ func NewCollyCollector() *DefaultCollector {
 
 		fmt.Println("-----------------------------")
 		fmt.Println(r.StatusCode)
+
+		fmt.Println("ProxyProvider :", getProxy.Provider)
+
 		if r.StatusCode != 200 {
 			for key, value := range *r.Headers {
 				fmt.Printf("%s: %s\n", key, value)
@@ -65,15 +69,22 @@ func NewCollyCollector() *DefaultCollector {
 	})
 
 	c.OnError(func(r *colly.Response, err error) {
+
+		fmt.Println("ProxyProvider :", getProxy.Provider)
+
+		getProxy = utils.PickProxyProvider()
+
 		if r.StatusCode == 404 {
 			r.Request.Abort()
 			log.Println("shop was not found. error 404 was returned")
 		} else {
 			fmt.Println("Request URL: ", r.Request.URL, " failed with response: ", r, "\nError: ", err)
 
-			c.SetProxy(utils.PickProxyProvider())
+			c.SetProxy(getProxy.Url)
 
 			c.UserAgent = utils.GetRandomUserAgent()
+
+			c.SetCookies(r.Request.URL.String(), nil)
 		}
 	})
 

@@ -31,7 +31,9 @@ type Config struct {
 	ScrapShopURL string `mapstructure:"SCRAP_SHOP_URL"`
 	MaxPageLimit int    `mapstructure:"SCRAP_MAX_PAGE_LIMIT"`
 
-	ProxyHostURL string `mapstructure:"PROXY_HOST_URL"`
+	ProxyHostURL1 string `mapstructure:"PROXY_HOST_URL1"`
+	ProxyHostURL2 string `mapstructure:"PROXY_HOST_URL2"`
+	ProxyHostURL3 string `mapstructure:"PROXY_HOST_URL3"`
 }
 
 func LoadProjConfig(path string) (config Config) {
