@@ -110,7 +110,7 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 
 	scrappedShop, err := scrap.ScrapShop(ShopRequest.ShopName)
 	if err != nil {
-		log.Println("failed to initiate Shop while handling ShopShopRequest.ID: ", ShopRequest.ID)
+		log.Println("failed to initiate Shop while handling ShopRequest.ID: ", ShopRequest.ID)
 		return err
 	}
 
@@ -118,45 +118,46 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 
 	result := s.DB.Create(scrappedShop)
 	if result.Error != nil {
-		log.Println("failed to save Shop's data while handling ShopShopRequest.ID: ", ShopRequest.ID)
+		log.Println("failed to save Shop's data while handling ShopRequest.ID: ", ShopRequest.ID)
 		ShopRequest.Status = "failed"
 		return err
 	}
 
-	log.Println("Shop's data saved successfully while handling ShopShopRequest.ID: ", ShopRequest.ID)
+	log.Println("Shop's data saved successfully while handling ShopRequest.ID: ", ShopRequest.ID)
 
 	time.Sleep(10 * time.Second)
 
-	log.Println("starting Shop's menu scraping for ShopShopRequest.ID: ", ShopRequest.ID)
+	log.Println("starting Shop's menu scraping for ShopRequest.ID: ", ShopRequest.ID)
 	scrapeMenu := scrap.ScrapAllMenuItems(scrappedShop)
 
 	result = s.DB.Save(scrapeMenu)
 	if result.Error != nil {
 		ShopRequest.Status = "failed"
-		log.Println("failed to save Shop's menu into database for ShopShopRequest.ID: ", ShopRequest.ID)
+		log.Println("failed to save Shop's menu into database for ShopRequest.ID: ", ShopRequest.ID)
 		s.CreateShopRequest(ShopRequest)
 		return err
 	}
 
 	ShopRequest.Status = "done"
 	s.CreateShopRequest(ShopRequest)
-	log.Println("Shop's menu data saved successfully while handling ShopShopRequest.ID: ", ShopRequest.ID)
+	log.Println("Shop's menu data saved successfully while handling ShopRequest.ID: ", ShopRequest.ID)
 
 	Task := &models.TaskSchedule{
 		IsScrapeFinished:     false,
 		IsPaginationScrapped: false,
 		CurrentPage:          0,
 		LastPage:             0,
+		UpdateSoldItems:      0,
 	}
 
 	if scrapeMenu.HasSoldHistory && scrapeMenu.TotalSales > 0 {
-		log.Println("Shop's selling history initiated for ShopShopRequest.ID: ", ShopRequest.ID)
+		log.Println("Shop's selling history initiated for ShopRequest.ID: ", ShopRequest.ID)
 		time.Sleep(10 * time.Second)
 
 		if err := s.UpdateSellingHistory(scrapeMenu, Task, ShopRequest); err != nil {
 			ShopRequest.Status = "failed"
 			s.CreateShopRequest(ShopRequest)
-			log.Println("Shop's selling history failed for ShopShopRequest.ID: ", ShopRequest.ID)
+			log.Println("Shop's selling history failed for ShopRequest.ID: ", ShopRequest.ID)
 
 			return err
 
@@ -174,7 +175,7 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 	if err != nil {
 		ShopRequest.Status = "failed"
 		s.CreateShopRequest(ShopRequest)
-		log.Println("Shop's selling history failed while initiating UpdateDiscontinuedItems for ShopShopRequest.ID: ", ShopRequest.ID)
+		log.Println("Shop's selling history failed while initiating UpdateDiscontinuedItems for ShopRequest.ID: ", ShopRequest.ID)
 
 		return err
 	}
@@ -200,12 +201,12 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 
 	result := s.DB.Create(ScrappedSoldItems)
 	if result.Error != nil {
-		log.Println("Shop's selling history failed while saving to database for ShopShopRequest.ID: ", ShopRequest.ID)
+		log.Println("Shop's selling history failed while saving to database for ShopRequest.ID: ", ShopRequest.ID)
 		return err
 	}
 
 	ShopRequest.Status = "done"
-	log.Println("Shop's selling history successfully saved  for ShopShopRequest.ID: ", ShopRequest.ID)
+	log.Println("Shop's selling history successfully saved  for ShopRequest.ID: ", ShopRequest.ID)
 	s.CreateShopRequest(ShopRequest)
 
 	return nil
@@ -228,7 +229,7 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 
 	getAllItems, err := s.GetItemsByShopID(Shop.ID)
 	if err != nil {
-		log.Println("UpdateDiscontinuedItems failed for ShopShopRequest.ID: ", ShopRequest.ID)
+		log.Println("UpdateDiscontinuedItems failed for ShopRequest.ID: ", ShopRequest.ID)
 		return nil, err
 	}
 
@@ -257,7 +258,7 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 			Shop.ShopMenu.Menu[index].Items = append(menu.Items, SoldOutItems...)
 
 			s.DB.Save(Shop.ShopMenu.Menu[index])
-			log.Println("Out Of Production successfully updated for ShopShopRequest.ID: ", ShopRequest.ID)
+			log.Println("Out Of Production successfully updated for ShopRequest.ID: ", ShopRequest.ID)
 		}
 	}
 
@@ -272,7 +273,7 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 
 		Shop.ShopMenu.Menu = append(Shop.ShopMenu.Menu, Menu)
 		s.DB.Save(Shop)
-		log.Println("Out Of Production successfully created for ShopShopRequest.ID: ", ShopRequest.ID)
+		log.Println("Out Of Production successfully created for ShopRequest.ID: ", ShopRequest.ID)
 
 	}
 
@@ -445,13 +446,16 @@ func (s *Shop) SoldItemsTask(Shop *models.Shop, Task *models.TaskSchedule, ShopR
 	return nil
 }
 
-func (s *Shop) CreateShopRequest(ShopRequest *models.ShopRequest) (*models.ShopRequest, error) {
+func (s *Shop) CreateShopRequest(ShopRequest *models.ShopRequest) error {
+	if ShopRequest.AccountID == uuid.Nil {
+		return nil
+	}
 
 	result := s.DB.Save(ShopRequest)
 	if result.Error != nil {
 		log.Println(result.Error)
-		return nil, result.Error
+		return result.Error
 	}
 
-	return ShopRequest, nil
+	return nil
 }
