@@ -15,7 +15,7 @@ import (
 
 func ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.SoldItems, *models.TaskSchedule) {
 	TerminateCollector := false
-
+	Items := &[]models.SoldItems{}
 	c := collector.NewCollyCollector().C
 
 	c.AllowURLRevisit = true
@@ -26,7 +26,12 @@ func ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.Sol
 	)
 
 	c.OnRequest(func(r *colly.Request) {
-
+		if len(*Items) >= Task.UpdateSoldItems && Task.UpdateSoldItems != 0 {
+			log.Println("Task.NewSoldItems :", Task.UpdateSoldItems)
+			*Items = (*Items)[:Task.UpdateSoldItems]
+			TerminateCollector = true
+			Task.IsScrapeFinished = true
+		}
 		if TerminateCollector {
 			r.Abort()
 			log.Println("Request is aborted")
@@ -43,7 +48,7 @@ func ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.Sol
 
 	})
 
-	Items := scrapSoldItems(c)
+	Items = scrapSoldItems(c)
 
 	Task = scrapSoldItemPages(c, ShopName, Task, OriginalQueue)
 

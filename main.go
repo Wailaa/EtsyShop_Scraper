@@ -4,6 +4,7 @@ import (
 	"EtsyScraper/controllers"
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
+	scheduleUpdates "EtsyScraper/scheduleUpdateTask"
 	"net/http"
 	"strconv"
 
@@ -19,7 +20,7 @@ func init() {
 	config := initializer.LoadProjConfig(".")
 	initializer.DataBaseConnect(&config)
 	initializer.RedisDBConnect(&config)
-
+	scheduleUpdates.ScheduleScrapUpdate()
 	initializer.DB.AutoMigrate(models.ModelsGroup...)
 	fmt.Println("Migration is completed")
 
@@ -102,4 +103,5 @@ func main() {
 	})
 
 	log.Fatal(server.Run(":" + config.ServerPort))
+
 }

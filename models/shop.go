@@ -17,6 +17,7 @@ var ModelsGroup = []interface{}{
 	&SoldItems{},
 	&CreateShopTaskQueue{},
 	&ShopRequest{},
+	&DailyShopSales{},
 }
 
 type Shop struct {
@@ -120,6 +121,14 @@ type TaskSchedule struct {
 	IsPaginationScrapped bool
 	CurrentPage          int
 	LastPage             int
+	UpdateSoldItems      int
+}
+
+type DailyShopSales struct {
+	gorm.Model
+	ShopID     uint
+	TotalSales int
+	Admirers   int
 }
 
 func CreateShop(newShop *Shop) *Shop {
