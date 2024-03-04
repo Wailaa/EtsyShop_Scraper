@@ -31,6 +31,7 @@ type Shop struct {
 	Admirers         int      `json:"admirers" gorm:"not null"`
 	SocialMediaLinks []string `json:"social_media_links" gorm:"serializer:json"`
 	HasSoldHistory   bool     `json:"-" `
+	OnVacation       bool     `json:"-" `
 
 	Member   []ShopMember `json:"shop_member" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
 	ShopMenu ShopMenu     `json:"shop_menu" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`

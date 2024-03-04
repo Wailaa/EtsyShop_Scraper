@@ -44,6 +44,9 @@ func ScrapShop(shopName string) (*models.Shop, error) {
 		return nil, err
 	}
 
+	if err := scrapShopvacation(NewShopCollector, NewShop); err != nil {
+		return nil, err
+	}
 	if err := scrapShopTotalSales(NewShopCollector, NewShop); err != nil {
 		return nil, err
 	}
@@ -97,6 +100,16 @@ func scrapShopDetails(c *colly.Collector, shop *models.Shop) error {
 	})
 	return nil
 }
+
+func scrapShopvacation(c *colly.Collector, shop *models.Shop) error {
+	c.OnHTML(`div[data-region="vacation-notification-bar"]`, func(e *colly.HTMLElement) {
+
+		shop.OnVacation = true
+
+	})
+	return nil
+}
+
 func scrapShopTotalSales(c *colly.Collector, shop *models.Shop) error {
 	IsElementFound := false
 	c.OnHTML(`div[data-appears-component-name="shop_home_listings_section"]`, func(e *colly.HTMLElement) {
