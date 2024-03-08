@@ -17,13 +17,19 @@ type UpdateDB struct {
 	DB *gorm.DB
 }
 
+type UpdateSoldItemsQueue struct {
+	Shop models.Shop
+	Task models.TaskSchedule
+}
+
 func NewUpdateDB(DB *gorm.DB) *UpdateDB {
 	return &UpdateDB{DB}
 }
 
 func ScheduleScrapUpdate() error {
 	c := cron.New()
-	_, err := c.AddFunc("41 12 * * * ", func() {
+
+	_, err := c.AddFunc("04 14 * * * ", func() {
 		log.Println("ScheduleScrapUpdate executed at", time.Now())
 		NewUpdateDB(initializer.DB).StartShopUpdate()
 	})
@@ -31,15 +37,19 @@ func ScheduleScrapUpdate() error {
 		fmt.Println("Error scheduling task:", err)
 		return err
 	}
+
 	c.Start()
 	return nil
 }
 
 func (u *UpdateDB) StartShopUpdate() error {
+	SoldItemsQueue := UpdateSoldItemsQueue{}
+	AddSoldItemsQueue := []UpdateSoldItemsQueue{}
 	Shops, err := u.getAllShops()
 	if err != nil {
 		log.Println("error while retreiving Shops rows. error :", err)
 	}
+
 	for _, Shop := range *Shops {
 
 		updatedShop, err := scrap.CheckForUpdates(Shop.Name)
@@ -53,14 +63,17 @@ func (u *UpdateDB) StartShopUpdate() error {
 
 		if NewSoldItems > 0 && Shop.HasSoldHistory {
 
-			Task := &models.TaskSchedule{
+			Task := models.TaskSchedule{
 				IsScrapeFinished:     false,
 				IsPaginationScrapped: false,
 				CurrentPage:          0,
 				LastPage:             0,
 				UpdateSoldItems:      NewSoldItems,
 			}
-			UpdateSoldItems(&Shop, Task)
+			SoldItemsQueue.Shop = Shop
+			SoldItemsQueue.Task = Task
+			AddSoldItemsQueue = append(AddSoldItemsQueue, SoldItemsQueue)
+			// UpdateSoldItems(&Shop, Task)
 		}
 
 		updateData := map[string]interface{}{
@@ -84,14 +97,20 @@ func (u *UpdateDB) StartShopUpdate() error {
 		time.Sleep(10 * time.Second)
 
 	}
+	if len(AddSoldItemsQueue) > 0 {
+		for _, queue := range AddSoldItemsQueue {
+			UpdateSoldItems(queue)
+			log.Printf("added %v new SoldItems to Shop: %s\n", queue.Task.UpdateSoldItems, queue.Shop.Name)
+		}
+	}
 	log.Println("finished updating Shops")
 
 	return nil
 }
 
-func UpdateSoldItems(Shop *models.Shop, Task *models.TaskSchedule) {
+func UpdateSoldItems(queue UpdateSoldItemsQueue) {
 	ShopRequest := &models.ShopRequest{}
-	controllers.NewShopController(initializer.DB).UpdateSellingHistory(Shop, Task, ShopRequest)
+	controllers.NewShopController(initializer.DB).UpdateSellingHistory(&queue.Shop, &queue.Task, ShopRequest)
 }
 
 func (u *UpdateDB) getAllShops() (*[]models.Shop, error) {

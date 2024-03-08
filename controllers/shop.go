@@ -206,7 +206,7 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 	}
 
 	ShopRequest.Status = "done"
-	log.Println("Shop's selling history successfully saved  for ShopRequest.ID: ", ShopRequest.ID)
+	log.Printf("Shop's selling history successfully saved %v items for ShopRequest.ID: %v \n", len(ScrappedSoldItems), ShopRequest.ID)
 	s.CreateShopRequest(ShopRequest)
 
 	return nil
@@ -224,7 +224,7 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 	}
 
 	if reflect.DeepEqual(scrapSoldItems, []models.SoldItems{}) {
-		return nil, fmt.Errorf("empty scrapped Sold data")
+		return scrapSoldItems, nil
 	}
 
 	getAllItems, err := s.GetItemsByShopID(Shop.ID)
