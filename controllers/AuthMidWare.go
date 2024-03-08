@@ -40,7 +40,7 @@ func AuthMiddleWare() gin.HandlerFunc {
 			}
 		}
 		if !refHasValue {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": err.Error()})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": "no refreshToken found"})
 			ctx.Abort()
 			return
 		}
@@ -52,7 +52,7 @@ func AuthMiddleWare() gin.HandlerFunc {
 		}
 		userClaims, errClaims := utils.ValidateJWT(accessToken)
 		if errClaims != nil {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": "auth failed because of " + err.Error()})
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": "auth failed because of " + errClaims.Error()})
 			ctx.Abort()
 			return
 		}
