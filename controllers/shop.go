@@ -3,6 +3,7 @@ package controllers
 import (
 	"EtsyScraper/models"
 	scrap "EtsyScraper/scraping"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -200,9 +201,27 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 	}
 
 	result := s.DB.Create(ScrappedSoldItems)
+
 	if result.Error != nil {
 		log.Println("Shop's selling history failed while saving to database for ShopRequest.ID: ", ShopRequest.ID)
 		return err
+	} else if Task.UpdateSoldItems > 0 {
+
+		now := time.Now().UTC().Truncate(24 * time.Hour)
+
+		UpdatedSoldItemIDs := []uint{}
+		for _, UpdatedSoldItem := range ScrappedSoldItems {
+			UpdatedSoldItemIDs = append(UpdatedSoldItemIDs, UpdatedSoldItem.ID)
+		}
+
+		jsonArray, err := json.Marshal(UpdatedSoldItemIDs)
+		if err != nil {
+			log.Println("Error marshaling JSON:", err)
+			return err
+		}
+
+		s.DB.Model(&models.DailyShopSales{}).Where("created_at > ?", now).Where("shop_id = ?", Shop.ID).Update("sold_items", jsonArray)
+
 	}
 
 	ShopRequest.Status = "done"

@@ -130,6 +130,7 @@ type DailyShopSales struct {
 	ShopID     uint
 	TotalSales int
 	Admirers   int
+	SoldItems  []uint `gorm:"type:jsonb"`
 }
 
 func CreateShop(newShop *Shop) *Shop {
