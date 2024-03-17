@@ -102,6 +102,7 @@ func scrapShopDetails(c *colly.Collector, shop *models.Shop) error {
 }
 
 func scrapShopvacation(c *colly.Collector, shop *models.Shop) error {
+	shop.OnVacation = false
 	c.OnHTML(`div[data-region="vacation-notification-bar"]`, func(e *colly.HTMLElement) {
 
 		shop.OnVacation = true

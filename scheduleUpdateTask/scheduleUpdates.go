@@ -73,7 +73,12 @@ func (u *UpdateDB) StartShopUpdate() error {
 			SoldItemsQueue.Shop = Shop
 			SoldItemsQueue.Task = Task
 			AddSoldItemsQueue = append(AddSoldItemsQueue, SoldItemsQueue)
-			// UpdateSoldItems(&Shop, Task)
+
+		}
+
+		if updatedShop.OnVacation {
+			updatedShop.TotalSales = Shop.TotalSales
+			updatedShop.Admirers = Shop.Admirers
 		}
 
 		updateData := map[string]interface{}{

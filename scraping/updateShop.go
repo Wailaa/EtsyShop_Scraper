@@ -41,6 +41,10 @@ func CheckForUpdates(Shop string) (*models.Shop, error) {
 		return nil, err
 	}
 
+	if err := scrapShopvacation(c, UpdatedShop); err != nil {
+		return nil, err
+	}
+
 	// if err := scrapShopMenu(c, newShop); err != nil {
 	// 	return nil, err
 	// }
