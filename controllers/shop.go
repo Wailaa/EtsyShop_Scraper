@@ -48,6 +48,11 @@ type ResponseSoldItemInfo struct {
 	SoldQauntity   int
 }
 
+type dailySoldStats struct {
+	TotalSales int `json:"total_sales"`
+	Items      []models.Item
+}
+
 func CreateSoldItemInfo(Item *models.Item) *ResponseSoldItemInfo {
 	newSoldItem := &ResponseSoldItemInfo{
 		Name:           Item.Name,
@@ -96,16 +101,6 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": message})
 	go s.CreateNewShop(ShopRequest)
 }
-
-// func (s *Shop) CreateShopTaskQueue(shopReqTask models.ShopRequest) error {
-
-// 	result := s.DB.Create(&shopReqTask)
-// 	if result.Error != nil {
-// 		log.Println("error while creating tas queue for new shop request")
-// 		return result.Error
-// 	}
-// 	return nil
-// }
 
 func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 
@@ -477,4 +472,84 @@ func (s *Shop) CreateShopRequest(ShopRequest *models.ShopRequest) error {
 	}
 
 	return nil
+}
+
+func (s *Shop) ProcessStatsRequest(ctx *gin.Context, ShopID uint, Period string) error {
+
+	year, month, day := 0, 0, 0
+
+	switch Period {
+	case "lastSevenDays":
+		day = -6
+	case "lastThirtyDays":
+		day = -29
+	case "lastThreeMonths":
+		month = -3
+	case "lastSixMonths":
+		month = -6
+	case "lastYear":
+		year = -1
+	default:
+
+		return fmt.Errorf("invalid period provided")
+
+	}
+	date := time.Now().AddDate(year, month, day)
+	dateMidnight := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+
+	LastSevenDays, err := s.GetSellingStatsByPeriod(ShopID, dateMidnight)
+	if err != nil {
+		log.Println("error while retreiving shop selling stats ,error :", err)
+		return fmt.Errorf("error while retreiving shop selling stats ,error : %s", err)
+	}
+	ctx.JSON(http.StatusOK, gin.H{"status": http.StatusOK, Period: LastSevenDays})
+	return nil
+}
+
+func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[string]dailySoldStats, error) {
+
+	dailyShopSales := []models.DailyShopSales{}
+	itemIDs := []uint{}
+	item := models.Item{}
+
+	stats := make(map[string]dailySoldStats)
+
+	result := s.DB.Where("shop_id = ? AND created_at > ?", ShopID, timePeriod).Find(&dailyShopSales)
+
+	if result.Error != nil {
+		log.Println(result.Error)
+		return nil, result.Error
+	}
+
+	for _, sales := range dailyShopSales {
+		items := []models.Item{}
+		dateCreated := sales.CreatedAt.Format("2006-01-02")
+
+		if len(sales.SoldItems) == 0 {
+			stats[dateCreated] = dailySoldStats{
+				TotalSales: sales.TotalSales,
+			}
+			continue
+		}
+
+		if err := json.Unmarshal(sales.SoldItems, &itemIDs); err != nil {
+			fmt.Println("Error parsing sold items:", err)
+			return nil, err
+		}
+		for _, itemID := range itemIDs {
+			result := s.DB.Raw("SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = (?)", itemID).Scan(&item)
+			if result.Error != nil {
+				return nil, result.Error
+			}
+			items = append(items, item)
+		}
+
+		stats[dateCreated] = dailySoldStats{
+			TotalSales: sales.TotalSales,
+			Items:      items,
+		}
+
+	}
+
+	return stats, nil
 }

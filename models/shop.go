@@ -65,7 +65,7 @@ type SoldItems struct {
 }
 
 type Item struct {
-	gorm.Model
+	gorm.Model     `json:"-"`
 	Name           string
 	OriginalPrice  float64
 	CurrencySymbol string
@@ -73,10 +73,10 @@ type Item struct {
 	DiscoutPercent string
 	Available      bool
 	ItemLink       string
-	MenuItemID     uint
+	MenuItemID     uint `json:"-"`
 	ListingID      uint
-	DataShopID     string
-	SoldUnits      []SoldItems `gorm:"foreignKey:ItemID;constraint:OnDelete:CASCADE;"`
+	DataShopID     string      `json:"-"`
+	SoldUnits      []SoldItems `json:"-" gorm:"foreignKey:ItemID;constraint:OnDelete:CASCADE;"`
 }
 
 type MenuItem struct {
@@ -130,7 +130,7 @@ type DailyShopSales struct {
 	ShopID     uint
 	TotalSales int
 	Admirers   int
-	SoldItems  []uint `gorm:"type:jsonb"`
+	SoldItems  []byte `gorm:"type:jsonb"`
 }
 
 func CreateShop(newShop *Shop) *Shop {

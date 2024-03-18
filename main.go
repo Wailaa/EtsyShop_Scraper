@@ -52,6 +52,7 @@ func main() {
 	getShopByID := controllers.NewShopController(initializer.DB).GetShopByID
 	getAllItemsByShopID := controllers.NewShopController(initializer.DB).GetItemsByShopID
 	getAllSoldItemsByShopID := controllers.NewShopController(initializer.DB).GetSoldItemsByShopID
+	getShopStats := controllers.NewShopController(initializer.DB).ProcessStatsRequest
 
 	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(), createNewShopRequest)
 	shopRoute.GET("/follow_shop", controllers.AuthMiddleWare(), followShop)
@@ -100,6 +101,22 @@ func main() {
 			return
 		}
 		ctx.JSON(http.StatusOK, Items)
+	})
+
+	shopRoute.GET("/stats/:shopID/:period", controllers.AuthMiddleWare(), func(ctx *gin.Context) {
+		ShopID := ctx.Param("shopID")
+		Period := ctx.Param("period")
+		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+			return
+		}
+		err = getShopStats(ctx, uint(ShopIDToUint), Period)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+			return
+		}
+
 	})
 
 	log.Fatal(server.Run(":" + config.ServerPort))
