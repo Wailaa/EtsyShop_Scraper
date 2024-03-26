@@ -49,9 +49,10 @@ func ScrapAllMenuItems(shop *models.Shop) *models.Shop {
 
 	for index, Menu := range shop.ShopMenu.Menu {
 
-		if Menu.Category != "On sale" {
+		if !CheckCategoryName(Menu.Category) {
 			OriginalQueue.AddURL(Menu.Link + "&sort_order=price_desc")
-		} else {
+		}
+		if Menu.Category == "On sale" {
 			HasSalesCategory = true
 		}
 		if Menu.Category == "All" {
@@ -93,7 +94,7 @@ func ScrapAllMenuItems(shop *models.Shop) *models.Shop {
 
 		shop.ShopMenu.Menu[AllItemCategoryIndex].Items = []models.Item{}
 	}
-
+	SectionIdPages = make(map[string]struct{})
 	return shop
 }
 
@@ -230,4 +231,15 @@ func GetSectionID(link string) (SectionID string) {
 		}
 	}
 	return ""
+}
+
+func CheckCategoryName(Category string) bool {
+	MenuCategoryNames := []string{"Out Of Production", "UnCategorized", "On sale"}
+	for _, MenuCategoryName := range MenuCategoryNames {
+		if Category == MenuCategoryName {
+			return true
+		}
+	}
+	return false
+
 }

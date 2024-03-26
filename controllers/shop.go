@@ -219,7 +219,7 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 			return err
 		}
 
-		s.DB.Model(&models.DailyShopSales{}).Where("created_at > ?", now).Where("shop_id = ?", Shop.ID).Update("sold_items", jsonArray)
+		s.DB.Model(&models.DailyShopSales{}).Where("created_at > ?", now).Where("shop_id = ?", Shop.ID).Updates(&models.DailyShopSales{SoldItems: jsonArray, DailyRevenue: dailyRevenue})
 
 	}
 

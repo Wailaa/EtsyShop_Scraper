@@ -7,6 +7,7 @@ import (
 	scrap "EtsyScraper/scraping"
 	"fmt"
 	"log"
+	"math"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -29,7 +30,7 @@ func NewUpdateDB(DB *gorm.DB) *UpdateDB {
 func ScheduleScrapUpdate() error {
 	c := cron.New()
 
-	_, err := c.AddFunc("04 14 * * * ", func() {
+	_, err := c.AddFunc("54 15 * * * ", func() {
 		log.Println("ScheduleScrapUpdate executed at", time.Now())
 		NewUpdateDB(initializer.DB).StartShopUpdate()
 	})
@@ -57,7 +58,7 @@ func (u *UpdateDB) StartShopUpdate() error {
 			log.Println("error while scraping Shop. error :", err)
 			return err
 		}
-
+		u.ShopItemsUpdate(&Shop, updatedShop)
 		NewSoldItems := updatedShop.TotalSales - Shop.TotalSales
 		NewAdmirers := updatedShop.Admirers - Shop.Admirers
 
@@ -99,7 +100,11 @@ func (u *UpdateDB) StartShopUpdate() error {
 			u.DB.Model(&Shop).Updates(updateData)
 		}
 
-		time.Sleep(10 * time.Second)
+		if time.Now().Weekday() == time.Wednesday {
+
+			log.Println("ShopItemsUpdate executed at", time.Now())
+			u.ShopItemsUpdate(&Shop, updatedShop)
+		}
 
 	}
 	if len(AddSoldItemsQueue) > 0 {
@@ -108,6 +113,7 @@ func (u *UpdateDB) StartShopUpdate() error {
 			log.Printf("added %v new SoldItems to Shop: %s\n", queue.Task.UpdateSoldItems, queue.Shop.Name)
 		}
 	}
+
 	log.Println("finished updating Shops")
 
 	return nil
@@ -128,4 +134,143 @@ func (u *UpdateDB) getAllShops() (*[]models.Shop, error) {
 	}
 
 	return AllShops, nil
+}
+
+func MenuExists(Menu string, ListOfMenus []string) bool {
+	for _, newMenu := range ListOfMenus {
+		if Menu == newMenu {
+			return true
+		}
+	}
+	return false
+
+}
+
+func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop) error {
+
+	dataShopID := ""
+	existingItems := []models.Item{}
+	existingItemMap := make(map[uint]bool)
+	ListOfMenus := []string{}
+	var OutOfProductionID uint
+
+	updatedShop = scrap.ScrapAllMenuItems(updatedShop)
+
+	for _, UpdatedMenu := range updatedShop.ShopMenu.Menu {
+		for _, Menu := range Shop.ShopMenu.Menu {
+
+			ListOfMenus = append(ListOfMenus, Menu.Category)
+
+			if Menu.Category == "Out Of Production" {
+				OutOfProductionID = Menu.ID
+				continue
+			}
+			if Menu.Category == UpdatedMenu.Category {
+				UpdatedMenu.ID = Menu.ID
+
+			}
+
+		}
+
+		if Exists := MenuExists(UpdatedMenu.Category, ListOfMenus); !Exists {
+			NewMenu := models.CreateMenuItem(UpdatedMenu)
+			NewMenu.ShopMenuID = Shop.ShopMenu.ID
+			u.DB.Create(&NewMenu)
+			UpdatedMenu.ID = NewMenu.ID
+		}
+
+		for _, item := range UpdatedMenu.Items {
+			existingItem := models.Item{}
+			existingItemMap[item.ListingID] = true
+			u.DB.Where("Listing_id = ? ", item.ListingID).First(&existingItem)
+			dataShopID = existingItem.DataShopID
+
+			PriceDiscrepancy := 3.0
+			PriceChange := math.Abs((existingItem.OriginalPrice / item.OriginalPrice) - 1)
+			PriceChangePerc := math.Round(PriceChange * 100)
+
+			log.Println("the price Change is :", PriceChangePerc)
+
+			if existingItem.ID == 0 {
+				item.MenuItemID = UpdatedMenu.ID
+				u.DB.Create(&item)
+
+				log.Println("new item created : ", item)
+
+				u.DB.Create(&models.ItemHistoryChange{
+					ItemID:         item.ID,
+					NewItemCreated: true,
+					OldPrice:       0,
+					NewPrice:       item.OriginalPrice,
+					OldAvailable:   false,
+					NewAvailable:   true,
+
+					NewMenuItemID: item.MenuItemID,
+				})
+
+			} else if PriceChangePerc >= PriceDiscrepancy {
+
+				log.Println("item before update : ", existingItem)
+
+				u.DB.Create(&models.ItemHistoryChange{
+					ItemID:         existingItem.ID,
+					NewItemCreated: false,
+					OldPrice:       existingItem.OriginalPrice,
+					NewPrice:       item.OriginalPrice,
+					OldAvailable:   existingItem.Available,
+					NewAvailable:   item.Available,
+					OldMenuItemID:  existingItem.MenuItemID,
+					NewMenuItemID:  UpdatedMenu.ID,
+				})
+
+				u.DB.Model(&existingItem).Updates(models.Item{
+					OriginalPrice: item.OriginalPrice,
+					Available:     item.Available,
+					MenuItemID:    UpdatedMenu.ID,
+				})
+
+				log.Println("updated item  : ", existingItem)
+			}
+		}
+
+	}
+
+	u.DB.Where("data_shop_id = ?", dataShopID).Find(&existingItems)
+
+	for _, item := range existingItems {
+		if _, ok := existingItemMap[item.ListingID]; !ok && item.MenuItemID != OutOfProductionID {
+			if OutOfProductionID == 0 {
+				Menu := models.CreateMenuItem(models.MenuItem{
+					ShopMenuID: Shop.ShopMenu.ID,
+					Category:   "Out Of Production",
+					SectionID:  "0",
+				})
+
+				u.DB.Create(&Menu)
+				OutOfProductionID = Menu.ID
+				log.Println("Out Of Production is created , id : ", OutOfProductionID)
+
+			}
+
+			u.DB.Create(&models.ItemHistoryChange{
+				ItemID:       item.ID,
+				OldPrice:     item.OriginalPrice,
+				NewPrice:     item.OriginalPrice,
+				OldAvailable: item.Available,
+				NewAvailable: false,
+
+				OldMenuItemID: item.MenuItemID,
+				NewMenuItemID: OutOfProductionID,
+			})
+
+			u.DB.Model(&item).Updates(map[string]interface{}{
+				"available":    false,
+				"menu_item_id": OutOfProductionID,
+			})
+
+			log.Println("item  not available anymore: ", item)
+		}
+	}
+
+	return nil
 }

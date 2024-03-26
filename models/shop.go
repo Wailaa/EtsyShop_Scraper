@@ -18,6 +18,7 @@ var ModelsGroup = []interface{}{
 	&CreateShopTaskQueue{},
 	&ShopRequest{},
 	&DailyShopSales{},
+	&ItemHistoryChange{},
 }
 
 type Shop struct {
@@ -79,6 +80,7 @@ type Item struct {
 	ListingID      uint
 	DataShopID     string      `json:"-"`
 	SoldUnits      []SoldItems `json:"-" gorm:"foreignKey:ItemID;constraint:OnDelete:CASCADE;"`
+	PriceHistory   []ItemHistoryChange
 }
 
 type MenuItem struct {
@@ -129,10 +131,23 @@ type TaskSchedule struct {
 
 type DailyShopSales struct {
 	gorm.Model
-	ShopID     uint
-	TotalSales int
-	Admirers   int
-	SoldItems  []byte `gorm:"type:jsonb"`
+	ShopID       uint
+	TotalSales   int
+	Admirers     int
+	DailyRevenue float64
+	SoldItems    []byte `gorm:"type:jsonb"`
+}
+
+type ItemHistoryChange struct {
+	gorm.Model
+	ItemID         uint
+	NewItemCreated bool
+	OldPrice       float64
+	NewPrice       float64
+	OldAvailable   bool
+	NewAvailable   bool
+	OldMenuItemID  uint
+	NewMenuItemID  uint
 }
 
 func CreateShop(newShop *Shop) *Shop {
@@ -159,8 +174,8 @@ func CreateShopMenu(newShopMenu *ShopMenu) *ShopMenu {
 	return NewShopMenu
 }
 
-func CreateMenuItem(menuItem *MenuItem) *MenuItem {
-	newMenuItem := &MenuItem{
+func CreateMenuItem(menuItem MenuItem) MenuItem {
+	newMenuItem := MenuItem{
 		ShopMenuID: menuItem.ShopMenuID,
 		Category:   menuItem.Category,
 		SectionID:  menuItem.SectionID,
