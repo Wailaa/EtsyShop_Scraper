@@ -22,16 +22,18 @@ var ModelsGroup = []interface{}{
 
 type Shop struct {
 	gorm.Model
-	Name             string   `json:"shop_name" gorm:"type:varchar(100);not null"`
-	Description      string   `json:"shop_description" gorm:"type:varchar(255);not null"`
-	Location         string   `json:"location" gorm:"type:varchar(50);not null"`
-	TotalSales       int      `json:"shop_total_sales" gorm:"not null"`
-	JoinedSince      string   `json:"joined_since" gorm:"type:varchar(100);not null"`
-	LastUpdateTime   string   `json:"last_update_time" gorm:"type:varchar(155);not null"`
-	Admirers         int      `json:"admirers" gorm:"not null"`
-	SocialMediaLinks []string `json:"social_media_links" gorm:"serializer:json"`
-	HasSoldHistory   bool     `json:"-" `
-	OnVacation       bool     `json:"-" `
+	Name              string   `json:"shop_name" gorm:"type:varchar(100);not null"`
+	Description       string   `json:"shop_description" gorm:"type:varchar(255);not null"`
+	Location          string   `json:"location" gorm:"type:varchar(50);not null"`
+	TotalSales        int      `json:"shop_total_sales" gorm:"not null"`
+	JoinedSince       string   `json:"joined_since" gorm:"type:varchar(100);not null"`
+	LastUpdateTime    string   `json:"last_update_time" gorm:"type:varchar(155);not null"`
+	Admirers          int      `json:"admirers" gorm:"not null"`
+	SocialMediaLinks  []string `json:"social_media_links" gorm:"serializer:json"`
+	HasSoldHistory    bool     `json:"-" `
+	OnVacation        bool     `json:"-" `
+	Revenue           float64  `json:"revenue" gorm:"-"`
+	AvarageItemsPrice float64  `json:"avarage_item_price" gorm:"-"`
 
 	Member   []ShopMember `json:"shop_member" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
 	ShopMenu ShopMenu     `json:"shop_menu" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`

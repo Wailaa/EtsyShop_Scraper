@@ -5,6 +5,7 @@ import (
 	scrap "EtsyScraper/scraping"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/rand"
 	"reflect"
 	"time"
@@ -45,6 +46,7 @@ type ResponseSoldItemInfo struct {
 	SalePrice      float64
 	DiscoutPercent string
 	ItemLink       string
+	Available      bool
 	SoldQauntity   int
 }
 
@@ -62,6 +64,7 @@ func CreateSoldItemInfo(Item *models.Item) *ResponseSoldItemInfo {
 		SalePrice:      Item.SalePrice,
 		DiscoutPercent: Item.DiscoutPercent,
 		ItemLink:       Item.ItemLink,
+		Available:      Item.Available,
 	}
 	return newSoldItem
 }
@@ -166,7 +169,7 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 }
 
 func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
-
+	var dailyRevenue float64
 	ScrappedSoldItems, err := s.UpdateDiscontinuedItems(Shop, Task, ShopRequest)
 	if err != nil {
 		ShopRequest.Status = "failed"
@@ -186,6 +189,7 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 		for _, item := range AllItems {
 			if ScrappedSoldItem.ListingID == item.ListingID {
 				ScrappedSoldItems[i].ItemID = item.ID
+				dailyRevenue += item.OriginalPrice
 				break
 			}
 		}
@@ -393,6 +397,19 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 
 		return nil, err
 	}
+
+	shop.AvarageItemsPrice, err = s.GetAvarageItemPrice(shop.ID)
+	if err != nil {
+		log.Println("error while calculating item avarage price")
+		return
+	}
+
+	shop.Revenue, err = s.GetTotalRevenue(shop.ID, shop.AvarageItemsPrice)
+	if err != nil {
+		log.Println("error while calculating shop's revenue")
+		return
+	}
+
 	return
 }
 
@@ -446,6 +463,42 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 	}
 
 	return
+}
+
+func (s *Shop) GetAvarageItemPrice(ShopID uint) (float64, error) {
+	var averagePrice float64
+
+	if err := s.DB.Table("items").
+		Joins("JOIN menu_items ON items.menu_item_id = menu_items.id").
+		Joins("JOIN shop_menus ON menu_items.shop_menu_id = shop_menus.id").
+		Joins("JOIN shops ON shop_menus.shop_id = shops.id").
+		Where("shops.id = ? AND items.available = ? ", ShopID, true).
+		Select("AVG(items.original_price) as average_price").
+		Row().Scan(&averagePrice); err != nil {
+
+		return 0, err
+	}
+
+	return averagePrice, nil
+}
+
+func (s *Shop) GetTotalRevenue(ShopID uint, AvarageItemPrice float64) (float64, error) {
+	var revenue float64
+
+	soldItems, err := s.GetSoldItemsByShopID(ShopID)
+	if err != nil {
+		log.Println("error while calculating revenue")
+		return 0, err
+	}
+	for _, soldItem := range soldItems {
+		if soldItem.Available {
+			revenue += soldItem.OriginalPrice * float64(soldItem.SoldQauntity)
+		} else {
+			revenue += AvarageItemPrice * float64(soldItem.SoldQauntity)
+		}
+	}
+	revenue = math.Round(revenue*100) / 100
+	return revenue, nil
 }
 
 func (s *Shop) SoldItemsTask(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
@@ -502,6 +555,7 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context, ShopID uint, Period string)
 		log.Println("error while retreiving shop selling stats ,error :", err)
 		return fmt.Errorf("error while retreiving shop selling stats ,error : %s", err)
 	}
+
 	ctx.JSON(http.StatusOK, gin.H{"status": http.StatusOK, Period: LastSevenDays})
 	return nil
 }
