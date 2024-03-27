@@ -10,7 +10,7 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
-func CheckForUpdates(Shop string) (*models.Shop, error) {
+func CheckForUpdates(Shop string, needUpdateItems bool) (*models.Shop, error) {
 	UpdatedShop := &models.Shop{}
 
 	shopLink := config.ScrapShopURL
@@ -44,9 +44,10 @@ func CheckForUpdates(Shop string) (*models.Shop, error) {
 	if err := scrapShopvacation(c, UpdatedShop); err != nil {
 		return nil, err
 	}
-
-	if err := scrapShopMenu(c, UpdatedShop); err != nil {
-		return nil, err
+	if needUpdateItems {
+		if err := scrapShopMenu(c, UpdatedShop); err != nil {
+			return nil, err
+		}
 	}
 
 	c.Visit(shopLink + Shop)

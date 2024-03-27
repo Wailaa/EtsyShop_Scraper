@@ -30,10 +30,17 @@ func NewUpdateDB(DB *gorm.DB) *UpdateDB {
 func ScheduleScrapUpdate() error {
 	c := cron.New()
 
-	_, err := c.AddFunc("54 15 * * * ", func() {
+	_, err := c.AddFunc("50 13 * * * ", func() {
 		log.Println("ScheduleScrapUpdate executed at", time.Now())
-		NewUpdateDB(initializer.DB).StartShopUpdate()
+		needUpdateItems := false
+		if time.Now().Weekday() == time.Tuesday {
+			log.Println(time.Now().Weekday())
+			needUpdateItems = true
+		}
+
+		NewUpdateDB(initializer.DB).StartShopUpdate(needUpdateItems)
 	})
+
 	if err != nil {
 		fmt.Println("Error scheduling task:", err)
 		return err
@@ -43,7 +50,7 @@ func ScheduleScrapUpdate() error {
 	return nil
 }
 
-func (u *UpdateDB) StartShopUpdate() error {
+func (u *UpdateDB) StartShopUpdate(needUpdateItems bool) error {
 	SoldItemsQueue := UpdateSoldItemsQueue{}
 	AddSoldItemsQueue := []UpdateSoldItemsQueue{}
 	Shops, err := u.getAllShops()
@@ -52,8 +59,11 @@ func (u *UpdateDB) StartShopUpdate() error {
 	}
 
 	for _, Shop := range *Shops {
+		if Shop.ID == 67 {
+			continue
+		}
 
-		updatedShop, err := scrap.CheckForUpdates(Shop.Name)
+		updatedShop, err := scrap.CheckForUpdates(Shop.Name, needUpdateItems)
 		if err != nil {
 			log.Println("error while scraping Shop. error :", err)
 			return err
@@ -100,8 +110,7 @@ func (u *UpdateDB) StartShopUpdate() error {
 			u.DB.Model(&Shop).Updates(updateData)
 		}
 
-		if time.Now().Weekday() == time.Wednesday {
-
+		if needUpdateItems {
 			log.Println("ShopItemsUpdate executed at", time.Now())
 			u.ShopItemsUpdate(&Shop, updatedShop)
 		}
