@@ -7,11 +7,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func AuthMiddleWare() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		config := initializer.LoadProjConfig(".")
+
 		user := &models.Account{}
 		JwtTokens, err := GetTokens(ctx)
 		if err != nil {
@@ -68,5 +70,28 @@ func AuthMiddleWare() gin.HandlerFunc {
 
 		ctx.Set("currentUserUUID", user.ID)
 		ctx.Next()
+	}
+}
+
+func Authorization() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		Account := models.Account{}
+		currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
+
+		result := initializer.DB.Where("id = ?", currentUserUUID).First(&Account)
+		if result.Error != nil {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": result.Error})
+			ctx.Abort()
+			return
+		}
+
+		if !Account.EmailVerified {
+			message := "email not verified"
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": message})
+			ctx.Abort()
+			return
+		}
+		ctx.Next()
+
 	}
 }

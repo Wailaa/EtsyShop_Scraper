@@ -5,6 +5,8 @@ services:
     image: postgres
     ports:
       - 5432:5432
+    env_file:
+      - ./project.env
     volumes:
       - postgres:/var/lib/postgresql/data
   cache:
@@ -14,18 +16,18 @@ services:
       - '6379:6379'   
     volumes: 
       - cache:/data
-  api:
-    build: .
-    ports:
-      - 8080:8080
-    depends_on:
-      - db
-      - cache
+  # api:
+  #   build: .
+  #   ports:
+  #     - 8080:8080
+  #   depends_on:
+  #     - db
+  #     - cache
       
-  redisinsight:
-    image: 'redislabs/redisinsight:latest'
-    ports:
-      - '127.0.0.1:8001:8001'
+  # redisinsight:
+  #   image: 'redislabs/redisinsight:latest'
+  #   ports:
+  #     - '127.0.0.1:8001:8001'
 volumes:
   postgres:
   cache:

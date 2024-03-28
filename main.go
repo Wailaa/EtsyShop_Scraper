@@ -54,10 +54,10 @@ func main() {
 	getAllSoldItemsByShopID := controllers.NewShopController(initializer.DB).GetSoldItemsByShopID
 	getShopStats := controllers.NewShopController(initializer.DB).ProcessStatsRequest
 
-	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(), createNewShopRequest)
-	shopRoute.GET("/follow_shop", controllers.AuthMiddleWare(), followShop)
-	shopRoute.GET("/unfollow_shop", controllers.AuthMiddleWare(), unFollowShop)
-	shopRoute.GET("/:shopID", controllers.AuthMiddleWare(), func(ctx *gin.Context) {
+	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(), controllers.Authorization(), createNewShopRequest)
+	shopRoute.GET("/follow_shop", controllers.AuthMiddleWare(), controllers.Authorization(), followShop)
+	shopRoute.GET("/unfollow_shop", controllers.AuthMiddleWare(), controllers.Authorization(), unFollowShop)
+	shopRoute.GET("/:shopID", controllers.AuthMiddleWare(), controllers.Authorization(), func(ctx *gin.Context) {
 		ShopID := ctx.Param("shopID")
 		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
 		if err != nil {
@@ -73,7 +73,7 @@ func main() {
 		ctx.JSON(http.StatusOK, Shop)
 	})
 
-	shopRoute.GET("/:shopID/all_items", controllers.AuthMiddleWare(), func(ctx *gin.Context) {
+	shopRoute.GET("/:shopID/all_items", controllers.AuthMiddleWare(), controllers.Authorization(), func(ctx *gin.Context) {
 		ShopID := ctx.Param("shopID")
 		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
 		if err != nil {
@@ -88,7 +88,7 @@ func main() {
 		ctx.JSON(http.StatusOK, Items)
 	})
 
-	shopRoute.GET("/:shopID/all_sold_items", controllers.AuthMiddleWare(), func(ctx *gin.Context) {
+	shopRoute.GET("/:shopID/all_sold_items", controllers.AuthMiddleWare(), controllers.Authorization(), func(ctx *gin.Context) {
 		ShopID := ctx.Param("shopID")
 		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
 		if err != nil {
@@ -103,7 +103,7 @@ func main() {
 		ctx.JSON(http.StatusOK, Items)
 	})
 
-	shopRoute.GET("/stats/:shopID/:period", controllers.AuthMiddleWare(), func(ctx *gin.Context) {
+	shopRoute.GET("/stats/:shopID/:period", controllers.AuthMiddleWare(), controllers.Authorization(), func(ctx *gin.Context) {
 		ShopID := ctx.Param("shopID")
 		Period := ctx.Param("period")
 		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
