@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reset Password</title>
+<link rel="stylesheet" href="static/styles.css">
+</head>
+<body>
+
+<div class="container">
+  <h2>Reset Password</h2>
+
+  <div>
+    <label for="newPassword">New Password:</label>
+    <input type="password" id="newPassword" name="newPassword">
+  </div>
+
+  <div>
+    <label for="confirmPassword">Confirm Password:</label>
+    <input type="password" id="confirmPassword" name="confirmPassword">
+  </div>
+
+  <button onclick="resetPassword()">Reset Password</button>
+</div>
+
+<script>
+function resetPassword() {
+  var newPassword = document.getElementById('newPassword').value;
+  var confirmPassword = document.getElementById('confirmPassword').value;
+
+  if (newPassword !== confirmPassword) {
+    alert("Passwords do not match.");
+    return;
+  }
+
+  var urlParams = new URLSearchParams(window.location.search);
+  var rcp = urlParams.get('rcp');
+
+  fetch('/auth/resetpassword', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      "new_password": newPassword,
+      "confirm_password": confirmPassword,
+      "rcp": rcp
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Failed to reset password');
+    }
+    alert('Password reset successful');
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Failed to reset password');
+  });
+}
+</script>
+
+</body>
+</html>

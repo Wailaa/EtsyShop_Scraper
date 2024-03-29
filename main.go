@@ -127,6 +127,12 @@ func main() {
 
 	})
 
+	server.Static("/static", "./static")
+	server.LoadHTMLGlob("static/templates/*")
+	server.GET("/reset_password", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "resetPass.html", nil)
+	})
+
 	log.Fatal(server.Run(":" + config.ServerPort))
 
 }
