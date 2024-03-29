@@ -132,6 +132,9 @@ func main() {
 	server.GET("/reset_password", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "resetPass.html", nil)
 	})
+	server.GET("/change_password", controllers.AuthMiddleWare(), controllers.Authorization(), func(c *gin.Context) {
+		c.HTML(http.StatusOK, "changePass.html", nil)
+	})
 
 	log.Fatal(server.Run(":" + config.ServerPort))
 
