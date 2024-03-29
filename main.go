@@ -43,11 +43,14 @@ func main() {
 	logOut := controllers.NewUserController(initializer.DB).LogOutAccount
 	forgotPass := controllers.NewUserController(initializer.DB).ForgotPassReq
 	changePass := controllers.NewUserController(initializer.DB).ChangePass
+	resetPass := controllers.NewUserController(initializer.DB).ResetPass
+
 	router.POST("/register", register)
 	router.POST("/login", login)
 	router.GET("/logout", logOut)
 	router.GET("/verifyaccount", confirmEmail)
 	router.POST("/forgotpassword", forgotPass)
+	router.POST("/resetpassword", resetPass)
 	router.POST("/changepassword", controllers.AuthMiddleWare(), controllers.Authorization(), changePass)
 
 	shopRoute := server.Group("/shop")

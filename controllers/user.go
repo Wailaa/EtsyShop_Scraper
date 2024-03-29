@@ -50,6 +50,12 @@ type ReqPassChange struct {
 	ConfirmPass string `json:"confirm_password"`
 }
 
+type UserReqPassChange struct {
+	RCP         string `json:"rcp"`
+	NewPass     string `json:"new_password"`
+	ConfirmPass string `json:"confirm_password"`
+}
+
 type UserReqForgotPassword struct {
 	Email string `json:"email_account"`
 }
@@ -329,3 +335,63 @@ func (s *User) ChangePass(ctx *gin.Context) {
 	s.LogOutAccount(ctx)
 }
 
+func (s *User) ResetPass(ctx *gin.Context) {
+
+	reqChangePass := UserReqPassChange{}
+	VerifyUser := &models.Account{}
+
+	if err := ctx.ShouldBindJSON(&reqChangePass); err != nil {
+		message := "failed to fetch change password request"
+		log.Println(message)
+		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	if reqChangePass.NewPass != reqChangePass.ConfirmPass {
+		message := "Paswwords are not the same"
+		log.Println(message)
+		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	DBCheck := s.DB.Where("account_pass_reset_token = ?", reqChangePass.RCP).Find(&VerifyUser).Limit(1)
+	if DBCheck.Error != nil {
+		log.Println(DBCheck.Error)
+		message := "something went wrong while resetting password"
+		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	if reflect.DeepEqual(*VerifyUser, models.Account{}) {
+		message := "Invalid verification code or account does not exists"
+		log.Println(message)
+		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		return
+	}
+	if VerifyUser.AccountPassResetToken != reqChangePass.RCP {
+		message := "failed to change password"
+		log.Println(message, "rcp and AccountPassResetToken no match")
+		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	if VerifyUser.AccountPassResetToken == "" {
+		message := "this link is not valid anymore"
+		log.Println(message)
+		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	newPasswardHashed, err := utils.HashPass(reqChangePass.NewPass)
+	if err != nil {
+		log.Println(err)
+		message := "error while hashing password"
+		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
+		return
+	}
+
+	s.DB.Model(VerifyUser).Updates(map[string]interface{}{"request_change_pass": false, "account_pass_reset_token": "", "password_hashed": newPasswardHashed})
+
+	message := "Password changed successfully"
+	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
+}
