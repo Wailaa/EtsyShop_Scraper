@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title> Login</title>
+<link rel="stylesheet" href="static/styles.css">
+</head>
+<body>
+
+<div class="container">
+  <h2>Login</h2>
+
+  <div>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email">
+  </div>
+
+  <div>
+    <label for="Password">Password:</label>
+    <input type="password" id="Password" name="Password">
+  </div>
+
+  <button onclick="Login()">Login</button>
+</div>
+
+<script>
+function Login() {
+  var Email= document.getElementById('email').value;
+    var Password = document.getElementById('Password').value;
+
+
+  fetch('auth/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+  "email": Email,
+  "password": Password
+})
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Failed to login');
+    }
+    alert('login successfully');
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Failed to login');
+  });
+}
+</script>
+
+</body>
+</html>
