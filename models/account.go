@@ -17,6 +17,8 @@ type Account struct {
 	SubscriptionType       string        `gorm:"type:varchar(55)"`
 	EmailVerified          bool          `gorm:"default:false"`
 	EmailVerificationToken string        `gorm:"type:varchar(255)"`
+	RequestChangePass      bool          `gorm:"default:false"`
+	AccountPassResetToken  string        `gorm:"type:varchar(255)"`
 	LastTimeLoggedIn       time.Time     `gorm:"type.TIMESTAMP"`
 	LastTimeLoggedOut      time.Time     `gorm:"type.TIMESTAMP"`
 	ShopsFollowing         []Shop        `gorm:"many2many:account_shop_following;"`

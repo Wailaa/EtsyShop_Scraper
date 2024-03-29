@@ -335,6 +335,38 @@ func (s *User) ChangePass(ctx *gin.Context) {
 	s.LogOutAccount(ctx)
 }
 
+func (s *User) ForgotPassReq(ctx *gin.Context) {
+	ForgotAccountPass := &UserReqForgotPassword{}
+	if err := ctx.ShouldBindJSON(&ForgotAccountPass); err != nil {
+		message := "failed to fetch change password request"
+		log.Println(message)
+		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	Account := s.GetAccountByEmail(ForgotAccountPass.Email)
+	if reflect.DeepEqual(Account, &models.Account{}) {
+		message := "reset password request denied , no account associated  "
+		log.Println(message)
+		ctx.JSON(http.StatusOK, gin.H{"status": "success"})
+		return
+	}
+	ResetPassToken, err := utils.CreateVerificationString()
+	if err != nil {
+		message := "failed to create resetpassword token"
+		log.Println(message, "error :", err)
+		ctx.JSON(http.StatusOK, gin.H{"status": "success"})
+		return
+	}
+	Account.RequestChangePass = true
+	Account.AccountPassResetToken = ResetPassToken
+	s.DB.Save(Account)
+
+	go utils.SendResetPassEmail(Account)
+	ctx.JSON(http.StatusOK, gin.H{"status": "success"})
+
+}
+
 func (s *User) ResetPass(ctx *gin.Context) {
 
 	reqChangePass := UserReqPassChange{}
