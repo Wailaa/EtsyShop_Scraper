@@ -44,6 +44,13 @@ type LoginResponse struct {
 	RefreshToken *models.Token `json:"refresh_token"`
 }
 
+type ReqPassChange struct {
+	CurrentPass string `json:"current_password"`
+	NewPass     string `json:"new_password"`
+	ConfirmPass string `json:"confirm_password"`
+}
+
+
 func (s *User) RegisterUser(ctx *gin.Context) {
 
 	var account *RegisterAccount
@@ -278,3 +285,51 @@ func (s *User) VerifyAccount(ctx *gin.Context) {
 	message := "Email has been verified"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
 }
+
+func (s *User) ChangePass(ctx *gin.Context) {
+
+	reqPassChange := ReqPassChange{}
+	currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
+
+	if err := ctx.ShouldBindJSON(&reqPassChange); err != nil {
+		message := "failed to fetch change password request"
+		log.Println(message)
+		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	Account, err := s.GetAccountByID(currentUserUUID)
+	if err != nil {
+		message := "failed to fetch change password request"
+		log.Println(message)
+		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	if reflect.DeepEqual(Account, &models.Account{}) {
+		message := "user not found"
+		log.Println(message)
+		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	if !utils.IsPassVerified(reqPassChange.CurrentPass, Account.PasswordHashed) {
+		message := "password is incorrect"
+		log.Println(message)
+		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		return
+	}
+
+	if reqPassChange.NewPass == reqPassChange.ConfirmPass {
+		passwardHashed, err := utils.HashPass(reqPassChange.NewPass)
+		if err != nil {
+			log.Println(err)
+			message := "error while hashing password"
+			ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
+			return
+		}
+		s.DB.Model(Account).Update("password_hashed", passwardHashed)
+	}
+	s.LogOutAccount(ctx)
+}
+

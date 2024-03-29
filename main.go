@@ -40,10 +40,12 @@ func main() {
 	confirmEmail := controllers.NewUserController(initializer.DB).VerifyAccount
 	login := controllers.NewUserController(initializer.DB).LoginAccount
 	logOut := controllers.NewUserController(initializer.DB).LogOutAccount
+	changePass := controllers.NewUserController(initializer.DB).ChangePass
 	router.POST("/register", register)
 	router.POST("/login", login)
 	router.GET("/logout", logOut)
 	router.GET("/verifyaccount", confirmEmail)
+	router.POST("/changepassword", controllers.AuthMiddleWare(), controllers.Authorization(), changePass)
 
 	shopRoute := server.Group("/shop")
 	createNewShopRequest := controllers.NewShopController(initializer.DB).CreateNewShopRequest
