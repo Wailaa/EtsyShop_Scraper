@@ -50,6 +50,9 @@ type ReqPassChange struct {
 	ConfirmPass string `json:"confirm_password"`
 }
 
+type UserReqForgotPassword struct {
+	Email string `json:"email_account"`
+}
 
 func (s *User) RegisterUser(ctx *gin.Context) {
 
@@ -112,7 +115,7 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 
 }
 
-func (s *Shop) GetAccountByID(ID uuid.UUID) (account *models.Account, err error) {
+func (s *User) GetAccountByID(ID uuid.UUID) (account *models.Account, err error) {
 
 	if err := s.DB.Where("ID = ?", ID).First(&account).Error; err != nil {
 		log.Println("no account was Found ,error :", err)
@@ -130,15 +133,8 @@ func (s *User) GetAccountByEmail(email string) *models.Account {
 		return account
 
 	}
-	newAccount := &models.Account{
-		ID:               account.ID,
-		FirstName:        account.FirstName,
-		LastName:         account.LastName,
-		Email:            account.Email,
-		PasswordHashed:   account.PasswordHashed,
-		SubscriptionType: account.SubscriptionType,
-	}
-	return newAccount
+
+	return account
 }
 
 func (s *User) LoginAccount(ctx *gin.Context) {
@@ -261,7 +257,7 @@ func (s *User) VerifyAccount(ctx *gin.Context) {
 	DBCheck := s.DB.Where("email_verification_token = ?", TranID).Find(&VerifyUser).Limit(1)
 	if DBCheck.Error != nil {
 		log.Println(DBCheck.Error)
-		message := "something went wrong while verifing email"
+		message := "something went wrong while verifying email"
 		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
 		return
 	}

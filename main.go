@@ -36,15 +36,18 @@ func main() {
 		message := "Welcome to EtsyScraper"
 		ctx.JSON(http.StatusOK, gin.H{"HTTPstatus": http.StatusOK, "message": message})
 	})
+
 	register := controllers.NewUserController(initializer.DB).RegisterUser
 	confirmEmail := controllers.NewUserController(initializer.DB).VerifyAccount
 	login := controllers.NewUserController(initializer.DB).LoginAccount
 	logOut := controllers.NewUserController(initializer.DB).LogOutAccount
+	forgotPass := controllers.NewUserController(initializer.DB).ForgotPassReq
 	changePass := controllers.NewUserController(initializer.DB).ChangePass
 	router.POST("/register", register)
 	router.POST("/login", login)
 	router.GET("/logout", logOut)
 	router.GET("/verifyaccount", confirmEmail)
+	router.POST("/forgotpassword", forgotPass)
 	router.POST("/changepassword", controllers.AuthMiddleWare(), controllers.Authorization(), changePass)
 
 	shopRoute := server.Group("/shop")
