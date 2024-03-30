@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verify Account</title>
+<link rel="stylesheet" href="static/styles.css">
+</head>
+<body>
+
+<div class="container">
+  <h2>Verify Account</h2>
+
+  <div id="verificationResult"></div>
+
+</div>
+
+<script>
+window.onload = function() {
+    var urlParams = new URLSearchParams(window.location.search);
+    var tranID = urlParams.get('TranID');
+
+    if (!tranID) {
+        displayVerificationError("Verification of account failed. TransID is missing in the URL.");
+        return;
+    }
+
+    verifyAccount(tranID);
+};
+
+function verifyAccount(transID) {
+    var encodedTransID = encodeURIComponent(transID);
+    fetch('/auth/verifyaccount?TranID=' + encodedTransID)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to verify account');
+        }
+        return response.text();
+    })
+    .then(result => {
+        if (result.status == "success"){
+        document.getElementById("verificationResult").innerText = "Thank you for verifying your account";
+        };
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        displayVerificationError("Failed to verify account.");
+    });
+}
+
+function displayVerificationError(message) {
+    var errorDiv = document.getElementById("verificationResult");
+    errorDiv.innerText = message;
+    errorDiv.style.color = "red";
+}
+</script>
+
+</body>
+</html>

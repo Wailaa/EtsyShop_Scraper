@@ -40,7 +40,7 @@ func SendVerificationEmail(account *models.Account) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	verificationLink.Path += "/verifyaccount"
+	verificationLink.Path += "/verify_account"
 	param := url.Values{}
 	param.Add("TranID", account.EmailVerificationToken)
 	verificationLink.RawQuery = param.Encode()

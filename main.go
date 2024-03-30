@@ -138,6 +138,9 @@ func main() {
 	server.GET("/log_in", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "logIn.html", nil)
 	})
+	server.GET("/verify_account", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "verifyAccount.html", nil)
+	})
 
 	log.Fatal(server.Run(":" + config.ServerPort))
 
