@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	scrap "EtsyScraper/scraping"
 	"encoding/json"
@@ -218,7 +219,7 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 			log.Println("Error marshaling JSON:", err)
 			return err
 		}
-
+		dailyRevenue = math.Round(dailyRevenue*100) / 100
 		s.DB.Model(&models.DailyShopSales{}).Where("created_at > ?", now).Where("shop_id = ?", Shop.ID).Updates(&models.DailyShopSales{SoldItems: jsonArray, DailyRevenue: dailyRevenue})
 
 	}
@@ -319,7 +320,7 @@ func (s *Shop) FollowShop(ctx *gin.Context) {
 		return
 	}
 
-	currentAccount, err := s.GetAccountByID(currentUserUUID)
+	currentAccount, err := NewUserController(initializer.DB).GetAccountByID(currentUserUUID)
 	if err != nil {
 		log.Println(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})

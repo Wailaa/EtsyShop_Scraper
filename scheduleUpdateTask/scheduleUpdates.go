@@ -30,7 +30,7 @@ func NewUpdateDB(DB *gorm.DB) *UpdateDB {
 func ScheduleScrapUpdate() error {
 	c := cron.New()
 
-	_, err := c.AddFunc("50 13 * * * ", func() {
+	_, err := c.AddFunc("41 22 * * * ", func() {
 		log.Println("ScheduleScrapUpdate executed at", time.Now())
 		needUpdateItems := false
 		if time.Now().Weekday() == time.Tuesday {
@@ -59,9 +59,6 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool) error {
 	}
 
 	for _, Shop := range *Shops {
-		if Shop.ID == 67 {
-			continue
-		}
 
 		updatedShop, err := scrap.CheckForUpdates(Shop.Name, needUpdateItems)
 		if err != nil {
