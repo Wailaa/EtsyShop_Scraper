@@ -14,6 +14,7 @@ require (
 
 require (
 	github.com/EDDYCJY/fake-useragent v0.2.0
+	github.com/gin-contrib/cors v1.7.1
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/google/uuid v1.4.0
 	github.com/imroc/req/v3 v3.42.3

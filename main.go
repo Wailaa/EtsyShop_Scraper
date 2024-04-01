@@ -7,7 +7,9 @@ import (
 	scheduleUpdates "EtsyScraper/scheduleUpdateTask"
 	"net/http"
 	"strconv"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"fmt"
@@ -30,6 +32,14 @@ func main() {
 	config := initializer.LoadProjConfig(".")
 
 	server = gin.Default()
+
+	server.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:8080"},
+		AllowHeaders:     []string{"Origin, Content-Type, Accept"},
+		AllowMethods:     []string{"GET, POST"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	router := server.Group("/auth")
 	router.GET("/test", controllers.AuthMiddleWare(), func(ctx *gin.Context) {
