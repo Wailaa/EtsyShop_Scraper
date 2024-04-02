@@ -1,6 +1,8 @@
 package models
 
 import (
+	"log"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -22,7 +24,7 @@ var ModelsGroup = []interface{}{
 }
 
 type Shop struct {
-	gorm.Model
+	gorm.Model        `json:"-"`
 	Name              string   `json:"shop_name" gorm:"type:varchar(100);not null"`
 	Description       string   `json:"shop_description" gorm:"type:varchar(255);not null"`
 	Location          string   `json:"location" gorm:"type:varchar(50);not null"`
@@ -59,7 +61,7 @@ type CreateShopTaskQueue struct {
 }
 
 type SoldItems struct {
-	gorm.Model
+	gorm.Model `json:"-"`
 	Name       string `gorm:"-"`
 	ItemLink   string `gorm:"-"`
 	ItemID     uint   `gorm:"index"`
@@ -84,23 +86,23 @@ type Item struct {
 }
 
 type MenuItem struct {
-	gorm.Model
+	gorm.Model `json:"-"`
 	ShopMenuID uint   `json:"-"`
 	Category   string `json:"category_name"`
-	SectionID  string `json:"selection_id"`
+	SectionID  string `json:"-"`
 	Link       string `json:"link"`
 	Amount     int    `json:"item_amount"`
-	Items      []Item `json:"category_item" gorm:"foreignKey:MenuItemID;constraint:OnDelete:CASCADE;"`
+	Items      []Item `json:"-" gorm:"foreignKey:MenuItemID;constraint:OnDelete:CASCADE;"`
 }
 
 type ShopMenu struct {
-	gorm.Model
+	gorm.Model        `json:"-"`
 	ShopID            uint       `json:"-" `
 	TotalItemsAmmount int        `json:"total_items_amount"`
 	Menu              []MenuItem `json:"items_category" gorm:"foreignKey:ShopMenuID;constraint:OnDelete:CASCADE;"`
 }
 type Reviews struct {
-	gorm.Model
+	gorm.Model   `json:"-"`
 	ShopID       uint           `json:"-"`
 	ShopRating   float64        `json:"shop_rate"`
 	ReviewsCount int            `json:"reviews_count"`
@@ -108,17 +110,17 @@ type Reviews struct {
 }
 
 type ReviewsTopic struct {
-	gorm.Model
+	gorm.Model   `json:"-"`
 	ReviewsID    uint   `json:"-"`
 	Keyword      string `json:"keyword"`
 	KeywordCount int    `json:"keyword_count"`
 }
 
 type ShopMember struct {
-	gorm.Model
-	ShopID uint   `json:"-"`
-	Name   string `json:"name"`
-	Role   string `json:"role"`
+	gorm.Model `json:"-"`
+	ShopID     uint   `json:"-"`
+	Name       string `json:"name"`
+	Role       string `json:"role"`
 }
 
 type TaskSchedule struct {
@@ -213,4 +215,13 @@ func CreateSoldOutItem(item *SoldItems) *Item {
 		DataShopID: item.DataShopID,
 	}
 	return SoldOutItem
+}
+
+func (m *ShopRequest) AfterSave(tx *gorm.DB) (err error) {
+
+	if m.Status == "Pending" {
+		log.Println("testing new record")
+	}
+
+	return nil
 }

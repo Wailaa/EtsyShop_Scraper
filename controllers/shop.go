@@ -397,7 +397,7 @@ func (s *Shop) GetShopByName(ShopName string) (shop *models.Shop, err error) {
 
 func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 
-	if err := s.DB.Preload("Member").Preload("ShopMenu.Menu.Items").Preload("Reviews.ReviewsTopic").Where("id = ?", ID).First(&shop).Error; err != nil {
+	if err := s.DB.Preload("Member").Preload("ShopMenu.Menu").Preload("Reviews.ReviewsTopic").Where("id = ?", ID).First(&shop).Error; err != nil {
 		log.Println("no Shop was Found ")
 
 		return nil, err
@@ -477,7 +477,7 @@ func (s *Shop) GetAvarageItemPrice(ShopID uint) (float64, error) {
 		Joins("JOIN menu_items ON items.menu_item_id = menu_items.id").
 		Joins("JOIN shop_menus ON menu_items.shop_menu_id = shop_menus.id").
 		Joins("JOIN shops ON shop_menus.shop_id = shops.id").
-		Where("shops.id = ? AND items.available = ? ", ShopID, true).
+		Where("shops.id = ? AND items.original_price > 0 ", ShopID).
 		Select("AVG(items.original_price) as average_price").
 		Row().Scan(&averagePrice); err != nil {
 
