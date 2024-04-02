@@ -65,7 +65,7 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool) error {
 			log.Println("error while scraping Shop. error :", err)
 			return err
 		}
-		u.ShopItemsUpdate(&Shop, updatedShop)
+
 		NewSoldItems := updatedShop.TotalSales - Shop.TotalSales
 		NewAdmirers := updatedShop.Admirers - Shop.Admirers
 
