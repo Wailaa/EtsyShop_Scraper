@@ -9,6 +9,7 @@ import (
 	"math"
 	"math/rand"
 	"reflect"
+	"sync"
 	"time"
 
 	"log"
@@ -70,6 +71,8 @@ func CreateSoldItemInfo(Item *models.Item) *ResponseSoldItemInfo {
 	return newSoldItem
 }
 
+var queueMutex sync.Mutex
+
 func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 	currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 	ShopRequest := &models.ShopRequest{}
@@ -107,7 +110,8 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 }
 
 func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
-
+	queueMutex.Lock()
+	defer queueMutex.Unlock()
 	scrappedShop, err := scrap.ScrapShop(ShopRequest.ShopName)
 	if err != nil {
 		log.Println("failed to initiate Shop while handling ShopRequest.ID: ", ShopRequest.ID)
