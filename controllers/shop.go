@@ -39,7 +39,6 @@ type FollowShopRequest struct {
 type UnFollowShopRequest struct {
 	UnFollowShopName string `json:"unfollow_shop"`
 }
-
 type ResponseSoldItemInfo struct {
 	Name           string
 	ItemID         uint
@@ -55,6 +54,10 @@ type ResponseSoldItemInfo struct {
 type dailySoldStats struct {
 	TotalSales int `json:"total_sales"`
 	Items      []models.Item
+}
+type itemsCount struct {
+	Available       int
+	OutOfProduction int
 }
 
 func CreateSoldItemInfo(Item *models.Item) *ResponseSoldItemInfo {
@@ -431,6 +434,24 @@ func (s *Shop) GetItemsByShopID(ID uint) (items []models.Item, err error) {
 	return
 }
 
+func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
+	itemCount := itemsCount{}
+	items, err := s.GetItemsByShopID(ID)
+	if err != nil {
+		log.Println("error while calculating item avarage price")
+		return itemCount, err
+	}
+	for _, item := range items {
+		if item.Available {
+			itemCount.Available++
+		} else {
+			itemCount.OutOfProduction++
+		}
+	}
+
+	return itemCount, nil
+}
+
 func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error) {
 	listingIDs := []uint{}
 	Solditems := []models.SoldItems{}
@@ -483,6 +504,7 @@ func (s *Shop) GetAvarageItemPrice(ShopID uint) (float64, error) {
 
 		return 0, err
 	}
+	averagePrice = math.Round(averagePrice*100) / 100
 
 	return averagePrice, nil
 }
