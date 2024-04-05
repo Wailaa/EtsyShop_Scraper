@@ -1,8 +1,6 @@
 package models
 
 import (
-	"log"
-
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -24,7 +22,7 @@ var ModelsGroup = []interface{}{
 }
 
 type Shop struct {
-	gorm.Model        `json:"-"`
+	gorm.Model
 	Name              string   `json:"shop_name" gorm:"type:varchar(100);not null"`
 	Description       string   `json:"shop_description" gorm:"type:varchar(255);not null"`
 	Location          string   `json:"location" gorm:"type:varchar(50);not null"`
@@ -215,13 +213,4 @@ func CreateSoldOutItem(item *SoldItems) *Item {
 		DataShopID: item.DataShopID,
 	}
 	return SoldOutItem
-}
-
-func (m *ShopRequest) AfterSave(tx *gorm.DB) (err error) {
-
-	if m.Status == "Pending" {
-		log.Println("testing new record")
-	}
-
-	return nil
 }

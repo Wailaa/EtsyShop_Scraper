@@ -42,6 +42,13 @@ type LoginResponse struct {
 	TokenType    string        `json:"token_type"`
 	AccessToken  *models.Token `json:"access_token"`
 	RefreshToken *models.Token `json:"refresh_token"`
+	User         UserData
+}
+
+type UserData struct {
+	Name  string
+	Email string
+	Shops []models.Shop
 }
 
 type ReqPassChange struct {
@@ -189,10 +196,28 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		log.Println(err)
 	}
 
+	if err := s.DB.Preload("ShopsFollowing").First(&result, result.ID).Error; err != nil {
+		log.Println(err)
+		return
+	}
+	for i := range result.ShopsFollowing {
+		if err := s.DB.Preload("ShopMenu").Preload("Reviews").Preload("Member").First(&result.ShopsFollowing[i]).Error; err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
+	user := UserData{
+		Name:  result.FirstName,
+		Email: result.Email,
+		Shops: result.ShopsFollowing,
+	}
+
 	loginResponse := &LoginResponse{
 		TokenType:    "Bearer",
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		User:         user,
 	}
 
 	ctx.SetCookie("access_token", string(*accessToken), int(config.AccTokenExp.Seconds()), "/", "localhost", false, true)
