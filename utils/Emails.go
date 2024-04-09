@@ -15,6 +15,8 @@ import (
 	"github.com/jordan-wright/email"
 )
 
+var Config = initializer.LoadProjConfig("/")
+
 func CreateVerificationString() (string, error) {
 	GenerateRandomInt, err := rand.Int(rand.Reader, big.NewInt(20))
 	if err != nil {
@@ -34,12 +36,12 @@ func CreateVerificationString() (string, error) {
 
 func SendVerificationEmail(account *models.Account) error {
 
-	Config := initializer.LoadProjConfig("/")
-
 	verificationLink, err := url.Parse(Config.ClientOrigin)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return err
 	}
+
 	verificationLink.Path += "/verify_account"
 	param := url.Values{}
 	param.Add("TranID", account.EmailVerificationToken)
@@ -69,13 +71,12 @@ func SendVerificationEmail(account *models.Account) error {
 	err = e.Send(fmt.Sprintf("%s:%v", Config.SMTPHost, Config.SMTPPort), smtp.PlainAuth(Config.EmailAddress, Config.SMTPUser, Config.SMTPPass, Config.SMTPHost))
 	if err != nil {
 		fmt.Println("There was an error sending the mail", err)
+		return err
 	}
 	return nil
 }
 
 func SendResetPassEmail(account *models.Account) error {
-
-	Config := initializer.LoadProjConfig("/")
 
 	verificationLink, err := url.Parse(Config.ClientOrigin)
 	if err != nil {

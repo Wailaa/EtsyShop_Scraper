@@ -19,6 +19,7 @@ require (
 	github.com/google/uuid v1.4.0
 	github.com/imroc/req/v3 v3.42.3
 	github.com/robfig/cron/v3 v3.0.1
+	github.com/stretchr/testify v1.9.0
 )
 
 require (
@@ -29,6 +30,7 @@ require (
 	github.com/antchfx/xmlquery v1.3.18 // indirect
 	github.com/antchfx/xpath v1.2.4 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -39,6 +41,7 @@ require (
 	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/onsi/ginkgo/v2 v2.13.2 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
 	github.com/quic-go/qtls-go1-20 v0.4.1 // indirect
 	github.com/quic-go/quic-go v0.40.1 // indirect
