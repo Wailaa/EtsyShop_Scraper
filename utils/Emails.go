@@ -15,7 +15,7 @@ import (
 	"github.com/jordan-wright/email"
 )
 
-var Config = initializer.LoadProjConfig("/")
+var Config = initializer.LoadProjConfig(".")
 
 func CreateVerificationString() (string, error) {
 	GenerateRandomInt, err := rand.Int(rand.Reader, big.NewInt(20))

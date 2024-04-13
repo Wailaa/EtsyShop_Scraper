@@ -13,7 +13,7 @@ import (
 func CheckForUpdates(Shop string, needUpdateItems bool) (*models.Shop, error) {
 	UpdatedShop := &models.Shop{}
 
-	shopLink := config.ScrapShopURL
+	shopLink := Config.ScrapShopURL
 
 	c := collector.NewCollyCollector().C
 	c.AllowURLRevisit = true

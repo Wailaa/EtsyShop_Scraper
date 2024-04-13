@@ -152,7 +152,7 @@ func AddURLtoQueue(ShopName string, Task *models.TaskSchedule, OriginalQueue *qu
 
 	loopStart := Task.CurrentPage
 
-	loopEnds := Task.CurrentPage + config.MaxPageLimit
+	loopEnds := Task.CurrentPage + Config.MaxPageLimit
 
 	if Task.UpdateSoldItems != 0 {
 		loopEnds = loopStart + (Task.UpdateSoldItems / 24) + 1

@@ -13,8 +13,8 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
-var config = initializer.LoadProjConfig(".")
-var Shoplink = config.ScrapShopURL
+var Config = initializer.LoadProjConfig(".")
+var Shoplink = Config.ScrapShopURL
 
 var MissingInfo string = "INFORMATION_NOT_AVAILABLE"
 
@@ -87,7 +87,7 @@ func scrapShopDetails(c *colly.Collector, shop *models.Shop) error {
 	c.OnHTML("div.shop-home-header-info", func(e *colly.HTMLElement) {
 
 		shop.Name = e.ChildText("div.shop-name-and-title-container h1")
-		shop.Description = e.ChildText("div.shop-name-and-title-container p")
+		shop.Description = e.ChildText("div.shop-name-and-title-container h2")
 		if shop.Description == "" {
 			shop.Description = MissingInfo
 		}
