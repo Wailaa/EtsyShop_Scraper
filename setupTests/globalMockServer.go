@@ -13,11 +13,11 @@ func GlobalTestSetupMockServer(file string) {
 	fileContent := []byte{}
 
 	if file != "" {
-
-		fileContent, _ = os.ReadFile(file)
-		// if err != nil {
-		// 	log.Fatalf("Failed to read test data file: %v", err)
-		// }
+		var err error
+		fileContent, err = os.ReadFile(file)
+		if err != nil {
+			log.Fatalf("Failed to read test data file: %v", err)
+		}
 	}
 
 	MockServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
