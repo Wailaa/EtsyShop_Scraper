@@ -27,25 +27,53 @@ func NewUpdateDB(DB *gorm.DB) *UpdateDB {
 	return &UpdateDB{DB}
 }
 
-func ScheduleScrapUpdate() error {
-	c := cron.New()
+type CustomCronJob struct {
+	cronJob *cron.Cron
+}
 
-	_, err := c.AddFunc("41 22 * * * ", func() {
+func NewCustomCronJob() *CustomCronJob {
+	return &CustomCronJob{
+		cronJob: cron.New(),
+	}
+}
+
+func (c *CustomCronJob) AddFunc(spec string, cmd func()) {
+	c.cronJob.AddFunc(spec, cmd)
+}
+
+func (c *CustomCronJob) Start() {
+	c.cronJob.Start()
+}
+
+func (c *CustomCronJob) Stop() {
+	c.cronJob.Stop()
+}
+
+type CronJob interface {
+	AddFunc(spec string, cmd func())
+	Start()
+}
+
+func StartScheduleScrapUpdate() {
+	c := NewCustomCronJob()
+	ScheduleScrapUpdate(c)
+}
+func ScheduleScrapUpdate(c CronJob) error {
+	var FuncError error
+	c.AddFunc("12 15 * * *", func() {
 		log.Println("ScheduleScrapUpdate executed at", time.Now())
 		needUpdateItems := false
 		if time.Now().Weekday() == time.Tuesday {
 			log.Println(time.Now().Weekday())
 			needUpdateItems = true
 		}
-
-		NewUpdateDB(initializer.DB).StartShopUpdate(needUpdateItems)
+		if err := NewUpdateDB(initializer.DB).StartShopUpdate(needUpdateItems); err != nil {
+			FuncError = err
+		}
 	})
-
-	if err != nil {
-		fmt.Println("Error scheduling task:", err)
-		return err
+	if FuncError != nil {
+		return FuncError
 	}
-
 	c.Start()
 	return nil
 }
