@@ -5,7 +5,6 @@ import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	scrap "EtsyScraper/scraping"
-	"fmt"
 	"log"
 	"math"
 	"time"
@@ -143,7 +142,8 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool) error {
 	}
 	if len(AddSoldItemsQueue) > 0 {
 		for _, queue := range AddSoldItemsQueue {
-			UpdateSoldItems(queue)
+			newController := controllers.NewShopController(initializer.DB)
+			UpdateSoldItems(queue, newController)
 			log.Printf("added %v new SoldItems to Shop: %s\n", queue.Task.UpdateSoldItems, queue.Shop.Name)
 		}
 	}
@@ -153,9 +153,9 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool) error {
 	return nil
 }
 
-func UpdateSoldItems(queue UpdateSoldItemsQueue) {
+func UpdateSoldItems(queue UpdateSoldItemsQueue, newController controllers.ShopController) {
 	ShopRequest := &models.ShopRequest{}
-	controllers.NewShopController(initializer.DB).UpdateSellingHistory(&queue.Shop, &queue.Task, ShopRequest)
+	newController.UpdateSellingHistory(&queue.Shop, &queue.Task, ShopRequest)
 }
 
 func (u *UpdateDB) getAllShops() (*[]models.Shop, error) {

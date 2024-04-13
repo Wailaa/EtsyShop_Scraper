@@ -75,6 +75,7 @@ func CreateSoldItemInfo(Item *models.Item) *ResponseSoldItemInfo {
 }
 
 var queueMutex sync.Mutex
+}
 
 func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 	currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
