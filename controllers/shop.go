@@ -60,6 +60,10 @@ type itemsCount struct {
 	OutOfProduction int
 }
 
+type ShopController interface {
+	UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
+}
+
 func CreateSoldItemInfo(Item *models.Item) *ResponseSoldItemInfo {
 	newSoldItem := &ResponseSoldItemInfo{
 		Name:           Item.Name,
@@ -75,7 +79,6 @@ func CreateSoldItemInfo(Item *models.Item) *ResponseSoldItemInfo {
 }
 
 var queueMutex sync.Mutex
-}
 
 func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 	currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
@@ -114,6 +117,7 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 }
 
 func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
+	scraper := &scrap.Scraper{}
 	queueMutex.Lock()
 	defer queueMutex.Unlock()
 	scrappedShop, err := scrap.ScrapShop(ShopRequest.ShopName)
@@ -136,7 +140,7 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 	time.Sleep(10 * time.Second)
 
 	log.Println("starting Shop's menu scraping for ShopRequest.ID: ", ShopRequest.ID)
-	scrapeMenu := scrap.ScrapAllMenuItems(scrappedShop)
+	scrapeMenu := scraper.ScrapAllMenuItems(scrappedShop)
 
 	result = s.DB.Save(scrapeMenu)
 	if result.Error != nil {
