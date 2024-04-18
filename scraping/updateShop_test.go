@@ -1,8 +1,10 @@
 package scrap
 
 import (
+	"EtsyScraper/collector"
 	initializer "EtsyScraper/init"
 	setupMockServer "EtsyScraper/setupTests"
+	"time"
 
 	"testing"
 
@@ -10,7 +12,7 @@ import (
 )
 
 func TestCheckForUpdates_Success(t *testing.T) {
-
+	collector.RateLimiting = 0 * time.Second
 	mockConfig := initializer.Config{
 		ProxyHostURL1: "",
 		ProxyHostURL2: "",
@@ -21,8 +23,9 @@ func TestCheckForUpdates_Success(t *testing.T) {
 
 	defer setupMockServer.MockServer.Close()
 
+	updateScraper := &Scraper{}
 	mockURL := setupMockServer.MockServer.URL
-	response, err := CheckForUpdates(mockURL, false)
+	response, err := updateScraper.CheckForUpdates(mockURL, false)
 	if err != nil {
 		t.Errorf("CheckForUpdates failed: %v", err)
 	}

@@ -17,7 +17,10 @@ import (
 var SectionIdPages = map[string]struct{}{}
 var ListingIdCount = map[uint]int{}
 
-func ScrapAllMenuItems(shop *models.Shop) *models.Shop {
+func (sc *Scraper) ScrapAllMenuItems(shop *models.Shop) *models.Shop {
+	ListingIdCount = make(map[uint]int)
+	SectionIdPages = map[string]struct{}{}
+
 	HasSalesCategory := false
 	AllItemCategoryIndex := 0
 	UnCategorizedItems := []models.Item{}

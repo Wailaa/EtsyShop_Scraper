@@ -13,6 +13,7 @@ import (
 )
 
 func TestScrapALLMenuItems_Success(t *testing.T) {
+	UpdateScraper := &Scraper{}
 	mockConfig := initializer.Config{
 		ProxyHostURL1: "",
 		ProxyHostURL2: "",
@@ -71,7 +72,7 @@ func TestScrapALLMenuItems_Success(t *testing.T) {
 		},
 	}
 
-	ScrapAllMenuItems(&Shop)
+	UpdateScraper.ScrapAllMenuItems(&Shop)
 
 	for _, menu := range Shop.ShopMenu.Menu {
 		if menu.Category == "UnCategorized" {
@@ -90,7 +91,7 @@ func TestScrapALLMenuItems_Success(t *testing.T) {
 
 func TestScrapALLMenuItems_UnCategorized(t *testing.T) {
 	collector.RateLimiting = 0 * time.Second
-
+	UpdateScraper := &Scraper{}
 	mockConfig := initializer.Config{
 		ProxyHostURL1: "",
 		ProxyHostURL2: "",
@@ -153,7 +154,7 @@ func TestScrapALLMenuItems_UnCategorized(t *testing.T) {
 		},
 	}
 
-	ScrapAllMenuItems(&Shop)
+	UpdateScraper.ScrapAllMenuItems(&Shop)
 
 	UnCategorizedIndex := 0
 	for index, menu := range Shop.ShopMenu.Menu {
