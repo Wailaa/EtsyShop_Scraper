@@ -1,0 +1,89 @@
+package scrap
+
+import (
+	"EtsyScraper/collector"
+	"EtsyScraper/models"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"net/url"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestScrapShop_AllCallBacks(t *testing.T) {
+	shop := &models.Shop{}
+
+	ShopMenuItems := `[{"category_name":"All","link":"MissArtisanShop?\u0026section_id=0","item_amount":15}]`
+	ShopReviews := `{"shop_rate":4.9286,"reviews_count":217,"reviews_mentions":[{"keyword":"quality","keyword_count":47},{"keyword":"shipping","keyword_count":29},{"keyword":"customer_service","keyword_count":42}]}`
+	ShopMembers := `[{"name":"example","role":"Shopkeeper, Владелец"},{"name":"example","role":"Maker, Shipper"}]`
+
+	collector.RateLimiting = 0 * time.Second
+	c := collector.NewCollyCollector().C
+
+	tr := &http.Transport{}
+	tr.RegisterProtocol("file", http.NewFileTransport(http.Dir("../.")))
+	c.WithTransport(tr)
+
+	scrapShopDetails(c, shop)
+	scrapShopvacation(c, shop)
+	scrapShopTotalSales(c, shop)
+	scrapShopMenu(c, shop)
+	scrapShopAdmirers(c, shop)
+	scrapShopReviews(c, shop)
+	scrapShopLastUpdate(c, shop)
+	scrapShopJoinedSince(c, shop)
+	scrapShopMembers(c, shop)
+	scrapShopSocialMediaAcc(c, shop)
+
+	u, err := url.Parse("file://./setupTests/testing.html")
+	if err != nil {
+		log.Fatalf("Failed to parse URL: %v", err)
+	}
+
+	err = c.Request("GET", u.String(), bytes.NewReader(nil), nil, nil)
+	if err != nil {
+		log.Fatalf("Failed to request local file: %v", err)
+	}
+
+	c.Wait()
+
+	ShopMenuJSON, err := json.Marshal(shop.ShopMenu.Menu)
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		return
+	}
+	ShopMenuAsString := string(ShopMenuJSON)
+
+	ShopReviewJSON, err := json.Marshal(shop.Reviews)
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		return
+	}
+	ShopMembersJson, err := json.Marshal(shop.Member)
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		return
+	}
+	ShopMembersString := string(ShopMembersJson)
+
+	ShopReviewAsString := string(ShopReviewJSON)
+
+	assert.Equal(t, "MissArtisanShop", shop.Name)
+	assert.Equal(t, "Own Something Beautiful Made With Love", shop.Description)
+	assert.Equal(t, "London, United Kingdom", shop.Location)
+	assert.Equal(t, false, shop.OnVacation)
+	assert.Equal(t, 694, shop.Admirers)
+	assert.Equal(t, 2072, shop.TotalSales)
+	assert.Equal(t, ShopMenuItems, ShopMenuAsString)
+	assert.Equal(t, ShopReviews, ShopReviewAsString)
+	assert.Equal(t, "Nov 7, 2023", shop.LastUpdateTime)
+	assert.Equal(t, "2018", shop.JoinedSince)
+	assert.Equal(t, ShopMembers, ShopMembersString)
+	assert.Equal(t, []string{"https://www.facebook.com/MissArtisan/", "https://www.miss-artisan.com"}, shop.SocialMediaLinks)
+
+}

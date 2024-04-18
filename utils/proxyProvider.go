@@ -1,14 +1,13 @@
 package utils
 
 import (
-	initializer "EtsyScraper/init"
 	"fmt"
 	"math/rand"
 	"strings"
 )
 
-var config = initializer.LoadProjConfig(".")
-var GetAllEnvProy = []string{config.ProxyHostURL1, config.ProxyHostURL2, config.ProxyHostURL3}
+// var GetAllEnvProy = []string{config.ProxyHostURL1, config.ProxyHostURL2, config.ProxyHostURL3}
+var GetAllEnvProy = []string{Config.ProxyHostURL1, Config.ProxyHostURL2}
 var Countries = []string{"UK", "FR", "DE", "US", "IR", "IT", "SP"}
 
 type ProxySetting struct {

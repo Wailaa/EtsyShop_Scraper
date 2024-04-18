@@ -22,7 +22,7 @@ func init() {
 	config := initializer.LoadProjConfig(".")
 	initializer.DataBaseConnect(&config)
 	initializer.RedisDBConnect(&config)
-	scheduleUpdates.ScheduleScrapUpdate()
+	scheduleUpdates.StartScheduleScrapUpdate()
 	initializer.DB.AutoMigrate(models.ModelsGroup...)
 	fmt.Println("Migration is completed")
 
@@ -166,6 +166,12 @@ func main() {
 	})
 	server.GET("/verify_account", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "verifyAccount.html", nil)
+	})
+	server.GET("/stats", controllers.AuthMiddleWare(), controllers.Authorization(), func(c *gin.Context) {
+		c.HTML(http.StatusOK, "stats.html", nil)
+	})
+	server.GET("/", controllers.AuthMiddleWare(), controllers.Authorization(), func(c *gin.Context) {
+		c.HTML(http.StatusOK, "mainPage.html", nil)
 	})
 
 	log.Fatal(server.Run(":" + config.ServerPort))

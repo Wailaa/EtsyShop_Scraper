@@ -10,10 +10,17 @@ import (
 	"github.com/gocolly/colly/v2"
 )
 
-func CheckForUpdates(Shop string, needUpdateItems bool) (*models.Shop, error) {
+type ScrapeUpdateProcess interface {
+	CheckForUpdates(Shop string, needUpdateItems bool) (*models.Shop, error)
+	ScrapAllMenuItems(shop *models.Shop) *models.Shop
+}
+type Scraper struct {
+}
+
+func (sc *Scraper) CheckForUpdates(Shop string, needUpdateItems bool) (*models.Shop, error) {
 	UpdatedShop := &models.Shop{}
 
-	shopLink := config.ScrapShopURL
+	shopLink := Config.ScrapShopURL
 
 	c := collector.NewCollyCollector().C
 	c.AllowURLRevisit = true

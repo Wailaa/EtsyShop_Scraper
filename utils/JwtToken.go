@@ -19,9 +19,10 @@ func CreateJwtToken(exp time.Duration, userUUID uuid.UUID) (*models.Token, error
 
 	now := time.Now().UTC()
 
-	config := initializer.LoadProjConfig(".")
-
-	JWTSecret := config.JwtSecret
+	JWTSecret := Config.JwtSecret
+	if JWTSecret == "" {
+		return nil, fmt.Errorf("failed to generate JWT Token with the current short key")
+	}
 
 	claims := jwt.MapClaims{
 		"iat":      now.Unix(),
@@ -43,13 +44,12 @@ func CreateJwtToken(exp time.Duration, userUUID uuid.UUID) (*models.Token, error
 
 func ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, error) {
 
-	config := initializer.LoadProjConfig(".")
 	token := fmt.Sprint(*JWTToken)
 	parcedtoken, err := jwt.Parse(token, func(Token *jwt.Token) (interface{}, error) {
 		if _, ok := Token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected method: %s", Token.Header["alg"])
 		}
-		return []byte(config.JwtSecret), nil
+		return []byte(Config.JwtSecret), nil
 	})
 	if err != nil {
 		if !strings.Contains(err.Error(), "used before issued") {
@@ -68,13 +68,13 @@ func ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, error) {
 }
 
 func RefreshAccToken(token *models.Token) (*models.Token, error) {
-	config := initializer.LoadProjConfig(".")
+
 	refreshTokenClaims, err := ValidateJWT(token)
 	if err != nil {
 		return nil, err
 	}
 
-	newAccessToken, err := CreateJwtToken(config.AccTokenExp, refreshTokenClaims.UserUUID)
+	newAccessToken, err := CreateJwtToken(Config.AccTokenExp, refreshTokenClaims.UserUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func BlacklistJWT(token *models.Token) error {
 		return err
 	}
 
-	expiredToken := TokenBlacklistPrefix + fmt.Sprint(token)
+	expiredToken := TokenBlacklistPrefix + fmt.Sprint(*token)
 
 	Now := time.Now().UTC()
 	EX := time.Unix(BlacklistedJWT.ExpiresAt, 0)
@@ -120,7 +120,7 @@ func BlacklistJWT(token *models.Token) error {
 
 func IsJWTBlackListed(token *models.Token) (bool, error) {
 	context := context.TODO()
-	blacklistedToken := TokenBlacklistPrefix + fmt.Sprint(token)
+	blacklistedToken := TokenBlacklistPrefix + fmt.Sprint(*token)
 
 	checkInBlackList := initializer.RedisClient.Exists(context, blacklistedToken)
 	if checkInBlackList.Err() != nil {

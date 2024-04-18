@@ -16,6 +16,8 @@ type DefaultCollector struct {
 	C *colly.Collector
 }
 
+var RateLimiting = 5 * time.Second
+
 func NewCollyCollector() *DefaultCollector {
 
 	Chrome := req.DefaultClient().ImpersonateChrome()
@@ -26,19 +28,22 @@ func NewCollyCollector() *DefaultCollector {
 	c.SetClient(&http.Client{
 		Transport: Chrome.Transport,
 	})
-	c.WithTransport(&http.Transport{
-		DisableKeepAlives: true,
-		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
-	})
 
-	c.SetProxy(getProxy.Url)
+	if getProxy.Url != "" {
+		c.WithTransport(&http.Transport{
+			DisableKeepAlives: true,
+			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		})
+
+		c.SetProxy(getProxy.Url)
+	}
 
 	c.UserAgent = utils.GetRandomUserAgent()
 
 	c.Limit(&colly.LimitRule{
 		DomainGlob:  "*",
-		Delay:       5 * time.Second,
-		RandomDelay: 5 * time.Second,
+		Delay:       RateLimiting,
+		RandomDelay: RateLimiting,
 	})
 
 	c.OnRequest(func(r *colly.Request) {
@@ -80,7 +85,9 @@ func NewCollyCollector() *DefaultCollector {
 		} else {
 			fmt.Println("Request URL: ", r.Request.URL, " failed with response: ", r, "\nError: ", err)
 
-			c.SetProxy(getProxy.Url)
+			if getProxy.Url != "" {
+				c.SetProxy(getProxy.Url)
+			}
 
 			c.UserAgent = utils.GetRandomUserAgent()
 

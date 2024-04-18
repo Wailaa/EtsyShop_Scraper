@@ -17,7 +17,10 @@ import (
 var SectionIdPages = map[string]struct{}{}
 var ListingIdCount = map[uint]int{}
 
-func ScrapAllMenuItems(shop *models.Shop) *models.Shop {
+func (sc *Scraper) ScrapAllMenuItems(shop *models.Shop) *models.Shop {
+	ListingIdCount = make(map[uint]int)
+	SectionIdPages = map[string]struct{}{}
+
 	HasSalesCategory := false
 	AllItemCategoryIndex := 0
 	UnCategorizedItems := []models.Item{}
@@ -101,7 +104,7 @@ func ScrapAllMenuItems(shop *models.Shop) *models.Shop {
 func scrapNextItemPage(c *colly.Collector, q *queue.Queue) {
 
 	c.OnHTML(`div[data-item-pagination]`, func(h *colly.HTMLElement) {
-		CurrentQueueURL := "https://" + h.Request.URL.Host + h.Request.URL.RequestURI()
+		CurrentQueueURL := h.Request.URL.Scheme + "://" + h.Request.URL.Host + h.Request.URL.RequestURI()
 		link := strings.Split(CurrentQueueURL, "?")[0]
 		lastpage := ""
 		pagesCount := 0
@@ -147,7 +150,7 @@ func scrapShopItems(c *colly.Collector, shop *models.Shop) *models.Shop {
 		newItemsSlice := []models.Item{}
 
 		MenuIndex := 0
-		CurrentQueueURL := "https://" + e.Request.URL.Host + e.Request.URL.RequestURI()
+		CurrentQueueURL := e.Request.URL.Scheme + "://" + e.Request.URL.Host + e.Request.URL.RequestURI()
 		Section_ID := GetSectionID(CurrentQueueURL)
 
 		for index, menu := range shop.ShopMenu.Menu {
@@ -192,6 +195,7 @@ func scrapShopItems(c *colly.Collector, shop *models.Shop) *models.Shop {
 				log.Println(err.Error())
 				return
 			}
+
 			OriginalPricetoFloat, err := strconv.ParseFloat(OriginalPrice, 64)
 			if err != nil {
 				log.Println(err.Error())
