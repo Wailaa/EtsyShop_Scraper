@@ -23,7 +23,7 @@ type UpdateSoldItemsQueue struct {
 }
 
 func NewUpdateDB(DB *gorm.DB) *UpdateDB {
-	return &UpdateDB{DB}
+	return &UpdateDB{DB: DB}
 }
 
 type CustomCronJob struct {
@@ -58,15 +58,15 @@ func StartScheduleScrapUpdate() {
 	ScheduleScrapUpdate(c)
 }
 func ScheduleScrapUpdate(c CronJob) error {
+	scraper := &scrap.Scraper{}
 	var FuncError error
 	c.AddFunc("12 15 * * *", func() {
 		log.Println("ScheduleScrapUpdate executed at", time.Now())
 		needUpdateItems := false
 		if time.Now().Weekday() == time.Tuesday {
-			log.Println(time.Now().Weekday())
 			needUpdateItems = true
 		}
-		if err := NewUpdateDB(initializer.DB).StartShopUpdate(needUpdateItems); err != nil {
+		if err := NewUpdateDB(initializer.DB).StartShopUpdate(needUpdateItems, scraper); err != nil {
 			FuncError = err
 		}
 	})
@@ -77,17 +77,19 @@ func ScheduleScrapUpdate(c CronJob) error {
 	return nil
 }
 
-func (u *UpdateDB) StartShopUpdate(needUpdateItems bool) error {
+func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpdateProcess) error {
 	SoldItemsQueue := UpdateSoldItemsQueue{}
 	AddSoldItemsQueue := []UpdateSoldItemsQueue{}
-	Shops, err := u.getAllShops()
+
+	Shops, err := u.GetAllShops()
 	if err != nil {
 		log.Println("error while retreiving Shops rows. error :", err)
+		return err
 	}
 
 	for _, Shop := range *Shops {
 
-		updatedShop, err := scrap.CheckForUpdates(Shop.Name, needUpdateItems)
+		updatedShop, err := scraper.CheckForUpdates(Shop.Name, needUpdateItems)
 		if err != nil {
 			log.Println("error while scraping Shop. error :", err)
 			return err
@@ -136,7 +138,7 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool) error {
 
 		if needUpdateItems {
 			log.Println("ShopItemsUpdate executed at", time.Now())
-			u.ShopItemsUpdate(&Shop, updatedShop)
+			u.ShopItemsUpdate(&Shop, updatedShop, scraper)
 		}
 
 	}
@@ -147,7 +149,6 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool) error {
 			log.Printf("added %v new SoldItems to Shop: %s\n", queue.Task.UpdateSoldItems, queue.Shop.Name)
 		}
 	}
-
 	log.Println("finished updating Shops")
 
 	return nil
@@ -158,7 +159,7 @@ func UpdateSoldItems(queue UpdateSoldItemsQueue, newController controllers.ShopC
 	newController.UpdateSellingHistory(&queue.Shop, &queue.Task, ShopRequest)
 }
 
-func (u *UpdateDB) getAllShops() (*[]models.Shop, error) {
+func (u *UpdateDB) GetAllShops() (*[]models.Shop, error) {
 	AllShops := &[]models.Shop{}
 
 	result := u.DB.Preload("ShopMenu.Menu").Find(AllShops)
@@ -180,7 +181,7 @@ func MenuExists(Menu string, ListOfMenus []string) bool {
 
 }
 
-func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop) error {
+func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap.ScrapeUpdateProcess) error {
 
 	dataShopID := ""
 	existingItems := []models.Item{}
@@ -188,8 +189,7 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop) error {
 	ListOfMenus := []string{}
 	var OutOfProductionID uint
 
-	updatedShop = scrap.ScrapAllMenuItems(updatedShop)
-
+	updatedShop = scraper.ScrapAllMenuItems(updatedShop)
 	for _, UpdatedMenu := range updatedShop.ShopMenu.Menu {
 		for _, Menu := range Shop.ShopMenu.Menu {
 
@@ -216,6 +216,7 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop) error {
 		for _, item := range UpdatedMenu.Items {
 			existingItem := models.Item{}
 			existingItemMap[item.ListingID] = true
+
 			u.DB.Where("Listing_id = ? ", item.ListingID).First(&existingItem)
 			dataShopID = existingItem.DataShopID
 
