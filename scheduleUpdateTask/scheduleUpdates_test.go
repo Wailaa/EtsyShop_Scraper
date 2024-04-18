@@ -6,7 +6,6 @@ import (
 	setupMockServer "EtsyScraper/setupTests"
 	"errors"
 	"fmt"
-	"log"
 	"regexp"
 	"testing"
 	"time"
@@ -608,22 +607,4 @@ func TestShopItemsUpdate_CreateNewMenu(t *testing.T) {
 	updateDB.ShopItemsUpdate(ExistingShop, UpdatedShop, MockedScrapper)
 
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
-}
-func TestORMtoSQL(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-	// Declare and initialize ShopTest
-	item := models.Item{}
-
-	// Call ToSQL methoddataShopID on the database connection
-	sql := MockedDataBase.ToSQL(func(tx *gorm.DB) *gorm.DB {
-		return tx.Model(&item).Updates(models.Item{
-			OriginalPrice: item.OriginalPrice,
-			Available:     item.Available,
-			MenuItemID:    item.ID,
-		})
-
-	})
-	log.Println(sql)
 }
