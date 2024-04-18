@@ -1,0 +1,37 @@
+body, html {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .upper {
+   display: flex;
+  }
+  .lower {
+    height: 40%;
+  }
+  .left, .right {
+    flex: 1;
+    padding: 10px;
+  }
+  #salesChart {
+    width: 100%;
+    height: 100%;
+  }
+  .shop-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+.shop-table th, .shop-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+.shop-table th {
+    background-color: #f2f2f2;
+}

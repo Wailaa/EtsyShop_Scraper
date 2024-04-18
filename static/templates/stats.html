@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sales Stats Chart</title>
+    <link rel="stylesheet" href="static/statsStyle.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="upper">
+        <div class="left">
+          
+          <div id="shopInfo2"></div>
+          <table class="shop-table">
+            <thead>
+              <tr>
+                <th>Total Sales</th>
+                <th>Admirers</th>
+                <th>Shop Rate</th>
+                <th>Review Count</th>
+                <th>Revenue</th>
+               
+              </tr>
+            </thead>
+            <tbody id="shopInfo"></tbody>
+          </table>
+
+          <table class="shop-table">
+            <thead>
+              <tr>
+                <th>Total Listings</th>
+                <th>Available Listings</th>
+                <th>Out Of Production Listings</th>
+              </tr>
+            </thead>
+            <tbody id="shopInfo3"></tbody>
+          </table>
+
+          <table class="shop-table">
+            <thead>
+              <tr>
+                <th>Category name</th>
+                <th>Listings Count</th>
+              </tr>
+            </thead>
+            <tbody id="shopInfo4"></tbody>
+          </table>
+
+        </div>
+        <div class="right">
+          <canvas class="salesChart" id="totalSales"></canvas>
+          <canvas class="salesChart" id="revenueChart"></canvas>
+        </div>
+      </div>
+      <div class="lower" id="itemsChange">
+        <table class="shop-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Original Price</th>
+              <th>Currency Symbol</th>
+              <th>Sale Price</th>
+              <th>Availability</th>
+              <th>Total Sold</th>
+              <th>Listing link</th>
+            </tr>
+          </thead>
+          <tbody id="itemInfo"></tbody>
+        </table>
+        <!-- Items data change will be displayed here -->
+      </div>
+    </div>
+
+    <script>
+      // Declare chart instance variable outside of the function
+
+      window.onload = function () {
+        var urlParams = new URLSearchParams(window.location.search);
+        var shopID = urlParams.get("shop_id");
+
+        if (!shopID) {
+          displayVerificationError("No Shop Id was found");
+          return;
+        }
+        fetchStatsData(shopID);
+        fetchShopData(shopID);
+        fetchItemsData(shopID);
+        fetchItemsHistory(shopID);
+      };
+
+      let salesChart;
+      let avarage_item_price;
+    
+
+      function fetchStatsData(shopID) {
+        const endpoint = `/shop/stats/${shopID}/lastSevenDays`;
+
+        fetch(endpoint)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data && data.stats) {
+              const dates = Object.keys(data.stats);
+              const salesData = dates.map(
+                (date) => data.stats[date].total_sales
+              );
+              
+              const revenueData = dates.map(
+                (date) => data.stats[date].daily_revenue
+              );
+
+              const ctx = document.getElementById("totalSales").getContext("2d");
+              salesChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                  labels: dates,
+                  datasets: [
+                    {
+                      label: "Total Sales",
+                      data: salesData,
+                      backgroundColor: "rgba(54, 162, 235, 0.5)",
+                      borderColor: "rgba(54, 162, 235, 1)",
+                      borderWidth: 1,
+                    },
+                  ],
+                },
+                options: {
+                  scales: {
+                    yAxes: [
+                      {
+                        ticks: {
+                          beginAtZero: true,
+                        },
+                      },
+                    ],
+                  },
+                },
+              });
+              const context = document.getElementById("revenueChart").getContext("2d");
+              revenueChart = new Chart(context, {
+                type: "bar",
+                data: {
+                  labels: dates,
+                  datasets: [
+                    {
+                      label: "Revenue-Daily",
+                      data: revenueData,
+                      backgroundColor: "rgba(54, 162, 235, 0.5)",
+                      borderColor: "rgba(54, 162, 235, 1)",
+                      borderWidth: 1,
+                    },
+                  ],
+                },
+                options: {
+                  scales: {
+                    yAxes: [
+                      {
+                        ticks: {
+                          beginAtZero: true,
+                        },
+                      },
+                    ],
+                  },
+                },
+              });
+            } else {
+              console.error("Error: No data received.");
+            }
+
+
+          })
+          .catch((error) => {
+            console.error("Error fetching data:", error);
+          });
+      }
+
+      function fetchShopData(shopID) {
+        const endpoint = `/shop/${shopID}`;
+
+        fetch(endpoint)
+          .then((response) => response.json())
+          .then((data) => {
+            if (!data) {
+              console.error("User data not found in local storage.");
+              return;
+            }
+              let MenuCount = 0;
+              const shopInfoElement = document.getElementById("shopInfo");
+              const shopInfoElementSecond = document.getElementById("shopInfo2");
+              const shopInfoElementForth = document.getElementById("shopInfo4");
+             
+              avarage_item_price = data.avarage_item_price
+              shopInfoElement.innerHTML = `
+                <td>${data.shop_total_sales}</td>
+                <td>${data.admirers}</td>
+                <td>${data.shop_reviews.shop_rate}</td>
+                <td>${data.shop_reviews.reviews_count}</td>
+                <td>${data.revenue} €</td>
+                `;
+              shopInfoElementSecond.innerHTML = `
+                <p>Shop: ${data.shop_name}</p>
+                <p>Location: ${data.location}</p>
+                <p>Description :${data.shop_description}</p>
+                <p>Since : ${data.joined_since}</p>
+                `;
+
+                data.shop_menu.items_category.forEach(Menu => {
+                MenuCount ++;
+                const row = document.createElement("tr");
+                  if (Menu.category_name !== "Out Of Production"){
+
+                  
+                  row.innerHTML = `
+                  <td>${Menu.category_name}</td>
+                  <td>${Menu.item_amount}</td>
+              `;
+                 shopInfoElementForth.appendChild(row);
+                };
+              });
+                 
+          })
+          .catch((error) => {
+            console.error("Error fetching shop's data:", error);
+          });
+      }
+
+      function fetchItemsData(shopID) {
+        const endpoint = `/shop/${shopID}/items_count`;
+
+        fetch(endpoint)
+          .then((response) => response.json())
+          .then((data) => {
+            if (!data) {
+              console.error("User data not found in local storage.");
+              return;
+            }
+             
+              const shopInfoElementThird = document.getElementById("shopInfo3");
+          
+                shopInfoElementThird.innerHTML=`
+                <td>${data.Available+data.OutOfProduction}</td>
+                <td>${data.Available}</td>
+                <td>${data.OutOfProduction}</td>
+                `;
+          })
+          .catch((error) => {
+            console.error("Error fetching items data:", error);
+          });
+      }
+
+      function fetchItemsHistory(shopID) {
+        const endpoint = `/shop/${shopID}/all_sold_items`;
+
+        fetch(endpoint)
+          .then((response) => response.json())
+          .then((data) => {
+            if (!data) {
+              console.error("User data not found in local storage.");
+              return;
+            }
+            const itemInfoElement = document.getElementById("itemInfo");
+            data.forEach(item => {
+              const row = document.createElement("tr");
+              row.innerHTML = `
+                  <td>${item.Name}</td>
+                  <td>${item.OriginalPrice}</td>
+                  <td>${item.CurrencySymbol}</td>
+                  <td>${item.SalePrice}</td>
+                  <td>${item.Available}</td>
+                  <td>${item.SoldQauntity}</td>
+                  <td>${item.ItemLink}</td>
+              `;
+              itemInfoElement.appendChild(row);
+            });
+          })
+          .catch((error) => {
+            console.error("Error fetching item's history data:", error);
+          });
+      }
+    </script>
+  </body>
+</html>

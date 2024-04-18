@@ -44,7 +44,11 @@ function Login() {
     if (!response.ok) {
       throw new Error('Failed to login');
     }
-    alert('login successfully');
+    return response.json();
+  }).then (data =>{
+    
+    localStorage.setItem("userInfo", JSON.stringify(data));
+    window.location.href = '/';
   })
   .catch(error => {
     console.error('Error:', error);
