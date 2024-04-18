@@ -60,6 +60,10 @@ type itemsCount struct {
 	OutOfProduction int
 }
 
+type ShopController interface {
+	UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
+}
+
 func CreateSoldItemInfo(Item *models.Item) *ResponseSoldItemInfo {
 	newSoldItem := &ResponseSoldItemInfo{
 		Name:           Item.Name,
@@ -74,9 +78,11 @@ func CreateSoldItemInfo(Item *models.Item) *ResponseSoldItemInfo {
 	return newSoldItem
 }
 
+
 type ShopController interface {
 	UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
 }
+
 
 var queueMutex sync.Mutex
 
@@ -117,7 +123,10 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 }
 
 func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
-	scraper := scrap.Scraper{}
+
+
+	scraper := &scrap.Scraper{}
+
 	queueMutex.Lock()
 	defer queueMutex.Unlock()
 	scrappedShop, err := scrap.ScrapShop(ShopRequest.ShopName)
