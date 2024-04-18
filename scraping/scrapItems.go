@@ -18,8 +18,6 @@ var SectionIdPages = map[string]struct{}{}
 var ListingIdCount = map[uint]int{}
 
 func (sc *Scraper) ScrapAllMenuItems(shop *models.Shop) *models.Shop {
-	ListingIdCount = make(map[uint]int)
-	SectionIdPages = map[string]struct{}{}
 
 	HasSalesCategory := false
 	AllItemCategoryIndex := 0
@@ -98,6 +96,7 @@ func (sc *Scraper) ScrapAllMenuItems(shop *models.Shop) *models.Shop {
 		shop.ShopMenu.Menu[AllItemCategoryIndex].Items = []models.Item{}
 	}
 	SectionIdPages = make(map[string]struct{})
+	ListingIdCount = make(map[uint]int)
 	return shop
 }
 
