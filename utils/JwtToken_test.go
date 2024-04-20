@@ -11,148 +11,148 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func InitiateUtilTest() (jwt *utils.Utils, exp time.Duration, userUUID uuid.UUID) {
+	jwt = &utils.Utils{}
+	exp = time.Hour
+	userUUID = uuid.New()
+	return
+}
+
 func TestCreateJwtToken_ValidClaims_ReturnsTokenObject(t *testing.T) {
+	jwt, exp, userUUID := InitiateUtilTest()
 
-	exp := time.Hour
-	userUUID := uuid.New()
-
-	token, err := utils.CreateJwtToken(exp, userUUID)
+	token, err := jwt.CreateJwtToken(exp, userUUID)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, token)
 }
 
 func TestCreateJwtToken_FailedToGenerateToken_ReturnsError(t *testing.T) {
-
-	exp := time.Hour
-	userUUID := uuid.New()
+	jwt, exp, userUUID := InitiateUtilTest()
 
 	utils.Config.JwtSecret = ""
-	token, err := utils.CreateJwtToken(exp, userUUID)
+	token, err := jwt.CreateJwtToken(exp, userUUID)
 
 	assert.Error(t, err)
 	assert.Nil(t, token)
 }
 
 func TestValidateJWT_ValidToken(t *testing.T) {
-	exp := time.Hour
-	userUUID := uuid.New()
-	utils.Config = initializer.LoadProjConfig("../.")
-	token, _ := utils.CreateJwtToken(exp, userUUID)
+	jwt, exp, userUUID := InitiateUtilTest()
 
-	claims, err := utils.ValidateJWT(token)
+	utils.Config = initializer.LoadProjConfig("../.")
+	token, _ := jwt.CreateJwtToken(exp, userUUID)
+
+	claims, err := jwt.ValidateJWT(token)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, claims)
 }
 
 func TestValidateJWT_InvalidSignature(t *testing.T) {
+	jwt, _, _ := InitiateUtilTest()
+
 	token := "invalid_token"
 	jwtToken := models.Token(token)
 
-	claims, err := utils.ValidateJWT(&jwtToken)
+	claims, err := jwt.ValidateJWT(&jwtToken)
 
 	assert.Error(t, err)
 	assert.Nil(t, claims)
 }
 
 func TestRefreshAccToken_ValidRefreshToken(t *testing.T) {
-	exp := time.Hour
-	userUUID := uuid.New()
+	jwt, exp, userUUID := InitiateUtilTest()
+	token, _ := jwt.CreateJwtToken(exp, userUUID)
 
-	token, _ := utils.CreateJwtToken(exp, userUUID)
-
-	newAccessToken, err := utils.RefreshAccToken(token)
+	newAccessToken, err := jwt.RefreshAccToken(token)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, newAccessToken)
 }
 
 func TestRefreshAccToken_InvalidToken(t *testing.T) {
-
+	jwt := utils.Utils{}
 	refreshToken := models.NewToken("invalid_refresh_token")
 
-	newAccessToken, err := utils.RefreshAccToken(refreshToken)
+	newAccessToken, err := jwt.RefreshAccToken(refreshToken)
 
 	assert.Error(t, err)
 	assert.Nil(t, newAccessToken)
 }
 
 func TestIsJWTBlackListed_NotBlacklistedToken(t *testing.T) {
-	exp := time.Millisecond
-	userUUID := uuid.New()
+	jwt, exp, userUUID := InitiateUtilTest()
+
 	utils.Config = initializer.LoadProjConfig("../.") // Ensure this path is correct
-	mockToken, err := utils.CreateJwtToken(exp, userUUID)
+	mockToken, err := jwt.CreateJwtToken(exp, userUUID)
 	if err != nil {
 		t.Fatalf("Failed to create JWT token: %v", err)
 	}
 	initializer.RedisDBConnect(&utils.Config)
 
-	blacklisted, err := utils.IsJWTBlackListed(mockToken)
+	blacklisted, err := jwt.IsJWTBlackListed(mockToken)
 
 	assert.False(t, blacklisted)
 	assert.NoError(t, err)
 }
 
 func TestIsJWTBlackListed_Exists(t *testing.T) {
+	jwt, exp, userUUID := InitiateUtilTest()
 
-	exp := time.Hour
-	userUUID := uuid.New()
 	utils.Config = initializer.LoadProjConfig("../.") // Ensure this path is correct
-	mockToken, err := utils.CreateJwtToken(exp, userUUID)
+	mockToken, err := jwt.CreateJwtToken(exp, userUUID)
 	if err != nil {
 		t.Fatalf("Failed to create JWT token: %v", err)
 	}
 	initializer.RedisDBConnect(&utils.Config)
 
-	utils.BlacklistJWT(mockToken)
+	jwt.BlacklistJWT(mockToken)
 	if err != nil {
 		t.Fatalf("Failed to create JWT token: %v", err)
 	}
 
-	blacklisted, _ := utils.IsJWTBlackListed(mockToken)
+	blacklisted, _ := jwt.IsJWTBlackListed(mockToken)
 
 	assert.True(t, blacklisted)
 }
 
 func TestBlacklistJWT_ValidToken(t *testing.T) {
+	jwt, exp, userUUID := InitiateUtilTest()
 
-	exp := time.Hour
-	userUUID := uuid.New()
 	utils.Config = initializer.LoadProjConfig("../.")
-	mockToken, _ := utils.CreateJwtToken(exp, userUUID)
+	mockToken, _ := jwt.CreateJwtToken(exp, userUUID)
 
 	initializer.RedisDBConnect(&utils.Config)
 
-	err := utils.BlacklistJWT(mockToken)
+	err := jwt.BlacklistJWT(mockToken)
 
 	assert.NoError(t, err)
 
 }
 
 func TestBlacklistJWT_EmptyToken(t *testing.T) {
-
+	jwt, _, _ := InitiateUtilTest()
 	utils.Config = initializer.LoadProjConfig("../.")
 	newToken := models.Token("")
 
 	initializer.RedisDBConnect(&utils.Config)
 
-	err := utils.BlacklistJWT(&newToken)
+	err := jwt.BlacklistJWT(&newToken)
 
 	assert.Error(t, err)
 
 }
 func TestBlacklistJWT_TokenIsBlackListed(t *testing.T) {
-
-	exp := time.Hour
-	userUUID := uuid.New()
+	jwt, exp, userUUID := InitiateUtilTest()
 	utils.Config = initializer.LoadProjConfig("../.")
-	mockToken, _ := utils.CreateJwtToken(exp, userUUID)
+
+	mockToken, _ := jwt.CreateJwtToken(exp, userUUID)
 
 	initializer.RedisDBConnect(&utils.Config)
 
-	_ = utils.BlacklistJWT(mockToken)
-	err := utils.BlacklistJWT(mockToken)
+	_ = jwt.BlacklistJWT(mockToken)
+	err := jwt.BlacklistJWT(mockToken)
 
 	expectedErrorMessage := "token is alraedy Blacklisted"
 
@@ -163,13 +163,13 @@ func TestBlacklistJWT_TokenIsBlackListed(t *testing.T) {
 }
 
 func TestBlacklistJWT_TokenNotValid(t *testing.T) {
-
+	jwt, _, _ := InitiateUtilTest()
 	utils.Config = initializer.LoadProjConfig("../.")
 	newToken := models.Token("test")
 
 	initializer.RedisDBConnect(&utils.Config)
 
-	err := utils.BlacklistJWT(&newToken)
+	err := jwt.BlacklistJWT(&newToken)
 
 	expectedErrorMessage := "invalidate token: token contains an invalid number of segments"
 	assert.EqualError(t, err, expectedErrorMessage)

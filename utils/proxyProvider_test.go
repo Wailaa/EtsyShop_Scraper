@@ -8,7 +8,8 @@ import (
 )
 
 func TestPickProxyProviderReturnsProxySettingObject(t *testing.T) {
-	proxySetting := utils.PickProxyProvider()
+	Utils := utils.Utils{}
+	proxySetting := Utils.PickProxyProvider()
 	assert.NotNil(t, proxySetting)
 	assert.IsType(t, utils.ProxySetting{}, proxySetting)
 }

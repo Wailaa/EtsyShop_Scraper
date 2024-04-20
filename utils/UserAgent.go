@@ -7,7 +7,7 @@ import (
 	browser "github.com/EDDYCJY/fake-useragent"
 )
 
-func GetRandomUserAgent() string {
+func (ut *Utils) GetRandomUserAgent() string {
 	userAgents := []string{
 		browser.Chrome(),
 		browser.Firefox(),

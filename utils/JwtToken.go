@@ -15,7 +15,7 @@ import (
 
 var TokenBlacklistPrefix = "token:blacklist:"
 
-func CreateJwtToken(exp time.Duration, userUUID uuid.UUID) (*models.Token, error) {
+func (ut *Utils) CreateJwtToken(exp time.Duration, userUUID uuid.UUID) (*models.Token, error) {
 
 	now := time.Now().UTC()
 
@@ -42,7 +42,7 @@ func CreateJwtToken(exp time.Duration, userUUID uuid.UUID) (*models.Token, error
 
 }
 
-func ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, error) {
+func (ut *Utils) ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, error) {
 
 	token := fmt.Sprint(*JWTToken)
 	parcedtoken, err := jwt.Parse(token, func(Token *jwt.Token) (interface{}, error) {
@@ -67,14 +67,14 @@ func ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, error) {
 	return getClaims, nil
 }
 
-func RefreshAccToken(token *models.Token) (*models.Token, error) {
+func (ut *Utils) RefreshAccToken(token *models.Token) (*models.Token, error) {
 
-	refreshTokenClaims, err := ValidateJWT(token)
+	refreshTokenClaims, err := ut.ValidateJWT(token)
 	if err != nil {
 		return nil, err
 	}
 
-	newAccessToken, err := CreateJwtToken(Config.AccTokenExp, refreshTokenClaims.UserUUID)
+	newAccessToken, err := ut.CreateJwtToken(Config.AccTokenExp, refreshTokenClaims.UserUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func RefreshAccToken(token *models.Token) (*models.Token, error) {
 	return newAccessToken, nil
 }
 
-func BlacklistJWT(token *models.Token) error {
+func (ut *Utils) BlacklistJWT(token *models.Token) error {
 
 	if token == models.NewToken("") {
 		return fmt.Errorf("token is missing")
@@ -90,7 +90,7 @@ func BlacklistJWT(token *models.Token) error {
 
 	context := context.TODO()
 
-	checkBlackList, err := IsJWTBlackListed(token)
+	checkBlackList, err := ut.IsJWTBlackListed(token)
 	if checkBlackList {
 		return fmt.Errorf("token is alraedy Blacklisted")
 	}
@@ -98,7 +98,7 @@ func BlacklistJWT(token *models.Token) error {
 		return err
 	}
 
-	BlacklistedJWT, err := ValidateJWT(token)
+	BlacklistedJWT, err := ut.ValidateJWT(token)
 	if err != nil {
 		log.Println("error while blacklisting token", err)
 		return err
@@ -118,7 +118,7 @@ func BlacklistJWT(token *models.Token) error {
 	return nil
 }
 
-func IsJWTBlackListed(token *models.Token) (bool, error) {
+func (ut *Utils) IsJWTBlackListed(token *models.Token) (bool, error) {
 	context := context.TODO()
 	blacklistedToken := TokenBlacklistPrefix + fmt.Sprint(*token)
 

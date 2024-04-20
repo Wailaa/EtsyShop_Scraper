@@ -15,7 +15,7 @@ type ProxySetting struct {
 	Url      string
 }
 
-func PickProxyProvider() ProxySetting {
+func (ut *Utils) PickProxyProvider() ProxySetting {
 	ProxySettings := ProxySetting{}
 
 	RandomIndex := rand.Intn(len(GetAllEnvProy))

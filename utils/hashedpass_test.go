@@ -6,8 +6,9 @@ import (
 )
 
 func TestValidPassword(t *testing.T) {
+	ps := &utils.Utils{}
 	password := "password123"
-	hashedPass, err := utils.HashPass(password)
+	hashedPass, err := ps.HashPass(password)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -17,10 +18,11 @@ func TestValidPassword(t *testing.T) {
 }
 
 func TestCorrectPassword(t *testing.T) {
+	ps := &utils.Utils{}
 	pass := "password123"
-	hashedPass, _ := utils.HashPass(pass)
+	hashedPass, _ := ps.HashPass(pass)
 
-	result := utils.IsPassVerified(pass, hashedPass)
+	result := ps.IsPassVerified(pass, hashedPass)
 
 	if !result {
 		t.Errorf("Expected true, but got false")
@@ -28,11 +30,12 @@ func TestCorrectPassword(t *testing.T) {
 }
 
 func TestCorrectPassword_NoPassMatch(t *testing.T) {
+	ps := &utils.Utils{}
 	pass := "password123"
 	wrongPass := "123password"
-	hashedPass, _ := utils.HashPass(pass)
+	hashedPass, _ := ps.HashPass(pass)
 
-	result := utils.IsPassVerified(wrongPass, hashedPass)
+	result := ps.IsPassVerified(wrongPass, hashedPass)
 
 	if result {
 		t.Errorf("Expected false, but got true")

@@ -17,7 +17,7 @@ import (
 
 var Config = initializer.LoadProjConfig(".")
 
-func CreateVerificationString() (string, error) {
+func (em *Utils) CreateVerificationString() (string, error) {
 	GenerateRandomInt, err := rand.Int(rand.Reader, big.NewInt(20))
 	if err != nil {
 		return "", err
@@ -34,7 +34,7 @@ func CreateVerificationString() (string, error) {
 	return EncodedString, nil
 }
 
-func SendVerificationEmail(account *models.Account) error {
+func (em *Utils) SendVerificationEmail(account *models.Account) error {
 
 	verificationLink, err := url.Parse(Config.ClientOrigin)
 	if err != nil {
@@ -76,7 +76,7 @@ func SendVerificationEmail(account *models.Account) error {
 	return nil
 }
 
-func SendResetPassEmail(account *models.Account) error {
+func (em *Utils) SendResetPassEmail(account *models.Account) error {
 
 	verificationLink, err := url.Parse(Config.ClientOrigin)
 	if err != nil {

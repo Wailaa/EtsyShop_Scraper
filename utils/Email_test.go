@@ -10,12 +10,14 @@ import (
 )
 
 func TestGenerateRandomInt(t *testing.T) {
-	result, err := utils.CreateVerificationString()
+	Email := &utils.Utils{}
+	result, err := Email.CreateVerificationString()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, result)
 }
 
 func TestSendVerificationEmail_InvalidCredentials(t *testing.T) {
+	Email := &utils.Utils{}
 
 	mockConfig := initializer.Config{
 		ClientOrigin: "invalid-url",
@@ -33,12 +35,13 @@ func TestSendVerificationEmail_InvalidCredentials(t *testing.T) {
 		EmailVerificationToken: "token",
 	}
 
-	err := utils.SendVerificationEmail(account)
+	err := Email.SendVerificationEmail(account)
 
 	assert.Error(t, err)
 }
 
 func TestSendVerificationEmail_WrongUserEmailAddress(t *testing.T) {
+	Email := &utils.Utils{}
 
 	utils.Config = initializer.LoadProjConfig("../")
 
@@ -47,12 +50,13 @@ func TestSendVerificationEmail_WrongUserEmailAddress(t *testing.T) {
 		EmailVerificationToken: "token",
 	}
 
-	err := utils.SendVerificationEmail(account)
+	err := Email.SendVerificationEmail(account)
 
 	assert.Error(t, err)
 }
 
 func TestSendVerificationEmail_WrongClientOrigin(t *testing.T) {
+	Email := &utils.Utils{}
 
 	mockConfig := initializer.Config{
 		ClientOrigin: "asda   .com  ",
@@ -66,11 +70,12 @@ func TestSendVerificationEmail_WrongClientOrigin(t *testing.T) {
 		EmailVerificationToken: "token",
 	}
 
-	err := utils.SendVerificationEmail(account)
+	err := Email.SendVerificationEmail(account)
 
 	assert.Error(t, err)
 }
 func TestSendVerificationEmail_Success(t *testing.T) {
+	Email := &utils.Utils{}
 
 	utils.Config = initializer.LoadProjConfig("../")
 
@@ -80,13 +85,13 @@ func TestSendVerificationEmail_Success(t *testing.T) {
 		EmailVerificationToken: "token",
 	}
 
-	err := utils.SendVerificationEmail(account)
+	err := Email.SendVerificationEmail(account)
 
 	assert.NoError(t, err)
 }
 
 func TestSendResetPassEmail_InvalidCredentials(t *testing.T) {
-
+	Email := &utils.Utils{}
 	mockConfig := initializer.Config{
 		ClientOrigin: "invalid-url",
 		EmailAddress: "test@example.com",
@@ -103,13 +108,13 @@ func TestSendResetPassEmail_InvalidCredentials(t *testing.T) {
 		EmailVerificationToken: "token",
 	}
 
-	err := utils.SendVerificationEmail(account)
+	err := Email.SendVerificationEmail(account)
 
 	assert.Error(t, err)
 }
 
 func TestSendResetPassEmail_success(t *testing.T) {
-
+	Email := &utils.Utils{}
 	utils.Config = initializer.LoadProjConfig("../")
 
 	mockAccount := &models.Account{
@@ -118,9 +123,7 @@ func TestSendResetPassEmail_success(t *testing.T) {
 		FirstName:             "John",
 	}
 
-	err := utils.SendResetPassEmail(mockAccount)
+	err := Email.SendResetPassEmail(mockAccount)
 
 	assert.NoError(t, err)
 }
-
-// Sends a verification email to the provided account email address with a verification link
