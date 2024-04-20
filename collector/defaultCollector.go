@@ -19,7 +19,7 @@ type DefaultCollector struct {
 var RateLimiting = 5 * time.Second
 
 func NewCollyCollector() *DefaultCollector {
-
+	utils := &utils.Utils{}
 	Chrome := req.DefaultClient().ImpersonateChrome()
 	getProxy := utils.PickProxyProvider()
 

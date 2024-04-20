@@ -5,6 +5,7 @@ import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	scheduleUpdates "EtsyScraper/scheduleUpdateTask"
+	"EtsyScraper/utils"
 	"net/http"
 	"strconv"
 	"time"
@@ -40,20 +41,20 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
-
+	utils := &utils.Utils{}
 	router := server.Group("/auth")
-	router.GET("/test", controllers.AuthMiddleWare(), func(ctx *gin.Context) {
+	router.GET("/test", controllers.AuthMiddleWare(utils), func(ctx *gin.Context) {
 		message := "Welcome to EtsyScraper"
 		ctx.JSON(http.StatusOK, gin.H{"HTTPstatus": http.StatusOK, "message": message})
 	})
 
-	register := controllers.NewUserController(initializer.DB).RegisterUser
-	confirmEmail := controllers.NewUserController(initializer.DB).VerifyAccount
-	login := controllers.NewUserController(initializer.DB).LoginAccount
-	logOut := controllers.NewUserController(initializer.DB).LogOutAccount
-	forgotPass := controllers.NewUserController(initializer.DB).ForgotPassReq
-	changePass := controllers.NewUserController(initializer.DB).ChangePass
-	resetPass := controllers.NewUserController(initializer.DB).ResetPass
+	register := controllers.NewUserController(initializer.DB, utils).RegisterUser
+	confirmEmail := controllers.NewUserController(initializer.DB, utils).VerifyAccount
+	login := controllers.NewUserController(initializer.DB, utils).LoginAccount
+	logOut := controllers.NewUserController(initializer.DB, utils).LogOutAccount
+	forgotPass := controllers.NewUserController(initializer.DB, utils).ForgotPassReq
+	changePass := controllers.NewUserController(initializer.DB, utils).ChangePass
+	resetPass := controllers.NewUserController(initializer.DB, utils).ResetPass
 
 	router.POST("/register", register)
 	router.POST("/login", login)
@@ -61,7 +62,7 @@ func main() {
 	router.GET("/verifyaccount", confirmEmail)
 	router.POST("/forgotpassword", forgotPass)
 	router.POST("/resetpassword", resetPass)
-	router.POST("/changepassword", controllers.AuthMiddleWare(), controllers.Authorization(), changePass)
+	router.POST("/changepassword", controllers.AuthMiddleWare(utils), controllers.Authorization(), changePass)
 
 	shopRoute := server.Group("/shop")
 	createNewShopRequest := controllers.NewShopController(initializer.DB).CreateNewShopRequest
@@ -73,10 +74,10 @@ func main() {
 	getShopStats := controllers.NewShopController(initializer.DB).ProcessStatsRequest
 	getItemsCountByShopID := controllers.NewShopController(initializer.DB).GetItemsCountByShopID
 
-	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(), controllers.Authorization(), createNewShopRequest)
-	shopRoute.GET("/follow_shop", controllers.AuthMiddleWare(), controllers.Authorization(), followShop)
-	shopRoute.GET("/unfollow_shop", controllers.AuthMiddleWare(), controllers.Authorization(), unFollowShop)
-	shopRoute.GET("/:shopID", controllers.AuthMiddleWare(), controllers.Authorization(), func(ctx *gin.Context) {
+	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(utils), controllers.Authorization(), createNewShopRequest)
+	shopRoute.GET("/follow_shop", controllers.AuthMiddleWare(utils), controllers.Authorization(), followShop)
+	shopRoute.GET("/unfollow_shop", controllers.AuthMiddleWare(utils), controllers.Authorization(), unFollowShop)
+	shopRoute.GET("/:shopID", controllers.AuthMiddleWare(utils), controllers.Authorization(), func(ctx *gin.Context) {
 		ShopID := ctx.Param("shopID")
 		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
 		if err != nil {
@@ -92,7 +93,7 @@ func main() {
 		ctx.JSON(http.StatusOK, Shop)
 	})
 
-	shopRoute.GET("/:shopID/all_items", controllers.AuthMiddleWare(), controllers.Authorization(), func(ctx *gin.Context) {
+	shopRoute.GET("/:shopID/all_items", controllers.AuthMiddleWare(utils), controllers.Authorization(), func(ctx *gin.Context) {
 		ShopID := ctx.Param("shopID")
 		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
 		if err != nil {
@@ -107,7 +108,7 @@ func main() {
 		ctx.JSON(http.StatusOK, Items)
 	})
 
-	shopRoute.GET("/:shopID/all_sold_items", controllers.AuthMiddleWare(), controllers.Authorization(), func(ctx *gin.Context) {
+	shopRoute.GET("/:shopID/all_sold_items", controllers.AuthMiddleWare(utils), controllers.Authorization(), func(ctx *gin.Context) {
 		ShopID := ctx.Param("shopID")
 		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
 		if err != nil {
@@ -122,7 +123,7 @@ func main() {
 		ctx.JSON(http.StatusOK, Items)
 	})
 
-	shopRoute.GET("/:shopID/items_count", controllers.AuthMiddleWare(), controllers.Authorization(), func(ctx *gin.Context) {
+	shopRoute.GET("/:shopID/items_count", controllers.AuthMiddleWare(utils), controllers.Authorization(), func(ctx *gin.Context) {
 		ShopID := ctx.Param("shopID")
 		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
 		if err != nil {
@@ -137,7 +138,7 @@ func main() {
 		ctx.JSON(http.StatusOK, Items)
 	})
 
-	shopRoute.GET("/stats/:shopID/:period", controllers.AuthMiddleWare(), controllers.Authorization(), func(ctx *gin.Context) {
+	shopRoute.GET("/stats/:shopID/:period", controllers.AuthMiddleWare(utils), controllers.Authorization(), func(ctx *gin.Context) {
 		ShopID := ctx.Param("shopID")
 		Period := ctx.Param("period")
 		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
@@ -158,7 +159,7 @@ func main() {
 	server.GET("/reset_password", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "resetPass.html", nil)
 	})
-	server.GET("/change_password", controllers.AuthMiddleWare(), controllers.Authorization(), func(c *gin.Context) {
+	server.GET("/change_password", controllers.AuthMiddleWare(utils), controllers.Authorization(), func(c *gin.Context) {
 		c.HTML(http.StatusOK, "changePass.html", nil)
 	})
 	server.GET("/log_in", func(c *gin.Context) {
@@ -167,10 +168,10 @@ func main() {
 	server.GET("/verify_account", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "verifyAccount.html", nil)
 	})
-	server.GET("/stats", controllers.AuthMiddleWare(), controllers.Authorization(), func(c *gin.Context) {
+	server.GET("/stats", controllers.AuthMiddleWare(utils), controllers.Authorization(), func(c *gin.Context) {
 		c.HTML(http.StatusOK, "stats.html", nil)
 	})
-	server.GET("/", controllers.AuthMiddleWare(), controllers.Authorization(), func(c *gin.Context) {
+	server.GET("/", controllers.AuthMiddleWare(utils), controllers.Authorization(), func(c *gin.Context) {
 		c.HTML(http.StatusOK, "mainPage.html", nil)
 	})
 

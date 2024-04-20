@@ -17,11 +17,18 @@ import (
 )
 
 type User struct {
-	DB *gorm.DB
+	DB    *gorm.DB
+	utils utils.UtilsProcess
 }
 
-func NewUserController(DB *gorm.DB) *User {
-	return &User{DB}
+func NewUserController(DB *gorm.DB, Process utils.UtilsProcess) *User {
+	return &User{
+		DB:    DB,
+		utils: Process,
+	}
+}
+func NewUserUtilsAccess(Process utils.UtilsProcess) *User {
+	return &User{utils: Process}
 }
 
 type RegisterAccount struct {
@@ -66,6 +73,9 @@ type UserReqPassChange struct {
 type UserReqForgotPassword struct {
 	Email string `json:"email_account"`
 }
+type UserController interface {
+	GetAccountByID(ID uuid.UUID) (account *models.Account, err error)
+}
 
 func (s *User) RegisterUser(ctx *gin.Context) {
 
@@ -83,7 +93,7 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	passwardHashed, err := utils.HashPass(account.Password)
+	passwardHashed, err := s.utils.HashPass(account.Password)
 	if err != nil {
 		log.Println(err)
 		message := "error while hashing password"
@@ -91,7 +101,7 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	EmailVerificationToken, err := utils.CreateVerificationString()
+	EmailVerificationToken, err := s.utils.CreateVerificationString()
 	if err != nil {
 		log.Println(err)
 		message := "error while creating the User"
@@ -122,7 +132,7 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	utils.SendVerificationEmail(newAccount)
+	s.utils.SendVerificationEmail(newAccount)
 	message := "thank you for registering, please check your email inbox"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
 
@@ -171,21 +181,21 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	if !utils.IsPassVerified(loginDetails.Password, result.PasswordHashed) {
+	if !s.utils.IsPassVerified(loginDetails.Password, result.PasswordHashed) {
 		message := "password is incorrect"
 		log.Println(message)
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
 		return
 	}
 
-	accessToken, err := utils.CreateJwtToken(config.AccTokenExp, result.ID)
+	accessToken, err := s.utils.CreateJwtToken(config.AccTokenExp, result.ID)
 	if err != nil {
 		log.Println(err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Failed", "message": err.Error()})
 		return
 	}
 
-	refreshToken, err := utils.CreateJwtToken(config.RefTokenExp, result.ID)
+	refreshToken, err := s.utils.CreateJwtToken(config.RefTokenExp, result.ID)
 	if err != nil {
 		log.Println(err.Error())
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Failed", "message": err.Error()})
@@ -253,7 +263,7 @@ func (s *User) LogOutAccount(ctx *gin.Context) {
 
 	for tokenName, token := range tokenList {
 		if reflect.ValueOf(userUUID).IsZero() {
-			tokenClaims, err := utils.ValidateJWT(token)
+			tokenClaims, err := s.utils.ValidateJWT(token)
 			if err != nil {
 				log.Println(err)
 				return
@@ -269,7 +279,7 @@ func (s *User) LogOutAccount(ctx *gin.Context) {
 
 		}
 
-		err = utils.BlacklistJWT(token)
+		err = s.utils.BlacklistJWT(token)
 		if err != nil {
 			log.Println(err.Error())
 		}
@@ -340,7 +350,7 @@ func (s *User) ChangePass(ctx *gin.Context) {
 		return
 	}
 
-	if !utils.IsPassVerified(reqPassChange.CurrentPass, Account.PasswordHashed) {
+	if !s.utils.IsPassVerified(reqPassChange.CurrentPass, Account.PasswordHashed) {
 		message := "password is incorrect"
 		log.Println(message)
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
@@ -348,7 +358,7 @@ func (s *User) ChangePass(ctx *gin.Context) {
 	}
 
 	if reqPassChange.NewPass == reqPassChange.ConfirmPass {
-		passwardHashed, err := utils.HashPass(reqPassChange.NewPass)
+		passwardHashed, err := s.utils.HashPass(reqPassChange.NewPass)
 		if err != nil {
 			log.Println(err)
 			message := "error while hashing password"
@@ -376,7 +386,7 @@ func (s *User) ForgotPassReq(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"status": "success"})
 		return
 	}
-	ResetPassToken, err := utils.CreateVerificationString()
+	ResetPassToken, err := s.utils.CreateVerificationString()
 	if err != nil {
 		message := "failed to create resetpassword token"
 		log.Println(message, "error :", err)
@@ -387,7 +397,7 @@ func (s *User) ForgotPassReq(ctx *gin.Context) {
 	Account.AccountPassResetToken = ResetPassToken
 	s.DB.Save(Account)
 
-	go utils.SendResetPassEmail(Account)
+	go s.utils.SendResetPassEmail(Account)
 	ctx.JSON(http.StatusOK, gin.H{"status": "success"})
 
 }
@@ -439,7 +449,7 @@ func (s *User) ResetPass(ctx *gin.Context) {
 		return
 	}
 
-	newPasswardHashed, err := utils.HashPass(reqChangePass.NewPass)
+	newPasswardHashed, err := s.utils.HashPass(reqChangePass.NewPass)
 	if err != nil {
 		log.Println(err)
 		message := "error while hashing password"

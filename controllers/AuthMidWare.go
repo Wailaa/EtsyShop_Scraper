@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func AuthMiddleWare() gin.HandlerFunc {
+func AuthMiddleWare(Process utils.UtilsProcess) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		config := initializer.LoadProjConfig(".")
 
@@ -26,8 +26,8 @@ func AuthMiddleWare() gin.HandlerFunc {
 		refreshToken, refHasValue := JwtTokens["refresh_token"]
 
 		if accHasValue {
-			userClaims, errClaims := utils.ValidateJWT(accessToken)
-			isBlackListed, err := utils.IsJWTBlackListed(accessToken)
+			userClaims, errClaims := Process.ValidateJWT(accessToken)
+			isBlackListed, err := Process.IsJWTBlackListed(accessToken)
 			if !isBlackListed && err == nil && errClaims == nil {
 
 				result := initializer.DB.Where("id = ?", userClaims.UserUUID).First(user)
@@ -46,13 +46,13 @@ func AuthMiddleWare() gin.HandlerFunc {
 			ctx.Abort()
 			return
 		}
-		accessToken, err = utils.RefreshAccToken(refreshToken)
+		accessToken, err = Process.RefreshAccToken(refreshToken)
 		if err != nil {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": err.Error()})
 			ctx.Abort()
 			return
 		}
-		userClaims, errClaims := utils.ValidateJWT(accessToken)
+		userClaims, errClaims := Process.ValidateJWT(accessToken)
 		if errClaims != nil {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": "auth failed because of " + errClaims.Error()})
 			ctx.Abort()

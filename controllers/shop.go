@@ -4,6 +4,7 @@ import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	scrap "EtsyScraper/scraping"
+	"EtsyScraper/utils"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -333,8 +334,8 @@ func (s *Shop) FollowShop(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
 	}
-
-	currentAccount, err := NewUserController(initializer.DB).GetAccountByID(currentUserUUID)
+	utils := &utils.Utils{}
+	currentAccount, err := NewUserController(initializer.DB, utils).GetAccountByID(currentUserUUID)
 	if err != nil {
 		log.Println(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
@@ -590,7 +591,7 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context, ShopID uint, Period string)
 		return fmt.Errorf("error while retreiving shop selling stats ,error : %s", err)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"status": http.StatusOK, Period: LastSevenDays})
+	ctx.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "stats": LastSevenDays})
 	return nil
 }
 
