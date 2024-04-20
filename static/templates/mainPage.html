@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="static/maniPageStyle.css">
+    <title>Home Page</title>
+</head>
+<body>
+<div class="container">
+    <h1>Welcome to EtsyShopsScraper</h1>
+    <div class="greeting" id="greetingMessage">
+       
+    </div>
+    <h2>Your Followed Shops</h2>
+    <table class="shop-table">
+        <thead>
+            <tr>
+                <th>Shop Name</th>
+                <th>Total Sales</th>
+                <th>Admirers</th>
+                <th>Shop Rate</th>
+                <th>Review Count</th>
+                <th>Revenue</th>
+                <th>Average Item Price</th>
+            </tr>
+        </thead>
+        <tbody id="shopList">
+         
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function getUserData() {
+        const userDataString = localStorage.getItem('userInfo');
+        return userDataString ? JSON.parse(userDataString) : null;
+    }
+
+    function displayUserData() {
+        const userData = getUserData();
+        if (!userData) {
+            console.error('User data not found in local storage.');
+            return;
+        }
+
+        const greetingElement = document.getElementById('greetingMessage');
+        const shopListElement = document.getElementById('shopList');
+
+        greetingElement.textContent = `Hello, ${userData.User.Name}! Welcome back.`;
+
+        userData.User.Shops.forEach((shop, index) => {
+            const row = document.createElement('tr');
+           
+            row.setAttribute('data-shop-id', shop.id); 
+            row.classList.add('shop-row'); 
+            row.innerHTML = `
+                <td>${shop.shop_name}</td>
+                <td>${shop.shop_total_sales}</td>
+                <td>${shop.admirers}</td>
+                <td>${shop.shop_reviews.shop_rate}</td>
+                <td>${shop.shop_reviews.reviews_count}</td>
+                <td>${shop.revenue}</td>
+                <td>${shop.avarage_item_price}</td>
+            `;
+            row.addEventListener('click', function() {
+              
+                window.location.href = '/stats?shop_id=' + shop.ID; 
+            });
+            shopListElement.appendChild(row);
+        });
+    }
+
+    displayUserData();
+
+</script>
+</body>
+</html>
