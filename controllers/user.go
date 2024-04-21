@@ -132,7 +132,13 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	s.utils.SendVerificationEmail(newAccount)
+	err = s.utils.SendVerificationEmail(newAccount)
+	if err != nil {
+		log.Println(err)
+		message := "internal error"
+		ctx.JSON(http.StatusInternalServerError, gin.H{"status": "registraition rejected", "message": message})
+		return
+	}
 	message := "thank you for registering, please check your email inbox"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
 
