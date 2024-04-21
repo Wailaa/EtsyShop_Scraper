@@ -403,7 +403,7 @@ func TestShopItemsUpdate_FewUpdates(t *testing.T) {
 
 			sqlMock.ExpectBegin()
 			sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "updated_at"=$1,"original_price"=$2 WHERE "items"."deleted_at" IS NULL AND "id" = $3`)).
-				WithArgs(sqlmock.AnyArg(), float64(20), i).WillReturnResult(sqlmock.NewResult(1, 1)).WillReturnResult(sqlmock.NewResult(1, 1))
+				WithArgs(sqlmock.AnyArg(), float64(20), i).WillReturnResult(sqlmock.NewResult(1, 1))
 			sqlMock.ExpectCommit()
 		}
 	}
