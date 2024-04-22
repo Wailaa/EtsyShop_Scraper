@@ -59,8 +59,8 @@ func (m *mockUtils) ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, e
 }
 
 func (m *mockUtils) RefreshAccToken(token *models.Token) (*models.Token, error) {
-
-	return nil, nil
+	args := m.Called()
+	return args.Get(0).(*models.Token), args.Error(1)
 }
 
 func (m *mockUtils) BlacklistJWT(token *models.Token) error {
@@ -69,8 +69,8 @@ func (m *mockUtils) BlacklistJWT(token *models.Token) error {
 }
 
 func (m *mockUtils) IsJWTBlackListed(token *models.Token) (bool, error) {
-
-	return false, nil
+	args := m.Called()
+	return args.Bool(0), args.Error(1)
 }
 func (m *mockUtils) PickProxyProvider() utils.ProxySetting {
 
