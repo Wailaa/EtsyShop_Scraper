@@ -19,9 +19,8 @@ import (
 )
 
 func TestAuthMiddleWare_noCookies(t *testing.T) {
-	w := httptest.NewRecorder()
-	gin.SetMode(gin.TestMode)
-	ctx, router := gin.CreateTestContext(w)
+
+	ctx, router, w := SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils))
@@ -37,9 +36,7 @@ func TestAuthMiddleWare_noCookies(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 func TestAuthMiddleWare_AccessToken_IsBlackListed(t *testing.T) {
-	w := httptest.NewRecorder()
-	gin.SetMode(gin.TestMode)
-	_, router := gin.CreateTestContext(w)
+	_, router, w := SetGinTestMode()
 
 	userID := uuid.New()
 	MockedUtils := &mockUtils{}
@@ -71,10 +68,7 @@ func TestAuthMiddleWare_AccessToken_IsBlackListed_False(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	w := httptest.NewRecorder()
-	gin.SetMode(gin.TestMode)
-
-	_, router := gin.CreateTestContext(w)
+	_, router, w := SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
@@ -113,10 +107,7 @@ func TestAuthMiddleWare_AccessToken_IsBlackListed_False(t *testing.T) {
 
 func TestAuthMiddleWare_RefreshToken_Error(t *testing.T) {
 
-	w := httptest.NewRecorder()
-	gin.SetMode(gin.TestMode)
-
-	_, router := gin.CreateTestContext(w)
+	_, router, w := SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, errors.New("not Valid"))
@@ -137,10 +128,7 @@ func TestAuthMiddleWare_RefreshToken_Error(t *testing.T) {
 
 func TestAuthMiddleWare_RefreshAccessToken_fail(t *testing.T) {
 
-	w := httptest.NewRecorder()
-	gin.SetMode(gin.TestMode)
-
-	_, router := gin.CreateTestContext(w)
+	_, router, w := SetGinTestMode()
 
 	token := models.Token("")
 	MockedUtils := &mockUtils{}
@@ -163,10 +151,7 @@ func TestAuthMiddleWare_RefreshAccessToken_fail(t *testing.T) {
 
 func TestAuthMiddleWare_ValidateNewToken(t *testing.T) {
 
-	w := httptest.NewRecorder()
-	gin.SetMode(gin.TestMode)
-
-	_, router := gin.CreateTestContext(w)
+	_, router, w := SetGinTestMode()
 
 	token := models.Token("")
 
@@ -195,9 +180,7 @@ func TestAuthMiddleWare_NewCookie(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	w := httptest.NewRecorder()
-	gin.SetMode(gin.TestMode)
-	_, router := gin.CreateTestContext(w)
+	_, router, w := SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
@@ -245,9 +228,7 @@ func TestAuthMiddleWare_Success_Key_Set(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	w := httptest.NewRecorder()
-	gin.SetMode(gin.TestMode)
-	_, router := gin.CreateTestContext(w)
+	_, router, w := SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
@@ -291,8 +272,7 @@ func TestAuthorization_NoCurrentUser_Panic(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	w := httptest.NewRecorder()
-	_, router := gin.CreateTestContext(w)
+	ctx, router, w := SetGinTestMode()
 
 	router.Use(controllers.Authorization())
 
@@ -303,7 +283,6 @@ func TestAuthorization_NoCurrentUser_Panic(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test", nil)
 
 	assert.Panics(t, func() {
-		ctx, _ := gin.CreateTestContext(w)
 		ctx.Set("currentUserUUID", nil)
 		router.ServeHTTP(w, req)
 	})
@@ -314,8 +293,7 @@ func TestAuthorization_UserNotFound(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	w := httptest.NewRecorder()
-	c, router := gin.CreateTestContext(w)
+	c, router, w := SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
@@ -340,8 +318,7 @@ func TestAuthorization_NotVerified(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	w := httptest.NewRecorder()
-	c, router := gin.CreateTestContext(w)
+	c, router, w := SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
@@ -371,8 +348,7 @@ func TestAuthorization_Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	w := httptest.NewRecorder()
-	c, router := gin.CreateTestContext(w)
+	c, router, w := SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
