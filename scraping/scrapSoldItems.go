@@ -13,7 +13,7 @@ import (
 	"github.com/gocolly/colly/v2/queue"
 )
 
-func ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.SoldItems, *models.TaskSchedule) {
+func (sc *Scraper) ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.SoldItems, *models.TaskSchedule) {
 	secondToLastScrapedItems := 0
 	TerminateCollector := false
 	Items := &[]models.SoldItems{}

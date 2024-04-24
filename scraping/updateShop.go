@@ -13,6 +13,8 @@ import (
 type ScrapeUpdateProcess interface {
 	CheckForUpdates(Shop string, needUpdateItems bool) (*models.Shop, error)
 	ScrapAllMenuItems(shop *models.Shop) *models.Shop
+	ScrapShop(shopName string) (*models.Shop, error)
+	ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.SoldItems, *models.TaskSchedule)
 }
 type Scraper struct {
 }

@@ -18,7 +18,7 @@ var Shoplink = Config.ScrapShopURL
 
 var MissingInfo string = "INFORMATION_NOT_AVAILABLE"
 
-func ScrapShop(shopName string) (*models.Shop, error) {
+func (sc *Scraper) ScrapShop(shopName string) (*models.Shop, error) {
 
 	NewShop := &models.Shop{}
 

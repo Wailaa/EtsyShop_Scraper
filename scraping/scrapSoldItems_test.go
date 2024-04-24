@@ -14,7 +14,7 @@ import (
 )
 
 func TestScrapesSoldItems_Success(t *testing.T) {
-
+	scraper := &Scraper{}
 	mockConfig := initializer.Config{
 		ProxyHostURL1: "",
 		ProxyHostURL2: "",
@@ -36,7 +36,7 @@ func TestScrapesSoldItems_Success(t *testing.T) {
 
 	mockURL := setupMockServer.MockServer.URL
 
-	items, task := ScrapSalesHistory(mockURL, task)
+	items, task := scraper.ScrapSalesHistory(mockURL, task)
 
 	assert.Equal(t, 24, len(items))
 	assert.Equal(t, 2, task.CurrentPage)
