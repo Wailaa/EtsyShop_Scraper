@@ -1,11 +1,11 @@
 package controllers
 
 import (
-	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	scrap "EtsyScraper/scraping"
 	"EtsyScraper/utils"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -65,7 +65,7 @@ type ResponseSoldItemInfo struct {
 	SoldQauntity   int
 }
 
-type dailySoldStats struct {
+type DailySoldStats struct {
 	TotalSales int `json:"total_sales"`
 	Items      []models.Item
 }
@@ -90,11 +90,32 @@ func CreateSoldItemInfo(Item *models.Item) *ResponseSoldItemInfo {
 
 type ShopController interface {
 	UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
+	UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
+}
+type ShopCreatorGetters interface {
+	GetShopByName(ShopName string) (shop *models.Shop, err error)
+	GetItemsByShopID(ID uint) (items []models.Item, err error)
+	GetAvarageItemPrice(ShopID uint) (float64, error)
+	CreateShopRequest(ShopRequest *models.ShopRequest) error
+	ExecuteCreateShop(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest)
+	ExecuteUpdateSellingHistory(dispatch ShopController, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
+	ExecuteUpdateDiscontinuedItems(dispatch ShopController, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
+	ExecuteGetTotalRevenue(dispatch ExecShopMethodProcess, ShopID uint, AvarageItemPrice float64) (float64, error)
+	ExecuteGetSoldItemsByShopID(dispatch ExecShopMethodProcess, ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error)
+	ExecuteGetSellingStatsByPeriod(dispatch ExecShopMethodProcess, ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error)
+}
+
+type ExecShopMethodProcess interface {
+	CreateNewShop(ShopRequest *models.ShopRequest) error
+	GetTotalRevenue(ShopID uint, AvarageItemPrice float64) (float64, error)
+	GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error)
+	GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error)
 }
 
 var queueMutex sync.Mutex
 
 func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
+
 	currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 	ShopRequest := &models.ShopRequest{}
 	var shop NewShopRequest
@@ -104,39 +125,61 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get the Shop's name"})
 		return
 	}
-
+	log.Println("ShopRequest.AccountID = currentUserUUID")
 	ShopRequest.AccountID = currentUserUUID
 	ShopRequest.ShopName = shop.ShopName
 
-	IsShop, err := s.GetShopByName(shop.ShopName)
+	IsShop, err := s.Process.GetShopByName(shop.ShopName)
 	if err != nil && err.Error() != "record not found" {
 		log.Println(err)
 		ShopRequest.Status = "failed"
-		s.CreateShopRequest(ShopRequest)
+		s.Process.CreateShopRequest(ShopRequest)
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "internal error"})
 		return
 	} else if IsShop != nil {
 		ShopRequest.Status = "denied"
-		s.CreateShopRequest(ShopRequest)
+		s.Process.CreateShopRequest(ShopRequest)
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "Shop already exists"})
 		return
 	}
 
 	ShopRequest.Status = "Pending"
-	s.CreateShopRequest(ShopRequest)
+	s.Process.CreateShopRequest(ShopRequest)
 
 	message := "shop request received successfully"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": message})
-	go s.CreateNewShop(ShopRequest)
+	go s.Process.ExecuteCreateShop(s, ShopRequest)
+
+}
+func (ps *ShopCreators) ExecuteCreateShop(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest) {
+	dispatch.CreateNewShop(ShopRequest)
+}
+func (ps *ShopCreators) ExecuteUpdateSellingHistory(dispatch ShopController, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
+	err := dispatch.UpdateSellingHistory(Shop, Task, ShopRequest)
+	return err
+}
+func (ps *ShopCreators) ExecuteUpdateDiscontinuedItems(dispatch ShopController, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error) {
+	ScrappedSoldItems, err := dispatch.UpdateDiscontinuedItems(Shop, Task, ShopRequest)
+	return ScrappedSoldItems, err
+}
+
+func (ps *ShopCreators) ExecuteGetTotalRevenue(dispatch ExecShopMethodProcess, ShopID uint, AvarageItemPrice float64) (float64, error) {
+	Avarage, err := dispatch.GetTotalRevenue(ShopID, AvarageItemPrice)
+	return Avarage, err
+}
+func (ps *ShopCreators) ExecuteGetSoldItemsByShopID(dispatch ExecShopMethodProcess, ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error) {
+	SoldItems, err := dispatch.GetSoldItemsByShopID(ID)
+	return SoldItems, err
+}
+func (ps *ShopCreators) ExecuteGetSellingStatsByPeriod(dispatch ExecShopMethodProcess, ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error) {
+	SoldItems, err := dispatch.GetSellingStatsByPeriod(ShopID, timePeriod)
+	return SoldItems, err
 }
 
 func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
-
-	scraper := &scrap.Scraper{}
-
 	queueMutex.Lock()
 	defer queueMutex.Unlock()
-	scrappedShop, err := scrap.ScrapShop(ShopRequest.ShopName)
+	scrappedShop, err := s.Scraper.ScrapShop(ShopRequest.ShopName)
 	if err != nil {
 		log.Println("failed to initiate Shop while handling ShopRequest.ID: ", ShopRequest.ID)
 		return err
@@ -148,26 +191,25 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 	if result.Error != nil {
 		log.Println("failed to save Shop's data while handling ShopRequest.ID: ", ShopRequest.ID)
 		ShopRequest.Status = "failed"
-		return err
+		s.Process.CreateShopRequest(ShopRequest)
+		return result.Error
 	}
 
 	log.Println("Shop's data saved successfully while handling ShopRequest.ID: ", ShopRequest.ID)
 
-	time.Sleep(10 * time.Second)
-
 	log.Println("starting Shop's menu scraping for ShopRequest.ID: ", ShopRequest.ID)
-	scrapeMenu := scraper.ScrapAllMenuItems(scrappedShop)
+	scrapeMenu := s.Scraper.ScrapAllMenuItems(scrappedShop)
 
 	result = s.DB.Save(scrapeMenu)
 	if result.Error != nil {
 		ShopRequest.Status = "failed"
 		log.Println("failed to save Shop's menu into database for ShopRequest.ID: ", ShopRequest.ID)
-		s.CreateShopRequest(ShopRequest)
-		return err
+		s.Process.CreateShopRequest(ShopRequest)
+		return result.Error
 	}
 
 	ShopRequest.Status = "done"
-	s.CreateShopRequest(ShopRequest)
+	s.Process.CreateShopRequest(ShopRequest)
 	log.Println("Shop's menu data saved successfully while handling ShopRequest.ID: ", ShopRequest.ID)
 
 	Task := &models.TaskSchedule{
@@ -180,11 +222,10 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 
 	if scrapeMenu.HasSoldHistory && scrapeMenu.TotalSales > 0 {
 		log.Println("Shop's selling history initiated for ShopRequest.ID: ", ShopRequest.ID)
-		time.Sleep(10 * time.Second)
 
-		if err := s.UpdateSellingHistory(scrapeMenu, Task, ShopRequest); err != nil {
+		if err := s.Process.ExecuteUpdateSellingHistory(s, scrapeMenu, Task, ShopRequest); err != nil {
 			ShopRequest.Status = "failed"
-			s.CreateShopRequest(ShopRequest)
+			s.Process.CreateShopRequest(ShopRequest)
 			log.Println("Shop's selling history failed for ShopRequest.ID: ", ShopRequest.ID)
 
 			return err
@@ -192,17 +233,17 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 		}
 	} else {
 		ShopRequest.Status = "done"
-		s.CreateShopRequest(ShopRequest)
+		s.Process.CreateShopRequest(ShopRequest)
 	}
 	return nil
 }
 
 func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
 	var dailyRevenue float64
-	ScrappedSoldItems, err := s.UpdateDiscontinuedItems(Shop, Task, ShopRequest)
+	ScrappedSoldItems, err := s.Process.ExecuteUpdateDiscontinuedItems(s, Shop, Task, ShopRequest)
 	if err != nil {
 		ShopRequest.Status = "failed"
-		s.CreateShopRequest(ShopRequest)
+		s.Process.CreateShopRequest(ShopRequest)
 		log.Println("Shop's selling history failed while initiating UpdateDiscontinuedItems for ShopRequest.ID: ", ShopRequest.ID)
 
 		return err
@@ -212,7 +253,10 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 		return fmt.Errorf("empty scrapped Sold data")
 	}
 
-	AllItems, _ := s.GetItemsByShopID(Shop.ID)
+	AllItems, err := s.Process.GetItemsByShopID(Shop.ID)
+	if err != nil {
+		return err
+	}
 
 	for i, ScrappedSoldItem := range ScrappedSoldItems {
 		for _, item := range AllItems {
@@ -228,11 +272,11 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 		ScrappedSoldItems[i], ScrappedSoldItems[j] = ScrappedSoldItems[j], ScrappedSoldItems[i]
 	}
 
-	result := s.DB.Create(ScrappedSoldItems)
+	result := s.DB.Create(&ScrappedSoldItems)
 
 	if result.Error != nil {
 		log.Println("Shop's selling history failed while saving to database for ShopRequest.ID: ", ShopRequest.ID)
-		return err
+		return result.Error
 	} else if Task.UpdateSoldItems > 0 {
 
 		now := time.Now().UTC().Truncate(24 * time.Hour)
@@ -254,7 +298,7 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 
 	ShopRequest.Status = "done"
 	log.Printf("Shop's selling history successfully saved %v items for ShopRequest.ID: %v \n", len(ScrappedSoldItems), ShopRequest.ID)
-	s.CreateShopRequest(ShopRequest)
+	s.Process.CreateShopRequest(ShopRequest)
 
 	return nil
 }
@@ -264,9 +308,8 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 	SoldOutItems := []models.Item{}
 	FilterSoldItems := map[uint]struct{}{}
 
-	scrapSoldItems, NewTask := scrap.ScrapSalesHistory(Shop.Name, Task)
+	scrapSoldItems, NewTask := s.Scraper.ScrapSalesHistory(Shop.Name, Task)
 	if !NewTask.IsScrapeFinished {
-		log.Println("Task :", Task)
 		go s.SoldItemsTask(Shop, NewTask, ShopRequest)
 	}
 
@@ -274,9 +317,10 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 		return scrapSoldItems, nil
 	}
 
-	getAllItems, err := s.GetItemsByShopID(Shop.ID)
+	getAllItems, err := s.Process.GetItemsByShopID(Shop.ID)
 	if err != nil {
 		log.Println("UpdateDiscontinuedItems failed for ShopRequest.ID: ", ShopRequest.ID)
+		log.Println(err)
 		return nil, err
 	}
 
@@ -337,18 +381,18 @@ func (s *Shop) FollowShop(ctx *gin.Context) {
 
 	currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 
-	requestedShop, err := s.GetShopByName(shopToFollow.FollowShopName)
+	requestedShop, err := s.Process.GetShopByName(shopToFollow.FollowShopName)
 	if err != nil {
 		if err.Error() == "record not found" {
 			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "shop not found"})
 			return
 		}
 		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "error while processing the request"})
 		return
 	}
 	utils := &utils.Utils{}
-	currentAccount, err := NewUserController(initializer.DB, utils).GetAccountByID(currentUserUUID)
+	currentAccount, err := NewUserController(s.DB, utils).GetAccountByID(currentUserUUID)
 	if err != nil {
 		log.Println(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
@@ -377,7 +421,7 @@ func (s *Shop) UnFollowShop(ctx *gin.Context) {
 
 	currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 
-	requestedShop, err := s.GetShopByName(unFollowShop.UnFollowShopName)
+	requestedShop, err := s.Process.GetShopByName(unFollowShop.UnFollowShopName)
 	if err != nil {
 		if err.Error() == "record not found" {
 			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "shop not found"})
@@ -410,9 +454,9 @@ func (s *Shop) UnFollowShop(ctx *gin.Context) {
 
 }
 
-func (s *Shop) GetShopByName(ShopName string) (shop *models.Shop, err error) {
+func (pr *ShopCreators) GetShopByName(ShopName string) (shop *models.Shop, err error) {
 
-	if err = s.DB.Preload("Member").Preload("ShopMenu.Menu.Items").Preload("Reviews.ReviewsTopic").Where("name = ?", ShopName).First(&shop).Error; err != nil {
+	if err = pr.DB.Preload("Member").Preload("ShopMenu.Menu.Items").Preload("Reviews.ReviewsTopic").Where("name = ?", ShopName).First(&shop).Error; err != nil {
 		log.Println("no Shop was Found ,error :", err)
 		return nil, err
 	}
@@ -427,24 +471,24 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 		return nil, err
 	}
 
-	shop.AvarageItemsPrice, err = s.GetAvarageItemPrice(shop.ID)
+	shop.AvarageItemsPrice, err = s.Process.GetAvarageItemPrice(shop.ID)
 	if err != nil {
 		log.Println("error while calculating item avarage price")
-		return
+		return nil, err
 	}
 
-	shop.Revenue, err = s.GetTotalRevenue(shop.ID, shop.AvarageItemsPrice)
+	shop.Revenue, err = s.Process.ExecuteGetTotalRevenue(s, shop.ID, shop.AvarageItemsPrice)
 	if err != nil {
 		log.Println("error while calculating shop's revenue")
-		return
+		return nil, err
 	}
 
 	return
 }
 
-func (s *Shop) GetItemsByShopID(ID uint) (items []models.Item, err error) {
+func (ps *ShopCreators) GetItemsByShopID(ID uint) (items []models.Item, err error) {
 	shop := &models.Shop{}
-	if err := s.DB.Preload("ShopMenu.Menu.Items").Where("id = ?", ID).First(shop).Error; err != nil {
+	if err := ps.DB.Preload("ShopMenu.Menu.Items").Where("id = ?", ID).First(shop).Error; err != nil {
 		log.Println("no Shop was Found")
 		return nil, err
 	}
@@ -457,7 +501,7 @@ func (s *Shop) GetItemsByShopID(ID uint) (items []models.Item, err error) {
 
 func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
 	itemCount := itemsCount{}
-	items, err := s.GetItemsByShopID(ID)
+	items, err := s.Process.GetItemsByShopID(ID)
 	if err != nil {
 		log.Println("error while calculating item avarage price")
 		return itemCount, err
@@ -477,7 +521,7 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 	listingIDs := []uint{}
 	Solditems := []models.SoldItems{}
 
-	AllItems, err := s.GetItemsByShopID(ID)
+	AllItems, err := s.Process.GetItemsByShopID(ID)
 	if err != nil {
 		log.Println("items where not found ")
 		return nil, err
@@ -490,7 +534,7 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 	result := s.DB.Where("listing_id IN ?", listingIDs).Find(&Solditems)
 	if result.Error != nil {
 		log.Println("items where not found ")
-		return nil, err
+		return nil, result.Error
 	}
 
 	soldQauntity := map[uint]int{}
@@ -512,7 +556,7 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 	return
 }
 
-func (s *Shop) GetAvarageItemPrice(ShopID uint) (float64, error) {
+func (s *ShopCreators) GetAvarageItemPrice(ShopID uint) (float64, error) {
 	var averagePrice float64
 
 	if err := s.DB.Table("items").
@@ -533,7 +577,7 @@ func (s *Shop) GetAvarageItemPrice(ShopID uint) (float64, error) {
 func (s *Shop) GetTotalRevenue(ShopID uint, AvarageItemPrice float64) (float64, error) {
 	var revenue float64
 
-	soldItems, err := s.GetSoldItemsByShopID(ShopID)
+	soldItems, err := s.Process.ExecuteGetSoldItemsByShopID(s, ShopID)
 	if err != nil {
 		log.Println("error while calculating revenue")
 		return 0, err
@@ -550,23 +594,22 @@ func (s *Shop) GetTotalRevenue(ShopID uint, AvarageItemPrice float64) (float64, 
 }
 
 func (s *Shop) SoldItemsTask(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
-	log.Println("new task is created")
 
 	randTimeSet := time.Duration(rand.Intn(89-10) + 10)
 	durationUntilNextTask := time.Until(time.Now().Add(randTimeSet * time.Second))
 
 	time.AfterFunc(durationUntilNextTask, func() {
-		s.UpdateSellingHistory(Shop, Task, ShopRequest)
+		s.Process.ExecuteUpdateSellingHistory(s, Shop, Task, ShopRequest)
 	})
 	return nil
 }
 
-func (s *Shop) CreateShopRequest(ShopRequest *models.ShopRequest) error {
+func (pr *ShopCreators) CreateShopRequest(ShopRequest *models.ShopRequest) error {
 	if ShopRequest.AccountID == uuid.Nil {
-		return nil
+		return errors.New("no AccountID was passed")
 	}
 
-	result := s.DB.Save(ShopRequest)
+	result := pr.DB.Save(ShopRequest)
 	if result.Error != nil {
 		log.Println(result.Error)
 		return result.Error
@@ -598,7 +641,7 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context, ShopID uint, Period string)
 	date := time.Now().AddDate(year, month, day)
 	dateMidnight := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 
-	LastSevenDays, err := s.GetSellingStatsByPeriod(ShopID, dateMidnight)
+	LastSevenDays, err := s.Process.ExecuteGetSellingStatsByPeriod(s, ShopID, dateMidnight)
 	if err != nil {
 		log.Println("error while retreiving shop selling stats ,error :", err)
 		return fmt.Errorf("error while retreiving shop selling stats ,error : %s", err)
@@ -608,13 +651,13 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context, ShopID uint, Period string)
 	return nil
 }
 
-func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[string]dailySoldStats, error) {
+func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error) {
 
 	dailyShopSales := []models.DailyShopSales{}
 	itemIDs := []uint{}
 	item := models.Item{}
 
-	stats := make(map[string]dailySoldStats)
+	stats := make(map[string]DailySoldStats)
 
 	result := s.DB.Where("shop_id = ? AND created_at > ?", ShopID, timePeriod).Find(&dailyShopSales)
 
@@ -628,7 +671,7 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 		dateCreated := sales.CreatedAt.Format("2006-01-02")
 
 		if len(sales.SoldItems) == 0 {
-			stats[dateCreated] = dailySoldStats{
+			stats[dateCreated] = DailySoldStats{
 				TotalSales: sales.TotalSales,
 			}
 			continue
@@ -646,7 +689,7 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 			items = append(items, item)
 		}
 
-		stats[dateCreated] = dailySoldStats{
+		stats[dateCreated] = DailySoldStats{
 			TotalSales: sales.TotalSales,
 			Items:      items,
 		}
