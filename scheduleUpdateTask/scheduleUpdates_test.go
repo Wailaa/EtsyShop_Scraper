@@ -36,8 +36,12 @@ type MockShopController struct {
 }
 
 func (m *MockShopController) UpdateSellingHistory(shop *models.Shop, task *models.TaskSchedule, shopRequest *models.ShopRequest) error {
-	args := m.Called(shop, task, shopRequest)
+	args := m.Called()
 	return args.Error(0)
+}
+func (m *MockShopController) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error) {
+	args := m.Called()
+	return args.Get(0).([]models.SoldItems), args.Error(1)
 }
 
 func TestScheduleScrapUpdate_SchedulesCronJob(t *testing.T) {
@@ -61,11 +65,11 @@ func TestUpdateSoldItems_ShopParameterNil(t *testing.T) {
 		Shop: models.Shop{},
 		Task: models.TaskSchedule{},
 	}
-	shopController.On("UpdateSellingHistory", mock.AnythingOfType("*models.Shop"), mock.AnythingOfType("*models.TaskSchedule"), mock.AnythingOfType("*models.ShopRequest")).Return(nil)
+	shopController.On("UpdateSellingHistory").Return(nil)
 
 	scheduleUpdates.UpdateSoldItems(queue, shopController)
 
-	shopController.AssertCalled(t, "UpdateSellingHistory", mock.AnythingOfType("*models.Shop"), mock.AnythingOfType("*models.TaskSchedule"), mock.AnythingOfType("*models.ShopRequest"))
+	shopController.AssertNumberOfCalls(t, "UpdateSellingHistory", 1)
 
 }
 
@@ -157,6 +161,14 @@ func (m *MockScrapper) CheckForUpdates(Shop string, needUpdateItems bool) (*mode
 func (m *MockScrapper) ScrapAllMenuItems(shop *models.Shop) *models.Shop {
 	args := m.Called()
 	return args.Get(0).(*models.Shop)
+}
+func (m *MockScrapper) ScrapShop(shopName string) (*models.Shop, error) {
+	args := m.Called()
+	return args.Get(0).(*models.Shop), args.Error(1)
+}
+func (m *MockScrapper) ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.SoldItems, *models.TaskSchedule) {
+	args := m.Called()
+	return args.Get(0).([]models.SoldItems), args.Get(1).(*models.TaskSchedule)
 }
 
 func TestStartShopUpdate_UpdatesSuccess(t *testing.T) {
