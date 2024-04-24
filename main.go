@@ -5,6 +5,7 @@ import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	scheduleUpdates "EtsyScraper/scheduleUpdateTask"
+	scrap "EtsyScraper/scraping"
 	"EtsyScraper/utils"
 	"net/http"
 	"strconv"
@@ -42,6 +43,10 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 	utils := &utils.Utils{}
+	Scraper := &scrap.Scraper{}
+	Creatrors := &controllers.ShopCreators{DB: initializer.DB}
+	implShop := controllers.Shop{DB: initializer.DB, Scraper: Scraper, Process: Creatrors}
+
 	router := server.Group("/auth")
 	router.GET("/test", controllers.AuthMiddleWare(utils), func(ctx *gin.Context) {
 		message := "Welcome to EtsyScraper"
@@ -65,14 +70,14 @@ func main() {
 	router.POST("/changepassword", controllers.AuthMiddleWare(utils), controllers.Authorization(), changePass)
 
 	shopRoute := server.Group("/shop")
-	createNewShopRequest := controllers.NewShopController(initializer.DB).CreateNewShopRequest
-	followShop := controllers.NewShopController(initializer.DB).FollowShop
-	unFollowShop := controllers.NewShopController(initializer.DB).UnFollowShop
-	getShopByID := controllers.NewShopController(initializer.DB).GetShopByID
-	getAllItemsByShopID := controllers.NewShopController(initializer.DB).GetItemsByShopID
-	getAllSoldItemsByShopID := controllers.NewShopController(initializer.DB).GetSoldItemsByShopID
-	getShopStats := controllers.NewShopController(initializer.DB).ProcessStatsRequest
-	getItemsCountByShopID := controllers.NewShopController(initializer.DB).GetItemsCountByShopID
+	createNewShopRequest := controllers.NewShopController(implShop).CreateNewShopRequest
+	followShop := controllers.NewShopController(implShop).FollowShop
+	unFollowShop := controllers.NewShopController(implShop).UnFollowShop
+	getShopByID := controllers.NewShopController(implShop).GetShopByID
+	getAllItemsByShopID := controllers.NewShopCreators(initializer.DB).GetItemsByShopID
+	getAllSoldItemsByShopID := controllers.NewShopController(implShop).GetSoldItemsByShopID
+	getShopStats := controllers.NewShopController(implShop).ProcessStatsRequest
+	getItemsCountByShopID := controllers.NewShopController(implShop).GetItemsCountByShopID
 
 	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(utils), controllers.Authorization(), createNewShopRequest)
 	shopRoute.GET("/follow_shop", controllers.AuthMiddleWare(utils), controllers.Authorization(), followShop)

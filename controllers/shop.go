@@ -22,11 +22,24 @@ import (
 )
 
 type Shop struct {
+	DB      *gorm.DB
+	Process ShopCreatorGetters
+	Scraper scrap.ScrapeUpdateProcess
+}
+type ShopCreators struct {
 	DB *gorm.DB
 }
 
-func NewShopController(DB *gorm.DB) *Shop {
-	return &Shop{DB}
+func NewShopController(implementSHOP Shop) *Shop {
+
+	return &Shop{
+		DB:      implementSHOP.DB,
+		Process: implementSHOP.Process,
+		Scraper: implementSHOP.Scraper,
+	}
+}
+func NewShopCreators(DB *gorm.DB) *ShopCreators {
+	return &ShopCreators{DB}
 }
 
 type NewShopRequest struct {
