@@ -133,7 +133,7 @@ func TestSendResetPassEmail_InvalidCredentials(t *testing.T) {
 		EmailVerificationToken: "token",
 	}
 
-	err := Email.SendVerificationEmail(account)
+	err := Email.SendResetPassEmail(account)
 
 	assert.Error(t, err)
 
