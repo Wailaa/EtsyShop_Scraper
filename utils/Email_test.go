@@ -196,3 +196,74 @@ func TestGenerateVerificationURL_Fail(t *testing.T) {
 	assert.Contains(t, err.Error(), "invalid URL details provided")
 
 }
+
+func TestComposeEmail_IncompleteDetails(t *testing.T) {
+	details := utils.EmailDetails{
+		To:         "",
+		Subject:    "Test Email",
+		HTMLbody:   "",
+		ButtonName: "",
+	}
+
+	err := utils.ComposeEmail(details)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "details are missing")
+}
+func TestComposeEmail_SMTPHostFail(t *testing.T) {
+
+	mockConfig := initializer.Config{
+		ClientOrigin: "exampleDomain.com",
+		EmailAddress: "test@example.com",
+		SMTPUser:     "test",
+		SMTPPass:     "password",
+	}
+
+	utils.Config = mockConfig
+
+	details := utils.EmailDetails{
+		To:         "SomeEmail@exampleTest.com",
+		UserName:   "ExampleName",
+		Subject:    "Test Email",
+		HTMLbody:   "<div>Just another element</div>",
+		ButtonName: "Click Me",
+	}
+
+	utils.SMTPDetails.SMTPAuth = nil
+	utils.SMTPDetails.SMTPHost = ""
+
+	err := utils.ComposeEmail(details)
+
+	assert.Error(t, err, "email was not sent successfully")
+	assert.Contains(t, err.Error(), "missing address")
+}
+
+func TestComposeEmail_Success(t *testing.T) {
+	FakeHostServer, port, serverStop := setupMockServer.MockSMTPServer()
+	defer serverStop()
+
+	mockConfig := initializer.Config{
+		ClientOrigin: "exampleDomain.com",
+		EmailAddress: "test@example.com",
+		SMTPUser:     "test",
+		SMTPPass:     "password",
+	}
+
+	utils.Config = mockConfig
+
+	details := utils.EmailDetails{
+		To:         "SomeEmail@exampleTest.com",
+		UserName:   "ExampleName",
+		Subject:    "Test Email",
+		HTMLbody:   "<div>Just another element</div>",
+		ButtonName: "Click Me",
+	}
+
+	utils.SMTPDetails.SMTPAuth = nil
+	utils.SMTPDetails.SMTPHost = fmt.Sprintf("%s:%v", FakeHostServer, port)
+
+	err := utils.ComposeEmail(details)
+
+	assert.NoError(t, err, "email was sent successfully")
+
+}

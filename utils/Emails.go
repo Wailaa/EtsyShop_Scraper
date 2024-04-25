@@ -29,6 +29,16 @@ type URLConfig struct {
 	Path      string
 }
 
+type EmailDetails struct {
+	To               string
+	UserName         string
+	Subject          string
+	HTMLbody         string
+	ButtonName       string
+	Plaintext        string
+	VerificationLink string
+}
+
 var SMTPDetails = new(EmailConfig)
 
 func init() {
@@ -152,4 +162,37 @@ func GenerateVerificationURL(urlDetails URLConfig) (string, error) {
 	verificationLink.RawQuery = param.Encode()
 
 	return verificationLink.String(), nil
+}
+
+func ComposeEmail(details EmailDetails) error {
+
+	if details.To == "" || details.Subject == "" || details.HTMLbody == "" || details.ButtonName == "" || details.UserName == "" {
+		return errors.New("could no compose email , details are missing")
+	}
+
+	e := &email.Email{
+		To:      []string{details.To},
+		From:    Config.EmailAddress,
+		Subject: details.Subject,
+		Text:    []byte(details.Plaintext),
+		HTML: []byte(fmt.Sprintf(`<html>
+		<head>
+		<div>
+		<h1>Hello %s,</h1>
+		%s
+		<button>
+		<a href="%s">%s</a>
+		</button>
+		<p>The EtsyScraper Team</p>
+		</div>
+		</body>
+		</html>`, details.UserName, details.HTMLbody, details.VerificationLink, details.ButtonName)),
+		Headers: textproto.MIMEHeader{},
+	}
+	err := e.Send(SMTPDetails.SMTPHost, SMTPDetails.SMTPAuth)
+	if err != nil {
+		log.Println("error while composing email", err)
+		return err
+	}
+	return nil
 }
