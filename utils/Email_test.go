@@ -166,3 +166,33 @@ func TestSendResetPassEmail_success(t *testing.T) {
 
 	assert.NoError(t, err)
 }
+
+func TestGenerateVerificationURL_Success(t *testing.T) {
+	utils.Config.ClientOrigin = "www.test_domain.com"
+	urlDetails := utils.URLConfig{
+		ParamName: "test_param",
+		Token:     "THI$_I$_TE$T_T@KEN",
+		Path:      "/email_test_path",
+	}
+
+	link, err := utils.GenerateVerificationURL(urlDetails)
+
+	assert.Equal(t, link, "www.test_domain.com/email_test_path?test_param=THI%24_I%24_TE%24T_T%40KEN")
+	assert.NoError(t, err)
+
+}
+func TestGenerateVerificationURL_Fail(t *testing.T) {
+	utils.Config.ClientOrigin = "www.test_domain.com"
+
+	urlDetails := utils.URLConfig{
+		ParamName: "",
+		Token:     "THI$_I$_TE$T_T@KEN",
+		Path:      "",
+	}
+
+	_, err := utils.GenerateVerificationURL(urlDetails)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid URL details provided")
+
+}

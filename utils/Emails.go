@@ -5,6 +5,7 @@ import (
 	"EtsyScraper/models"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -20,6 +21,12 @@ var Config = initializer.LoadProjConfig(".")
 type EmailConfig struct {
 	SMTPHost string
 	SMTPAuth smtp.Auth
+}
+
+type URLConfig struct {
+	ParamName string
+	Token     string
+	Path      string
 }
 
 var SMTPDetails = new(EmailConfig)
@@ -126,4 +133,23 @@ func (em *Utils) SendResetPassEmail(account *models.Account) error {
 		return err
 	}
 	return nil
+}
+
+func GenerateVerificationURL(urlDetails URLConfig) (string, error) {
+
+	if urlDetails.Path == "" || urlDetails.ParamName == "" || urlDetails.Token == "" {
+		return "", errors.New("invalid URL details provided")
+	}
+
+	verificationLink, err := url.Parse(Config.ClientOrigin)
+	if err != nil {
+		return "", err
+	}
+
+	verificationLink.Path += urlDetails.Path
+	param := url.Values{}
+	param.Add(urlDetails.ParamName, urlDetails.Token)
+	verificationLink.RawQuery = param.Encode()
+
+	return verificationLink.String(), nil
 }
