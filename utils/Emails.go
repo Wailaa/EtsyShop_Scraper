@@ -74,32 +74,23 @@ func (em *Utils) SendVerificationEmail(account *models.Account) error {
 	if err != nil {
 		return err
 	}
+	PlainText := "This is an email sent upon your registration at EtsyScraper."
 
-	e := &email.Email{
-		To:      []string{account.Email},
-		From:    Config.EmailAddress,
-		Subject: "Confirm registration",
-		Text:    []byte("Text Body is, of course, supported!"),
-		HTML: []byte(fmt.Sprintf(`<html>
-		<head>
-		<div>
-		<h1>Hello %s,</h1>
-		<p>We’re happy you signed up for EtsyScraper. To start reading shops data , please confirm your email address.</p>
-		<button>
-		<a href="%s">Verify Now</a>
-		</button>
-		<p>Welcome to EtsyScraper!</p>
-		<p>The EtsyScraper Team</p>
-	  	</div>
-	 </body>
-		</html>`, account.FirstName, verificationLink)),
-		Headers: textproto.MIMEHeader{},
+	HTMLbody := `<p>We’re happy you signed up for EtsyScraper. To start reading shops data , please confirm your email address.</p>`
+
+	details := EmailDetails{
+		To:               account.Email,
+		UserName:         account.FirstName,
+		Subject:          "Confirm registration",
+		Plaintext:        PlainText,
+		HTMLbody:         HTMLbody,
+		ButtonName:       "Verify Now",
+		VerificationLink: verificationLink,
 	}
 
-	err = e.Send(SMTPDetails.SMTPHost, SMTPDetails.SMTPAuth)
+	err = ComposeEmail(details)
 	if err != nil {
-		fmt.Println("There was an error sending the mail", err)
-		return err
+		return fmt.Errorf("failed to send verification mail: no address or missig details error: %w", err)
 	}
 	return nil
 }
