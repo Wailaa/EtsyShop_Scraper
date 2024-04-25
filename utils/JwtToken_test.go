@@ -15,6 +15,7 @@ func InitiateUtilTest() (jwt *utils.Utils, exp time.Duration, userUUID uuid.UUID
 	jwt = &utils.Utils{}
 	exp = time.Hour
 	userUUID = uuid.New()
+	utils.Config = initializer.LoadProjConfig("../")
 	return
 }
 
@@ -40,7 +41,6 @@ func TestCreateJwtToken_FailedToGenerateToken_ReturnsError(t *testing.T) {
 func TestValidateJWT_ValidToken(t *testing.T) {
 	jwt, exp, userUUID := InitiateUtilTest()
 
-	utils.Config = initializer.LoadProjConfig("../.")
 	token, _ := jwt.CreateJwtToken(exp, userUUID)
 
 	claims, err := jwt.ValidateJWT(token)
@@ -84,7 +84,6 @@ func TestRefreshAccToken_InvalidToken(t *testing.T) {
 func TestIsJWTBlackListed_NotBlacklistedToken(t *testing.T) {
 	jwt, exp, userUUID := InitiateUtilTest()
 
-	utils.Config = initializer.LoadProjConfig("../.") // Ensure this path is correct
 	mockToken, err := jwt.CreateJwtToken(exp, userUUID)
 	if err != nil {
 		t.Fatalf("Failed to create JWT token: %v", err)
@@ -100,7 +99,6 @@ func TestIsJWTBlackListed_NotBlacklistedToken(t *testing.T) {
 func TestIsJWTBlackListed_Exists(t *testing.T) {
 	jwt, exp, userUUID := InitiateUtilTest()
 
-	utils.Config = initializer.LoadProjConfig("../.") // Ensure this path is correct
 	mockToken, err := jwt.CreateJwtToken(exp, userUUID)
 	if err != nil {
 		t.Fatalf("Failed to create JWT token: %v", err)
@@ -120,7 +118,6 @@ func TestIsJWTBlackListed_Exists(t *testing.T) {
 func TestBlacklistJWT_ValidToken(t *testing.T) {
 	jwt, exp, userUUID := InitiateUtilTest()
 
-	utils.Config = initializer.LoadProjConfig("../.")
 	mockToken, _ := jwt.CreateJwtToken(exp, userUUID)
 
 	initializer.RedisDBConnect(&utils.Config)
@@ -133,7 +130,7 @@ func TestBlacklistJWT_ValidToken(t *testing.T) {
 
 func TestBlacklistJWT_EmptyToken(t *testing.T) {
 	jwt, _, _ := InitiateUtilTest()
-	utils.Config = initializer.LoadProjConfig("../.")
+
 	newToken := models.Token("")
 
 	initializer.RedisDBConnect(&utils.Config)
@@ -145,7 +142,6 @@ func TestBlacklistJWT_EmptyToken(t *testing.T) {
 }
 func TestBlacklistJWT_TokenIsBlackListed(t *testing.T) {
 	jwt, exp, userUUID := InitiateUtilTest()
-	utils.Config = initializer.LoadProjConfig("../.")
 
 	mockToken, _ := jwt.CreateJwtToken(exp, userUUID)
 
@@ -164,7 +160,7 @@ func TestBlacklistJWT_TokenIsBlackListed(t *testing.T) {
 
 func TestBlacklistJWT_TokenNotValid(t *testing.T) {
 	jwt, _, _ := InitiateUtilTest()
-	utils.Config = initializer.LoadProjConfig("../.")
+
 	newToken := models.Token("test")
 
 	initializer.RedisDBConnect(&utils.Config)
