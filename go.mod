@@ -20,6 +20,7 @@ require (
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/google/uuid v1.6.0
 	github.com/imroc/req/v3 v3.43.3
+	github.com/mocktools/go-smtp-mock v1.10.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/DATA-DOG/go-sqlmock.v1 v1.3.0
