@@ -116,31 +116,26 @@ func (em *Utils) SendResetPassEmail(account *models.Account) error {
 		return err
 	}
 
-	e := &email.Email{
-		To:      []string{account.Email},
-		From:    Config.EmailAddress,
-		Subject: "Reset Password",
-		Text:    []byte("This is an email sent upon your request to reset your account password at EtsyScraper. if you did not request this email then please igonre the message, otherwise please press on the button to reset your password"),
-		HTML: []byte(fmt.Sprintf(`<html>
-		<head>
-		<div>
-		<h1>Hello %s,</h1>
-		<p>This is an email sent upon your request to reset your account password at EtsyScraper </p>
-		<p>if you did not request this email then please igonre the message, otherwise please press on the button to reset your password.  </p>
-		<button>
-		<a href="%s">Reset Password</a>
-		</button>
-		<p>The EtsyScraper Team</p>
-	  	</div>
-	 </body>
-		</html>`, account.FirstName, verificationLink)),
-		Headers: textproto.MIMEHeader{},
+	PlainText := "This is an email sent upon your request to reset your account password at EtsyScraper. if you did not request this email then please igonre the message, otherwise please press on the button to reset your password"
+
+	HTMLbody := `<p>This is an email sent upon your request to reset your account password at EtsyScraper </p>
+	<p>if you did not request this email then please igonre the message, otherwise please press on the button to reset your password.  </p>
+	<button>`
+
+	details := EmailDetails{
+		To:               account.Email,
+		UserName:         account.FirstName,
+		Subject:          "Reset Password",
+		Plaintext:        PlainText,
+		HTMLbody:         HTMLbody,
+		ButtonName:       "Reset Password",
+		VerificationLink: verificationLink,
 	}
 
-	err = e.Send(SMTPDetails.SMTPHost, SMTPDetails.SMTPAuth)
+	err = ComposeEmail(details)
+
 	if err != nil {
-		log.Println("There was an error sending the mail", err)
-		return err
+		return fmt.Errorf("failed to send verification email,error: %w", err)
 	}
 	return nil
 }
