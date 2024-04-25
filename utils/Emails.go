@@ -97,14 +97,15 @@ func (em *Utils) SendVerificationEmail(account *models.Account) error {
 
 func (em *Utils) SendResetPassEmail(account *models.Account) error {
 
-	verificationLink, err := url.Parse(Config.ClientOrigin)
-	if err != nil {
-		log.Fatal(err)
+	urlDetails := URLConfig{
+		ParamName: "rcp",
+		Token:     account.AccountPassResetToken,
+		Path:      "/reset_password",
 	}
-	verificationLink.Path += "/reset_password"
-	param := url.Values{}
-	param.Add("rcp", account.AccountPassResetToken)
-	verificationLink.RawQuery = param.Encode()
+	verificationLink, err := GenerateVerificationURL(urlDetails)
+	if err != nil {
+		return err
+	}
 
 	e := &email.Email{
 		To:      []string{account.Email},
@@ -123,7 +124,7 @@ func (em *Utils) SendResetPassEmail(account *models.Account) error {
 		<p>The EtsyScraper Team</p>
 	  	</div>
 	 </body>
-		</html>`, account.FirstName, verificationLink.String())),
+		</html>`, account.FirstName, verificationLink)),
 		Headers: textproto.MIMEHeader{},
 	}
 
