@@ -17,6 +17,18 @@ import (
 
 var Config = initializer.LoadProjConfig(".")
 
+type EmailConfig struct {
+	SMTPHost string
+	SMTPAuth smtp.Auth
+}
+
+var SMTPDetails = new(EmailConfig)
+
+func init() {
+	SMTPDetails.SMTPHost = fmt.Sprintf("%s:%v", Config.SMTPHost, Config.SMTPPort)
+	SMTPDetails.SMTPAuth = smtp.PlainAuth(Config.EmailAddress, Config.SMTPUser, Config.SMTPPass, Config.SMTPHost)
+}
+
 func (em *Utils) CreateVerificationString() (string, error) {
 	GenerateRandomInt, err := rand.Int(rand.Reader, big.NewInt(20))
 	if err != nil {
@@ -68,7 +80,7 @@ func (em *Utils) SendVerificationEmail(account *models.Account) error {
 		Headers: textproto.MIMEHeader{},
 	}
 
-	err = e.Send(fmt.Sprintf("%s:%v", Config.SMTPHost, Config.SMTPPort), smtp.PlainAuth(Config.EmailAddress, Config.SMTPUser, Config.SMTPPass, Config.SMTPHost))
+	err = e.Send(SMTPDetails.SMTPHost, SMTPDetails.SMTPAuth)
 	if err != nil {
 		fmt.Println("There was an error sending the mail", err)
 		return err
@@ -108,7 +120,7 @@ func (em *Utils) SendResetPassEmail(account *models.Account) error {
 		Headers: textproto.MIMEHeader{},
 	}
 
-	err = e.Send(fmt.Sprintf("%s:%v", Config.SMTPHost, Config.SMTPPort), smtp.PlainAuth(Config.EmailAddress, Config.SMTPUser, Config.SMTPPass, Config.SMTPHost))
+	err = e.Send(SMTPDetails.SMTPHost, SMTPDetails.SMTPAuth)
 	if err != nil {
 		log.Println("There was an error sending the mail", err)
 		return err
