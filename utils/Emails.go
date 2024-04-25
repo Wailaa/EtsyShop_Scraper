@@ -55,16 +55,15 @@ func (em *Utils) CreateVerificationString() (string, error) {
 
 func (em *Utils) SendVerificationEmail(account *models.Account) error {
 
-	verificationLink, err := url.Parse(Config.ClientOrigin)
+	urlDetails := URLConfig{
+		ParamName: "TranID",
+		Token:     account.EmailVerificationToken,
+		Path:      "/verify_account",
+	}
+	verificationLink, err := GenerateVerificationURL(urlDetails)
 	if err != nil {
-		log.Println(err)
 		return err
 	}
-
-	verificationLink.Path += "/verify_account"
-	param := url.Values{}
-	param.Add("TranID", account.EmailVerificationToken)
-	verificationLink.RawQuery = param.Encode()
 
 	e := &email.Email{
 		To:      []string{account.Email},
@@ -83,7 +82,7 @@ func (em *Utils) SendVerificationEmail(account *models.Account) error {
 		<p>The EtsyScraper Team</p>
 	  	</div>
 	 </body>
-		</html>`, account.FirstName, verificationLink.String())),
+		</html>`, account.FirstName, verificationLink)),
 		Headers: textproto.MIMEHeader{},
 	}
 
