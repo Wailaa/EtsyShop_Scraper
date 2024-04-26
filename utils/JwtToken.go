@@ -90,8 +90,8 @@ func (ut *Utils) BlacklistJWT(token *models.Token) error {
 
 	context := context.TODO()
 
-	checkBlackList, err := ut.IsJWTBlackListed(token)
-	if checkBlackList {
+	isBlackListed, err := ut.IsJWTBlackListed(token)
+	if isBlackListed {
 		return fmt.Errorf("token is alraedy Blacklisted")
 	}
 	if err != nil {
