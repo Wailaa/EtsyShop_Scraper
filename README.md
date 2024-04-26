@@ -79,3 +79,9 @@ to stop and remove container , please run:
 ```bash
     docker compose down
 ```
+
+
+## Documentation
+
+full endpoint list is available [here](https://github.com/Wailaa/EtsyShop_Scraper/blob/master/Documentaion.md)
+
