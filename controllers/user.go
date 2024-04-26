@@ -428,7 +428,7 @@ func (s *User) ResetPass(ctx *gin.Context) {
 	}
 
 	if reqChangePass.NewPass != reqChangePass.ConfirmPass {
-		message := "Paswwords are not the same"
+		message := "Passwords are not the same"
 		log.Println(message)
 		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
 		return
