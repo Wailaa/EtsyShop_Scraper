@@ -57,14 +57,14 @@ func (ut *Utils) ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, erro
 		}
 	}
 
-	getClaimsData, ok := parcedtoken.Claims.(jwt.MapClaims)
-	if err := getClaimsData.Valid(); err != nil || !ok {
+	ClaimsData, ok := parcedtoken.Claims.(jwt.MapClaims)
+	if err := ClaimsData.Valid(); err != nil || !ok {
 		return nil, fmt.Errorf("invalid claims %v", ok)
 	}
 
-	getClaims := models.CreateClaims(getClaimsData)
+	Claims := models.CreateClaims(ClaimsData)
 
-	return getClaims, nil
+	return Claims, nil
 }
 
 func (ut *Utils) RefreshAccToken(token *models.Token) (*models.Token, error) {
