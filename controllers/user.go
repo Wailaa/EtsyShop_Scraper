@@ -372,7 +372,14 @@ func (s *User) ChangePass(ctx *gin.Context) {
 			return
 		}
 		s.DB.Model(Account).Update("password_hashed", passwardHashed)
+	} else {
+		message := "new password is not confirmed"
+		ctx.JSON(http.StatusUnauthorized, gin.H{"status": "failed", "message": message})
+		ctx.Abort()
+		return
 	}
+	message := "password changed"
+	ctx.JSON(http.StatusOK, gin.H{"status": "registraition rejected", "message": message})
 	s.LogOutAccount(ctx)
 }
 

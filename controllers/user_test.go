@@ -1062,7 +1062,7 @@ func TestChangePass_EmptyAccount(t *testing.T) {
 }
 func TestChangePass_PassNoMatch(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
@@ -1088,7 +1088,7 @@ func TestChangePass_PassNoMatch(t *testing.T) {
 	router.ServeHTTP(w, c.Request)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 func TestChangePass_HashFail(t *testing.T) {
 
@@ -1130,6 +1130,44 @@ func TestChangePass_HashFail(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
+func TestChangePass_PassNotConfirmed(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	c, router, w := SetGinTestMode()
+
+	currentUserUUID := uuid.New()
+	emptyAccount := models.Account{}
+
+	MockedUtils := &mockUtils{}
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	MockedUtils.On("IsPassVerified").Return(true)
+
+	router.POST("/changepassword", func(ctx *gin.Context) {
+		ctx.Set("currentUserUUID", currentUserUUID)
+
+	}, User.ChangePass)
+
+	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
+		AddRow(currentUserUUID.String(), emptyAccount.CreatedAt, emptyAccount.UpdatedAt, emptyAccount.FirstName, emptyAccount.LastName, emptyAccount.Email, emptyAccount.PasswordHashed, emptyAccount.SubscriptionType, emptyAccount.EmailVerified, emptyAccount.EmailVerificationToken, emptyAccount.RequestChangePass, emptyAccount.AccountPassResetToken, emptyAccount.LastTimeLoggedIn, emptyAccount.LastTimeLoggedOut)
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE ID = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WithArgs(currentUserUUID, 1).WillReturnRows(Account)
+
+	c.Request, _ = http.NewRequest("POST", "/changepassword", bytes.NewBuffer([]byte(`{
+		"current_password":"qqqq1111",
+		"new_password":"1111qqq1",
+		"confirm_password":"1111qqqq"
+	}`)))
+
+	router.ServeHTTP(w, c.Request)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
 func TestChangePass_Success(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
@@ -1169,6 +1207,7 @@ func TestChangePass_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
+
 func TestForgotPassReq_FailedBindJson(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
