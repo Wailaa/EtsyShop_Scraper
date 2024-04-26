@@ -65,12 +65,12 @@ This project is built with Golang.
 
 2. Ensure docker-compose is installed on your build system. For details on how to do this please click [here](https://docs.docker.com/compose/install/)
 
-3. This application uses Mailtrap.io mailing services.You can open an account for free [here](https://mailtrap.io/).Please add the credits in project.env file to have fully woring flow.
+3. This application uses Mailtrap.io mailing services.You can open an account for free [here](https://mailtrap.io/).Please add the credits in project.env file to have fully working flow.
 4. you can add proxy server in .env file, if not please keep it empty
 
 5. To build a Docker image, please make sure you have obtained a copy of the repository and a working installation of Docker. Please refer to the Docker [website](https://docs.docker.com/), to learn more about how to download and install Docker.
 
-After you cloning the repositroy ,run the following comand to buid the images and run the docker container:
+After you cloned the repository , run the following command to build the images and run the docker container:
 
 ```bash
     docker compose up -d
