@@ -125,7 +125,7 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get the Shop's name"})
 		return
 	}
-	log.Println("ShopRequest.AccountID = currentUserUUID")
+
 	ShopRequest.AccountID = currentUserUUID
 	ShopRequest.ShopName = shop.ShopName
 
