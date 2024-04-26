@@ -58,11 +58,11 @@ func (ut *Utils) ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, erro
 	}
 
 	getClaimsData, ok := parcedtoken.Claims.(jwt.MapClaims)
-	getClaims := models.CreateClaims(getClaimsData)
-
 	if err := getClaimsData.Valid(); err != nil || !ok {
 		return nil, fmt.Errorf("invalid claims %v", ok)
 	}
+
+	getClaims := models.CreateClaims(getClaimsData)
 
 	return getClaims, nil
 }
