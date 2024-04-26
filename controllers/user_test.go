@@ -1069,7 +1069,6 @@ func TestChangePass_PassNoMatch(t *testing.T) {
 	c, router, w := SetGinTestMode()
 
 	currentUserUUID := uuid.New()
-	emptyAccount := models.Account{}
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -1079,12 +1078,6 @@ func TestChangePass_PassNoMatch(t *testing.T) {
 	router.POST("/changepassword", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
 	}, User.ChangePass)
-
-	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(currentUserUUID.String(), emptyAccount.CreatedAt, emptyAccount.UpdatedAt, emptyAccount.FirstName, emptyAccount.LastName, emptyAccount.Email, emptyAccount.PasswordHashed, emptyAccount.SubscriptionType, emptyAccount.EmailVerified, emptyAccount.EmailVerificationToken, emptyAccount.RequestChangePass, emptyAccount.AccountPassResetToken, emptyAccount.LastTimeLoggedIn, emptyAccount.LastTimeLoggedOut)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE ID = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WithArgs(currentUserUUID, 1).WillReturnRows(Account)
 
 	c.Request, _ = http.NewRequest("POST", "/changepassword", bytes.NewBuffer([]byte(`{
 		"current_password":"qqqq1111",
