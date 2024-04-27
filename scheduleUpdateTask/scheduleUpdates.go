@@ -312,3 +312,43 @@ func ApplyUpdated(DB *gorm.DB, existingItem, item models.Item, UpdatedMenuID uin
 	})
 
 }
+
+func (u *UpdateDB) HandleOutOfProductionItems(dataShopID string, OutOfProductionID, ShopMenuID uint, existingItemMap map[uint]bool) {
+	existingItems := []models.Item{}
+	u.DB.Where("data_shop_id = ?", dataShopID).Find(&existingItems)
+
+	for _, item := range existingItems {
+		if _, ok := existingItemMap[item.ListingID]; !ok && item.MenuItemID != OutOfProductionID {
+			if OutOfProductionID == 0 {
+				Menu := models.CreateMenuItem(models.MenuItem{
+					ShopMenuID: ShopMenuID,
+					Category:   "Out Of Production",
+					SectionID:  "0",
+				})
+
+				u.DB.Create(&Menu)
+				OutOfProductionID = Menu.ID
+				log.Println("Out Of Production is created , id : ", OutOfProductionID)
+
+			}
+
+			u.DB.Create(&models.ItemHistoryChange{
+				ItemID:       item.ID,
+				OldPrice:     item.OriginalPrice,
+				NewPrice:     item.OriginalPrice,
+				OldAvailable: item.Available,
+				NewAvailable: false,
+
+				OldMenuItemID: item.MenuItemID,
+				NewMenuItemID: OutOfProductionID,
+			})
+
+			u.DB.Model(&item).Updates(map[string]interface{}{
+				"available":    false,
+				"menu_item_id": OutOfProductionID,
+			})
+
+			log.Println("item  not available anymore: ", item)
+		}
+	}
+}
