@@ -185,7 +185,6 @@ func MenuExists(Menu string, ListOfMenus []string) bool {
 func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap.ScrapeUpdateProcess) error {
 
 	dataShopID := ""
-	existingItems := []models.Item{}
 	existingItemMap := make(map[uint]bool)
 	ListOfMenus := []string{}
 	var OutOfProductionID uint
@@ -245,43 +244,7 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 
 	}
 
-	u.DB.Where("data_shop_id = ?", dataShopID).Find(&existingItems)
-
-	for _, item := range existingItems {
-		if _, ok := existingItemMap[item.ListingID]; !ok && item.MenuItemID != OutOfProductionID {
-			if OutOfProductionID == 0 {
-				Menu := models.CreateMenuItem(models.MenuItem{
-					ShopMenuID: Shop.ShopMenu.ID,
-					Category:   "Out Of Production",
-					SectionID:  "0",
-				})
-
-				u.DB.Create(&Menu)
-				OutOfProductionID = Menu.ID
-				log.Println("Out Of Production is created , id : ", OutOfProductionID)
-
-			}
-
-			u.DB.Create(&models.ItemHistoryChange{
-				ItemID:       item.ID,
-				OldPrice:     item.OriginalPrice,
-				NewPrice:     item.OriginalPrice,
-				OldAvailable: item.Available,
-				NewAvailable: false,
-
-				OldMenuItemID: item.MenuItemID,
-				NewMenuItemID: OutOfProductionID,
-			})
-
-			u.DB.Model(&item).Updates(map[string]interface{}{
-				"available":    false,
-				"menu_item_id": OutOfProductionID,
-			})
-
-			log.Println("item  not available anymore: ", item)
-		}
-	}
-
+	u.HandleOutOfProductionItems(dataShopID, OutOfProductionID, Shop.ShopMenu.ID, existingItemMap)
 	return nil
 }
 
