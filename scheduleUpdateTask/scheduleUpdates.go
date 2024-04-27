@@ -311,3 +311,24 @@ func ShouldUpdateItem(exsistingPrice, newPrice float64) bool {
 	PriceChangePerc := math.Round(PriceChange * 100)
 	return PriceChangePerc >= PriceDiscrepancy
 }
+
+func ApplyUpdated(DB *gorm.DB, existingItem, item models.Item, UpdatedMenuID uint) {
+
+	DB.Create(&models.ItemHistoryChange{
+		ItemID:         existingItem.ID,
+		NewItemCreated: false,
+		OldPrice:       existingItem.OriginalPrice,
+		NewPrice:       item.OriginalPrice,
+		OldAvailable:   existingItem.Available,
+		NewAvailable:   item.Available,
+		OldMenuItemID:  existingItem.MenuItemID,
+		NewMenuItemID:  UpdatedMenuID,
+	})
+
+	DB.Model(&existingItem).Updates(models.Item{
+		OriginalPrice: item.OriginalPrice,
+		Available:     item.Available,
+		MenuItemID:    UpdatedMenuID,
+	})
+
+}

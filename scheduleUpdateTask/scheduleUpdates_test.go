@@ -670,3 +670,75 @@ func TestShouldUpdateItem(t *testing.T) {
 		})
 	}
 }
+
+func TestApplyUpdated_Success(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	sqlMock.MatchExpectationsInOrder(true)
+
+	NewItem := models.Item{
+		OriginalPrice: 40,
+		Available:     true,
+	}
+
+	ExsistingItem := models.Item{
+		Name:           "testItem",
+		OriginalPrice:  20.0,
+		CurrencySymbol: "$",
+		SalePrice:      -1,
+		DiscoutPercent: "",
+		Available:      true,
+		ItemLink:       "www.examplelink.com",
+		MenuItemID:     10,
+		ListingID:      101010,
+		DataShopID:     "1234",
+	}
+	ExsistingItem.ID = 7
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "item_history_changes" ("created_at","updated_at","deleted_at","item_id","new_item_created","old_price","new_price","old_available","new_available","old_menu_item_id","new_menu_item_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, ExsistingItem.ID, false, ExsistingItem.OriginalPrice, NewItem.OriginalPrice, ExsistingItem.Available, NewItem.Available, ExsistingItem.MenuItemID, ExsistingItem.MenuItemID).WillReturnRows(sqlmock.NewRows([]string{"1"}))
+	sqlMock.ExpectCommit()
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "updated_at"=$1,"original_price"=$2,"available"=$3,"menu_item_id"=$4 WHERE "items"."deleted_at" IS NULL AND "id" = $5`)).
+		WithArgs(sqlmock.AnyArg(), NewItem.OriginalPrice, NewItem.Available, ExsistingItem.MenuItemID, ExsistingItem.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	sqlMock.ExpectCommit()
+
+	scheduleUpdates.ApplyUpdated(MockedDataBase, ExsistingItem, NewItem, ExsistingItem.MenuItemID)
+
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestApplyUpdated_Fail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	sqlMock.MatchExpectationsInOrder(true)
+
+	NewItem := models.Item{
+		OriginalPrice: 40,
+		Available:     true,
+	}
+
+	ExsistingItem := models.Item{}
+	ExsistingItem.ID = 0
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "item_history_changes" ("created_at","updated_at","deleted_at","item_id","new_item_created","old_price","new_price","old_available","new_available","old_menu_item_id","new_menu_item_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, ExsistingItem.ID, false, ExsistingItem.OriginalPrice, NewItem.OriginalPrice, ExsistingItem.Available, NewItem.Available, ExsistingItem.MenuItemID, ExsistingItem.MenuItemID).WillReturnRows(sqlmock.NewRows([]string{"1"}))
+	sqlMock.ExpectCommit()
+
+	sqlMock.ExpectBegin()
+
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "updated_at"=$1,"original_price"=$2,"available"=$3,"menu_item_id"=$4 WHERE "items"."deleted_at" IS NULL AND "id" = $5`)).
+		WithArgs(sqlmock.AnyArg(), NewItem.OriginalPrice, NewItem.Available, ExsistingItem.MenuItemID, 0).WillReturnError(errors.New("no item id"))
+	sqlMock.ExpectRollback()
+
+	scheduleUpdates.ApplyUpdated(MockedDataBase, ExsistingItem, NewItem, ExsistingItem.MenuItemID)
+
+	assert.Error(t, sqlMock.ExpectationsWereMet())
+}
