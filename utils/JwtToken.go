@@ -98,7 +98,7 @@ func (ut *Utils) BlacklistJWT(token *models.Token) error {
 		return err
 	}
 
-	BlacklistedJWT, err := ut.ValidateJWT(token)
+	Claims, err := ut.ValidateJWT(token)
 	if err != nil {
 		log.Println("error while blacklisting token", err)
 		return err
@@ -107,7 +107,7 @@ func (ut *Utils) BlacklistJWT(token *models.Token) error {
 	expiredToken := TokenBlacklistPrefix + fmt.Sprint(*token)
 
 	Now := time.Now().UTC()
-	EX := time.Unix(BlacklistedJWT.ExpiresAt, 0)
+	EX := time.Unix(Claims.ExpiresAt, 0)
 	tokenExpire := EX.Sub(Now)
 
 	errToken := initializer.RedisClient.Set(context, expiredToken, "revokedToken", tokenExpire).Err()
