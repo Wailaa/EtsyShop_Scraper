@@ -221,10 +221,6 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 			u.DB.Where("Listing_id = ? ", item.ListingID).First(&existingItem)
 			dataShopID = existingItem.DataShopID
 
-			PriceDiscrepancy := 3.0
-			PriceChange := math.Abs((existingItem.OriginalPrice / item.OriginalPrice) - 1)
-			PriceChangePerc := math.Round(PriceChange * 100)
-
 			if existingItem.ID == 0 {
 				item.MenuItemID = UpdatedMenu.ID
 				u.DB.Create(&item)
@@ -242,7 +238,7 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 					NewMenuItemID: item.MenuItemID,
 				})
 
-			} else if PriceChangePerc >= PriceDiscrepancy {
+			} else if ShouldUpdateItem(existingItem.OriginalPrice, item.OriginalPrice) {
 
 				log.Println("item before update : ", existingItem)
 
