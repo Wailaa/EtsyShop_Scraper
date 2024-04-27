@@ -225,8 +225,6 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 			PriceChange := math.Abs((existingItem.OriginalPrice / item.OriginalPrice) - 1)
 			PriceChangePerc := math.Round(PriceChange * 100)
 
-			log.Println("the price Change is :", PriceChangePerc)
-
 			if existingItem.ID == 0 {
 				item.MenuItemID = UpdatedMenu.ID
 				u.DB.Create(&item)
