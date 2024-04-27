@@ -620,3 +620,53 @@ func TestShopItemsUpdate_CreateNewMenu(t *testing.T) {
 
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestShouldUpdateItem(t *testing.T) {
+
+	tests := []struct {
+		name          string
+		existingPrice float64
+		newPrice      float64
+		expected      bool
+	}{
+		{
+			name:          "Price discrepancy is greater than tolerated ",
+			existingPrice: 100.0,
+			newPrice:      105.0,
+			expected:      true,
+		},
+		{
+			name:          "Price discrepancy is greater than tolerated ",
+			existingPrice: 100.0,
+			newPrice:      103.0,
+			expected:      true,
+		},
+		{
+			name:          "Price discrepancy is greater than tolerated ",
+			existingPrice: 100.0,
+			newPrice:      96.0,
+			expected:      true,
+		},
+		{
+			name:          "Price discrepancy is  tolerated ",
+			existingPrice: 100.0,
+			newPrice:      99.0,
+			expected:      false,
+		},
+		{
+			name:          "Price discrepancy is  tolerated ",
+			existingPrice: 100.0,
+			newPrice:      101,
+			expected:      false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := scheduleUpdates.ShouldUpdateItem(tc.existingPrice, tc.newPrice)
+			if actual != tc.expected {
+				t.Errorf("Expected ShouldUpdateItem(%f, %f) to be %t, but got %t", tc.existingPrice, tc.newPrice, tc.expected, actual)
+			}
+		})
+	}
+}
