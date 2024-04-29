@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/queue"
 	"github.com/stretchr/testify/assert"
 )
@@ -498,4 +499,73 @@ func TestReplaceSign(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestExtractPrices(t *testing.T) {
+
+	mockConfig := initializer.Config{
+		ProxyHostURL1: "",
+		ProxyHostURL2: "",
+		ProxyHostURL3: "",
+	}
+	Config = mockConfig
+
+	collector.RateLimiting = 0 * time.Second
+
+	c := collector.NewCollyCollector().C
+
+	setupMockServer.GlobalTestSetupMockServer("../setupTests/testingItems.html")
+
+	defer setupMockServer.MockServer.Close()
+
+	mockURL := setupMockServer.MockServer.URL
+
+	tests := []struct {
+		Expected []float64
+	}{
+
+		{
+
+			Expected: []float64{21.77, 19.59},
+		},
+		{
+
+			Expected: []float64{251.28, 238.72},
+		},
+		{
+
+			Expected: []float64{426.93, 405.59},
+		},
+		{
+
+			Expected: []float64{880.7, 836.67},
+		},
+		{
+
+			Expected: []float64{308.61, 293.18},
+		},
+		{
+
+			Expected: []float64{307.39, 292.02},
+		},
+	}
+
+	c.OnHTML(`div[data-appears-component-name="shop_home_listing_grid"]`, func(e *colly.HTMLElement) {
+		e.ForEachWithBreak("div.js-merch-stash-check-listing", func(i int, h *colly.HTMLElement) bool {
+
+			OriginalPrice, SalesPrice := ExtractPrices(h)
+			t.Run("", func(t *testing.T) {
+				if OriginalPrice != tests[i].Expected[0] || SalesPrice != tests[i].Expected[1] {
+					t.Errorf("Expected OriginalPrice to be %v, but got %v", tests[i].Expected[0], OriginalPrice)
+				}
+			})
+
+			return i != 5
+		})
+
+	})
+
+	c.Visit(mockURL)
+	c.Wait()
+
 }

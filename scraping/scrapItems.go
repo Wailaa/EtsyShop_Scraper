@@ -273,3 +273,32 @@ func ReplaceSign(sentence, oldSign, newSign string) string {
 	result := strings.Replace(sentence, oldSign, newSign, -1)
 	return result
 }
+
+func ExtractPrices(h *colly.HTMLElement) (float64, float64) {
+	OriginalPrice := h.ChildText("span.currency-value")
+	OriginalPrice = ReplaceSign(OriginalPrice, ",", "")
+	SalesPrice := "-1"
+	h.ForEachWithBreak("p.search-collage-promotion-price", func(i int, g *colly.HTMLElement) bool {
+		SalesPrice = h.DOM.Find("span.currency-value").Eq(0).Text()
+		SalesPrice = ReplaceSign(SalesPrice, ",", "")
+
+		OriginalPrice = g.ChildText("span.currency-value")
+		OriginalPrice = ReplaceSign(OriginalPrice, ",", "")
+
+		return false
+	})
+
+	SalesPriceToFloat, err := StringToFloat(SalesPrice)
+	if err != nil {
+		log.Println(err.Error())
+		return float64(0), float64(0)
+	}
+
+	OriginalPricetoFloat, err := StringToFloat(OriginalPrice)
+	if err != nil {
+		log.Println(err.Error())
+		return float64(0), float64(0)
+	}
+
+	return OriginalPricetoFloat, SalesPriceToFloat
+}
