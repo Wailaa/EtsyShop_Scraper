@@ -279,3 +279,39 @@ func ExtractPrices(h *colly.HTMLElement) (float64, float64) {
 
 	return OriginalPricetoFloat, SalesPriceToFloat
 }
+
+func HandleItem(h *colly.HTMLElement, MenuID uint) models.Item {
+	newItem := models.Item{}
+	ListingID := h.Attr("data-listing-id")
+	ListingIDToUint64, err := strconv.ParseUint(ListingID, 10, 64)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	newItem.ListingID = uint(ListingIDToUint64)
+
+	ListingIdCount[newItem.ListingID]++
+
+	newItem.DataShopID = h.Attr("data-shop-id")
+	newItem.MenuItemID = MenuID
+
+	divID := "h3#listing-title-" + ListingID
+	newItem.Name = h.ChildText(divID)
+
+	OriginalPrice, SalesPrice := ExtractPrices(h)
+
+	newItem.OriginalPrice = OriginalPrice
+
+	newItem.SalePrice = SalesPrice
+
+	newItem.CurrencySymbol = h.DOM.Find("span.currency-symbol").Eq(0).Text()
+
+	getDiscoutPrice := h.DOM.Find("p.search-collage-promotion-price").Find("span").Last().Text()
+	getDiscoutPrice = strings.TrimSpace(getDiscoutPrice)
+	newItem.DiscoutPercent = getDiscoutPrice
+
+	newItem.ItemLink = h.ChildAttr("a.listing-link", "href")
+	newItem.Available = true
+
+	return newItem
+}

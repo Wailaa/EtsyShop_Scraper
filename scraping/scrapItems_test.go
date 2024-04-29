@@ -6,6 +6,7 @@ import (
 	"EtsyScraper/models"
 	setupMockServer "EtsyScraper/setupTests"
 	"log"
+	"reflect"
 	"testing"
 	"time"
 
@@ -561,6 +562,75 @@ func TestExtractPrices(t *testing.T) {
 			})
 
 			return i != 5
+		})
+
+	})
+
+	c.Visit(mockURL)
+	c.Wait()
+
+}
+func TestHandleItem(t *testing.T) {
+
+	mockConfig := initializer.Config{
+		ProxyHostURL1: "",
+		ProxyHostURL2: "",
+		ProxyHostURL3: "",
+	}
+	Config = mockConfig
+
+	collector.RateLimiting = 0 * time.Second
+
+	c := collector.NewCollyCollector().C
+
+	setupMockServer.GlobalTestSetupMockServer("../setupTests/testingItems.html")
+
+	defer setupMockServer.MockServer.Close()
+
+	mockURL := setupMockServer.MockServer.URL
+
+	tests := []struct {
+		Expected models.Item
+	}{
+		{
+			Expected: models.Item{Name: "INDUSTRIAL COAT HOOK- steampunk wall art", OriginalPrice: 21.77, CurrencySymbol: "€", SalePrice: 19.59, DiscoutPercent: "(10% off)", Available: true, ItemLink: "https://www.etsy.com/de-en/listing/1616116159/industrial-coat-hook-steampunk-wall-art?click_key=0db4c2898f0e84d918cac1c3b0e13c3a09cfe4d4%3A1616116159\u0026click_sum=53d95add\u0026ref=shop_home_active_2\u0026pro=1", ListingID: 1616116159, PriceHistory: nil},
+		},
+		{
+			Expected: models.Item{Name: "Steampunk shelving unit - Retro Industrial wall art", OriginalPrice: 251.28, CurrencySymbol: "€", SalePrice: 238.72, DiscoutPercent: "(5% off)", Available: true, ItemLink: "https://www.etsy.com/de-en/listing/1573116439/steampunk-shelving-unit-retro-industrial?click_key=8fae5cf715d357c866d8a2805451331280299b16%3A1573116439\u0026click_sum=295cd595\u0026ref=shop_home_active_3\u0026pro=1", ListingID: 1573116439, PriceHistory: nil},
+		},
+		{
+			Expected: models.Item{Name: "The Manic Steampunk Side Table", OriginalPrice: 426.93, CurrencySymbol: "€", SalePrice: 405.59, DiscoutPercent: "(5% off)", Available: true, ItemLink: "https://www.etsy.com/de-en/listing/1572514925/the-manic-steampunk-side-table?click_key=de8520515537e83cb4803fbe876e59f3b20ea7ea%3A1572514925\u0026click_sum=f4f366f8\u0026ref=shop_home_active_4\u0026pro=1", ListingID: 1572514925, PriceHistory: nil},
+		},
+		{
+			Expected: models.Item{Name: "The industrial Shelving Unit - Steampunk wall art", OriginalPrice: 880.7, CurrencySymbol: "€", SalePrice: 836.67, DiscoutPercent: "(5% off)", Available: true, ItemLink: "https://www.etsy.com/de-en/listing/1539348644/the-industrial-shelving-unit-steampunk?click_key=efb54d919d2ca63a829189e57565939743a22ff4%3A1539348644\u0026click_sum=4b2c33b8\u0026ref=shop_home_active_5\u0026pro=1", ListingID: 1539348644, PriceHistory: nil},
+		},
+		{
+			Expected: models.Item{Name: "Brunel Steampunk shelving unit - Retro Industrial wall art", OriginalPrice: 308.61, CurrencySymbol: "€", SalePrice: 293.18, DiscoutPercent: "(5% off)", Available: true, ItemLink: "https://www.etsy.com/de-en/listing/1463373323/brunel-steampunk-shelving-unit-retro?click_key=5c76bd7420a06ad07de08392226c0b9c343f4b61%3A1463373323\u0026click_sum=91132e67\u0026ref=shop_home_active_6\u0026pro=1", ListingID: 1463373323, PriceHistory: nil},
+		},
+		{
+			Expected: models.Item{Name: "The Stephenson Steampunk Shelving Unit- - Retro Industrial wall art", OriginalPrice: 307.39, CurrencySymbol: "€", SalePrice: 292.02, DiscoutPercent: "(5% off)", Available: true, ItemLink: "https://www.etsy.com/de-en/listing/1468110403/the-stephenson-steampunk-shelving-unit?click_key=57bd4a72bfc90861d969a5697562fbf7e4a5f84f%3A1468110403\u0026click_sum=62e359b4\u0026ref=shop_home_active_7\u0026pro=1", ListingID: 1468110403, PriceHistory: nil},
+		},
+		{
+			Expected: models.Item{Name: "locke Steampunk shelving unit - Retro Industrial wall art Plant stand", OriginalPrice: 185.41, CurrencySymbol: "€", SalePrice: 176.14, DiscoutPercent: "(5% off)", Available: true, ItemLink: "https://www.etsy.com/de-en/listing/1527884665/locke-steampunk-shelving-unit-retro?click_key=4a26efa99764e4ed46c55ba9505421d8295c8387%3A1527884665\u0026click_sum=1b18c02f\u0026ref=shop_home_active_8\u0026pro=1", ListingID: 1527884665, PriceHistory: nil},
+		},
+		{
+			Expected: models.Item{Name: "The Reynolds industrial Shelving Unit - Steampunk wall art", OriginalPrice: 602.59, CurrencySymbol: "€", SalePrice: 572.46, DiscoutPercent: "(5% off)", Available: true, ItemLink: "https://www.etsy.com/de-en/listing/1479436896/the-reynolds-industrial-shelving-unit?click_key=4fad9bdab5eb88c0a9f6fb4a95ea21fbc6a540f9%3A1479436896\u0026click_sum=b1da47c5\u0026ref=shop_home_active_9\u0026pro=1", ListingID: 1479436896, PriceHistory: nil},
+		},
+	}
+
+	MenuID := uint(1)
+	c.OnHTML(`div[data-appears-component-name="shop_home_listing_grid"]`, func(e *colly.HTMLElement) {
+		e.ForEachWithBreak("div.js-merch-stash-check-listing", func(i int, h *colly.HTMLElement) bool {
+
+			Items := HandleItem(h, MenuID)
+
+			t.Run(tests[i].Expected.Name, func(t *testing.T) {
+				if reflect.DeepEqual(Items, tests[i].Expected) {
+					t.Errorf("Expected OriginalPrice to be %v, but got %v", tests[i].Expected, Items)
+				}
+			})
+			return i != 7
+
 		})
 
 	})
