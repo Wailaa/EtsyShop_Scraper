@@ -118,7 +118,7 @@ func scrapShopTotalSales(c *colly.Collector, shop *models.Shop) error {
 
 		TotalSales := e.ChildText("div.wt-mt-lg-5 div:first-child")
 		TotalSales = strings.Split(TotalSales, " ")[0]
-		TotalSales = strings.Replace(TotalSales, ",", "", -1)
+		TotalSales = ReplaceSign(TotalSales, ",", "")
 		TotalSalesToInt, _ := strconv.Atoi(TotalSales)
 
 		shop.TotalSales = TotalSalesToInt
