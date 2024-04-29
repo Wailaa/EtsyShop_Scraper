@@ -121,7 +121,6 @@ func scrapShopItems(c *colly.Collector, shop *models.Shop) *models.Shop {
 
 	c.OnHTML(`div[data-appears-component-name="shop_home_listing_grid"]`, func(e *colly.HTMLElement) {
 
-		newItem := models.Item{}
 		newItemsSlice := []models.Item{}
 
 		CurrentQueueURL := e.Request.URL.Scheme + "://" + e.Request.URL.Host + e.Request.URL.RequestURI()
@@ -130,38 +129,7 @@ func scrapShopItems(c *colly.Collector, shop *models.Shop) *models.Shop {
 
 		e.ForEach("div.js-merch-stash-check-listing", func(i int, h *colly.HTMLElement) {
 
-			ListingID := h.Attr("data-listing-id")
-			ListingIDToUint64, err := strconv.ParseUint(ListingID, 10, 64)
-			if err != nil {
-				log.Println(err.Error())
-				return
-			}
-
-			newItem.ListingID = uint(ListingIDToUint64)
-
-			ListingIdCount[newItem.ListingID]++
-
-			newItem.DataShopID = h.Attr("data-shop-id")
-			newItem.MenuItemID = shop.ShopMenu.Menu[MenuIndex].ID
-
-			divID := "h3#listing-title-" + ListingID
-			newItem.Name = h.ChildText(divID)
-
-			OriginalPrice, SalesPrice := ExtractPrices(h)
-
-			newItem.OriginalPrice = OriginalPrice
-
-			newItem.SalePrice = SalesPrice
-
-			newItem.CurrencySymbol = h.DOM.Find("span.currency-symbol").Eq(0).Text()
-
-			getDiscoutPrice := h.DOM.Find("p.search-collage-promotion-price").Find("span").Last().Text()
-			getDiscoutPrice = strings.TrimSpace(getDiscoutPrice)
-			newItem.DiscoutPercent = getDiscoutPrice
-
-			newItem.ItemLink = h.ChildAttr("a.listing-link", "href")
-			newItem.Available = true
-
+			newItem := HandleItem(h, shop.ShopMenu.Menu[MenuIndex].ID)
 			newItemsSlice = append(newItemsSlice, newItem)
 
 		})
