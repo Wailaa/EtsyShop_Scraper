@@ -246,3 +246,35 @@ func CheckCategoryName(Category string) bool {
 	return false
 
 }
+
+func HandleUnCategorized(shop *models.Shop, HasSalesCategory bool, AllItemCategoryIndex int) *models.Shop {
+	UnCategorizedItems := []models.Item{}
+
+	if (len(shop.ShopMenu.Menu) > 1 && !HasSalesCategory) || (len(shop.ShopMenu.Menu) > 2 && HasSalesCategory) {
+		for ListingID, Amount := range ListingIdCount {
+			if Amount == 1 {
+				for _, item := range shop.ShopMenu.Menu[AllItemCategoryIndex].Items {
+					if item.ListingID == ListingID {
+						UnCategorizedItems = append(UnCategorizedItems, item)
+					}
+				}
+			}
+		}
+		if len(UnCategorizedItems) > 0 {
+			UnCategorizedMenu := models.MenuItem{
+				ShopMenuID: shop.ShopMenu.Menu[AllItemCategoryIndex].ShopMenuID,
+				Category:   "UnCategorized",
+				SectionID:  shop.ShopMenu.Menu[AllItemCategoryIndex].SectionID,
+				Link:       shop.ShopMenu.Menu[AllItemCategoryIndex].Link,
+				Amount:     len(UnCategorizedItems),
+				Items:      UnCategorizedItems,
+			}
+
+			shop.ShopMenu.Menu = append(shop.ShopMenu.Menu, UnCategorizedMenu)
+		}
+
+		shop.ShopMenu.Menu[AllItemCategoryIndex].Items = []models.Item{}
+	}
+
+	return shop
+}
