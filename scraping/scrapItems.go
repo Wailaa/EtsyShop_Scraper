@@ -148,14 +148,14 @@ func scrapShopItems(c *colly.Collector, shop *models.Shop) *models.Shop {
 			newItem.Name = h.ChildText(divID)
 
 			OriginalPrice := h.ChildText("span.currency-value")
-			OriginalPrice = strings.Replace(OriginalPrice, ",", "", -1)
+			OriginalPrice = ReplaceSign(OriginalPrice, ",", "")
 			SalesPrice := "-1"
 			h.ForEachWithBreak("p.search-collage-promotion-price", func(i int, g *colly.HTMLElement) bool {
 				SalesPrice = h.DOM.Find("span.currency-value").Eq(0).Text()
-				SalesPrice = strings.Replace(SalesPrice, ",", "", -1)
+				SalesPrice = ReplaceSign(SalesPrice, ",", "")
 
 				OriginalPrice = g.ChildText("span.currency-value")
-				OriginalPrice = strings.Replace(OriginalPrice, ",", "", -1)
+				OriginalPrice = ReplaceSign(OriginalPrice, ",", "")
 
 				return false
 			})
