@@ -21,7 +21,6 @@ func (sc *Scraper) ScrapAllMenuItems(shop *models.Shop) *models.Shop {
 
 	HasSalesCategory := false
 	AllItemCategoryIndex := 0
-	UnCategorizedItems := []models.Item{}
 
 	c := collector.NewCollyCollector().C
 	c.AllowURLRevisit = true
@@ -70,31 +69,8 @@ func (sc *Scraper) ScrapAllMenuItems(shop *models.Shop) *models.Shop {
 	backUpQueue.Run(c)
 	c.Wait()
 
-	if (len(shop.ShopMenu.Menu) > 1 && !HasSalesCategory) || (len(shop.ShopMenu.Menu) > 2 && HasSalesCategory) {
-		for ListingID, Amount := range ListingIdCount {
-			if Amount == 1 {
-				for _, item := range shop.ShopMenu.Menu[AllItemCategoryIndex].Items {
-					if item.ListingID == ListingID {
-						UnCategorizedItems = append(UnCategorizedItems, item)
-					}
-				}
-			}
-		}
-		if len(UnCategorizedItems) > 0 {
-			UnCategorizedMenu := models.MenuItem{
-				ShopMenuID: shop.ShopMenu.Menu[AllItemCategoryIndex].ShopMenuID,
-				Category:   "UnCategorized",
-				SectionID:  shop.ShopMenu.Menu[AllItemCategoryIndex].SectionID,
-				Link:       shop.ShopMenu.Menu[AllItemCategoryIndex].Link,
-				Amount:     len(UnCategorizedItems),
-				Items:      UnCategorizedItems,
-			}
+	HandleUnCategorized(shop, HasSalesCategory, AllItemCategoryIndex)
 
-			shop.ShopMenu.Menu = append(shop.ShopMenu.Menu, UnCategorizedMenu)
-		}
-
-		shop.ShopMenu.Menu[AllItemCategoryIndex].Items = []models.Item{}
-	}
 	SectionIdPages = make(map[string]struct{})
 	ListingIdCount = make(map[uint]int)
 	return shop
