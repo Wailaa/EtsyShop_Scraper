@@ -136,6 +136,7 @@ func scrapShopItems(c *colly.Collector, shop *models.Shop) *models.Shop {
 				log.Println(err.Error())
 				return
 			}
+
 			newItem.ListingID = uint(ListingIDToUint64)
 
 			ListingIdCount[newItem.ListingID]++
@@ -258,4 +259,12 @@ func GetMenuIndex(shop *models.Shop, SectionID string) int {
 		}
 	}
 	return MenuIndex
+}
+
+func StringToFloat(price string) (float64, error) {
+	result, err := strconv.ParseFloat(price, 64)
+	if err != nil {
+		return float64(0), err
+	}
+	return result, nil
 }

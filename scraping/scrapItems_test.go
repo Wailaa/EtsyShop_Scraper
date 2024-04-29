@@ -436,3 +436,29 @@ func TestGetMenuIndex(t *testing.T) {
 	}
 
 }
+
+func TestStringToFloat(t *testing.T) {
+	tests := []struct {
+		Price  string
+		result float64
+		err    error
+	}{
+		{
+			Price:  "19.7",
+			result: 19.7,
+		},
+		{
+			Price:  "1.8",
+			result: 1.8,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.Price, func(t *testing.T) {
+			actual, _ := StringToFloat(tc.Price)
+			if actual != tc.result {
+				t.Errorf("Expected StringToFloat to be %v, but got %v", tc.result, actual)
+			}
+		})
+	}
+}
