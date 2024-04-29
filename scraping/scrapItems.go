@@ -268,3 +268,8 @@ func StringToFloat(price string) (float64, error) {
 	}
 	return result, nil
 }
+
+func ReplaceSign(sentence, oldSign, newSign string) string {
+	result := strings.Replace(sentence, oldSign, newSign, -1)
+	return result
+}
