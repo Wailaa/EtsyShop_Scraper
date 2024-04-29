@@ -195,7 +195,7 @@ func scrapShopReviews(c *colly.Collector, shop *models.Shop) error {
 	c.OnHTML("div.reviews-total", func(e *colly.HTMLElement) {
 
 		ratings := e.ChildAttr("input", "value")
-		ratingsToFloat, _ := strconv.ParseFloat(ratings, 64)
+		ratingsToFloat, _ := StringToFloat(ratings)
 
 		totalReviews := e.ChildText("div:last-child")
 		totalReviews = totalReviews[1 : len(totalReviews)-1]
