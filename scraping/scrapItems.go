@@ -124,15 +124,9 @@ func scrapShopItems(c *colly.Collector, shop *models.Shop) *models.Shop {
 		newItem := models.Item{}
 		newItemsSlice := []models.Item{}
 
-		MenuIndex := 0
 		CurrentQueueURL := e.Request.URL.Scheme + "://" + e.Request.URL.Host + e.Request.URL.RequestURI()
 		Section_ID := GetSectionID(CurrentQueueURL)
-
-		for index, menu := range shop.ShopMenu.Menu {
-			if Section_ID == menu.SectionID {
-				MenuIndex = index
-			}
-		}
+		MenuIndex := GetMenuIndex(shop, Section_ID)
 
 		e.ForEach("div.js-merch-stash-check-listing", func(i int, h *colly.HTMLElement) {
 
