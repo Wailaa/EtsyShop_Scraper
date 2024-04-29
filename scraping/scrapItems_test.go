@@ -361,3 +361,78 @@ func TestHandleUnCategorized_CreateUnCategorized(t *testing.T) {
 
 	assert.True(t, IsUnCategorized, "UnCategorized category is created")
 }
+
+func TestGetMenuIndex(t *testing.T) {
+	UpdatedShop := &models.Shop{
+		ShopMenu: models.ShopMenu{
+			Menu: []models.MenuItem{
+				{
+					Category:  "All",
+					SectionID: "0",
+					Amount:    0,
+					Items:     []models.Item{{ListingID: 1, DataShopID: "101", OriginalPrice: 10}, {ListingID: 2, DataShopID: "101", OriginalPrice: 10}, {ListingID: 3, DataShopID: "101", OriginalPrice: 10}, {ListingID: 4, DataShopID: "101", OriginalPrice: 10}, {ListingID: 5, DataShopID: "101", OriginalPrice: 10}, {ListingID: 6, DataShopID: "101", OriginalPrice: 10}, {ListingID: 7, DataShopID: "101", OriginalPrice: 10}, {ListingID: 8, DataShopID: "101", OriginalPrice: 10}, {ListingID: 9, DataShopID: "101", OriginalPrice: 10}, {ListingID: 10, DataShopID: "101", OriginalPrice: 10}, {ListingID: 11, DataShopID: "101", OriginalPrice: 10}, {ListingID: 12, DataShopID: "101", OriginalPrice: 10}, {ListingID: 13, DataShopID: "101", OriginalPrice: 10}},
+				},
+				{
+					Category:  "On sale",
+					SectionID: "1",
+					Amount:    0,
+					Items:     []models.Item{},
+				},
+				{
+					Category:  "shelving",
+					SectionID: "46696458",
+					Amount:    45,
+					Items:     []models.Item{{ListingID: 1, DataShopID: "101", OriginalPrice: 10}, {ListingID: 2, DataShopID: "101", OriginalPrice: 10}, {ListingID: 3, DataShopID: "101", OriginalPrice: 10}},
+				},
+				{
+					Category:  "tables",
+					SectionID: "46704593",
+					Amount:    44,
+					Items:     []models.Item{{ListingID: 4, DataShopID: "101", OriginalPrice: 10}, {ListingID: 5, DataShopID: "101", OriginalPrice: 10}},
+				},
+				{
+					Category:  "coat racks",
+					SectionID: "46704591",
+					Amount:    46,
+					Items:     []models.Item{{ListingID: 6, DataShopID: "101", OriginalPrice: 10}, {ListingID: 7, DataShopID: "101", OriginalPrice: 10}, {ListingID: 8, DataShopID: "101", OriginalPrice: 10}, {ListingID: 9, DataShopID: "101", OriginalPrice: 10}, {ListingID: 10, DataShopID: "101", OriginalPrice: 10}},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		SectioID  string
+		MenuIndex int
+	}{
+		{
+			SectioID:  "0",
+			MenuIndex: 0,
+		},
+		{
+			SectioID:  "1",
+			MenuIndex: 1,
+		},
+		{
+			SectioID:  "46696458",
+			MenuIndex: 2,
+		},
+		{
+			SectioID:  "46704593",
+			MenuIndex: 3,
+		},
+		{
+			SectioID:  "46704591",
+			MenuIndex: 4,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.SectioID, func(t *testing.T) {
+			actual := GetMenuIndex(UpdatedShop, tc.SectioID)
+			if actual != tc.MenuIndex {
+				t.Errorf("Expected GetMenuIndex to be %v, but got %v", tc.MenuIndex, actual)
+			}
+		})
+	}
+
+}

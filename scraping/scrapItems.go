@@ -254,3 +254,14 @@ func HandleUnCategorized(shop *models.Shop, HasSalesCategory bool, AllItemCatego
 
 	return shop
 }
+
+func GetMenuIndex(shop *models.Shop, SectionID string) int {
+	MenuIndex := 0
+	for index, menu := range shop.ShopMenu.Menu {
+		if SectionID == menu.SectionID {
+			MenuIndex = index
+			break
+		}
+	}
+	return MenuIndex
+}
