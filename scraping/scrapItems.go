@@ -160,13 +160,13 @@ func scrapShopItems(c *colly.Collector, shop *models.Shop) *models.Shop {
 				return false
 			})
 
-			SalesPriceToFloat, err := strconv.ParseFloat(SalesPrice, 64)
+			SalesPriceToFloat, err := StringToFloat(SalesPrice)
 			if err != nil {
 				log.Println(err.Error())
 				return
 			}
 
-			OriginalPricetoFloat, err := strconv.ParseFloat(OriginalPrice, 64)
+			OriginalPricetoFloat, err := StringToFloat(OriginalPrice)
 			if err != nil {
 				log.Println(err.Error())
 				return
