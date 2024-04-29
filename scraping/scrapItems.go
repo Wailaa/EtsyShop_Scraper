@@ -283,3 +283,16 @@ func HandleItem(h *colly.HTMLElement, MenuID uint) models.Item {
 
 	return newItem
 }
+
+func AddToQueue(SectionID string, pagesCount int, link string, q *queue.Queue) {
+	if _, ok := SectionIdPages[SectionID]; !ok {
+		for i := 2; i <= pagesCount; i++ {
+			SectionIdPages[SectionID] = struct{}{}
+
+			QueueURL := fmt.Sprint(link, "?ref=items-pagination&page=", i, "&section_id=", SectionID, "&sort_order=price_desc")
+
+			q.AddURL(QueueURL)
+
+		}
+	}
+}

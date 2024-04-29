@@ -639,3 +639,53 @@ func TestHandleItem(t *testing.T) {
 	c.Wait()
 
 }
+func TestAddToQueue(t *testing.T) {
+
+	tests := []struct {
+		name        string
+		Section_ID  string
+		pageCount   int
+		link        string
+		queueLength int
+	}{
+		{
+			name:        "menu has 5 pages",
+			Section_ID:  "0",
+			pageCount:   5,
+			link:        "www.JustEcample.com",
+			queueLength: 4,
+		},
+		{
+			name:        "has no pages",
+			Section_ID:  "1",
+			pageCount:   0,
+			link:        "www.JustEcample.com",
+			queueLength: 0,
+		},
+		{
+			name:        "SectionID already consumed",
+			Section_ID:  "10",
+			pageCount:   5,
+			link:        "www.JustEcample.com",
+			queueLength: 0,
+		},
+	}
+
+	SectionIdPages["10"] = struct{}{}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			q, _ := queue.New(
+				1,
+				&queue.InMemoryQueueStorage{MaxSize: 10000},
+			)
+
+			AddToQueue(tc.Section_ID, tc.pageCount, tc.link, q)
+			ActualQueueSize, _ := q.Size()
+			if ActualQueueSize != tc.queueLength {
+				t.Errorf("Expected StringToFloat to be %v, but got %v", tc.queueLength, ActualQueueSize)
+			}
+		})
+	}
+
+}
