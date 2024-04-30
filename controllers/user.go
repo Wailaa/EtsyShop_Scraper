@@ -251,7 +251,7 @@ func (s *User) LogOutAccount(ctx *gin.Context) {
 	}
 
 	for tokenName, token := range tokenList {
-		if reflect.ValueOf(userUUID).IsZero() {
+		if userUUID == uuid.Nil {
 			tokenClaims, err := s.utils.ValidateJWT(token)
 			if err != nil {
 				log.Println(err)
