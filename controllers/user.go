@@ -503,3 +503,12 @@ func (s *User) GenerateLoginResponce(Account *models.Account, AccessToken, Refre
 
 	return loginResponse
 }
+
+func (s *User) UpdateLastTimeLoggedOut(UserID uuid.UUID) error {
+	now := time.Now()
+	if err := s.DB.Model(&models.Account{}).Where("id = ?", UserID).Update("last_time_logged_out", now).Error; err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}

@@ -1610,3 +1610,45 @@ func TestGenerateLoginResponce(t *testing.T) {
 	}
 
 }
+
+func TestUpdateLastTimeLoggedOut_Success(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	MockedUtils := &mockUtils{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	Account := models.Account{}
+	Account.ID = uuid.New()
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_out"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), Account.ID).WillReturnResult(sqlmock.NewResult(1, 2))
+	sqlMock.ExpectCommit()
+
+	User.UpdateLastTimeLoggedOut(Account.ID)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestUpdateLastTimeLoggedOut_Failed(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	MockedUtils := &mockUtils{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	Account := models.Account{}
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_out"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL`)).WillReturnError(errors.New(("user not found")))
+	sqlMock.ExpectRollback()
+
+	err := User.UpdateLastTimeLoggedOut(Account.ID)
+
+	assert.Contains(t, err.Error(), "user not found")
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
