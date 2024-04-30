@@ -216,6 +216,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		log.Println(err)
 		return
 	}
+
 	for i := range result.ShopsFollowing {
 		if err := s.DB.Preload("ShopMenu").Preload("Reviews").Preload("Member").First(&result.ShopsFollowing[i]).Error; err != nil {
 			log.Println(err)
@@ -474,4 +475,13 @@ func (s *User) ResetPass(ctx *gin.Context) {
 
 	message := "Password changed successfully"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
+}
+
+func (s *User) UpdateLastTimeLoggedIn(Account *models.Account) error {
+	now := time.Now()
+	if err := s.DB.Model(Account).Where("id = ?", Account.ID).Update("last_time_logged_in", now).Error; err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
 }

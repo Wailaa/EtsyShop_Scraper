@@ -1491,3 +1491,42 @@ func TestResetPass_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
+func TestUpdateLastTimeLoggedIn(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	MockedUtils := &mockUtils{}
+	MockedUtils.On("HashPass").Return("NewHasshedPass", nil)
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	Account := models.Account{}
+	Account.ID = uuid.New()
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_in"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL AND "id" = $4`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), Account.ID, Account.ID).WillReturnResult(sqlmock.NewResult(1, 2))
+	sqlMock.ExpectCommit()
+
+	User.UpdateLastTimeLoggedIn(&Account)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestUpdateLastTimeLoggedIn_Failed(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	MockedUtils := &mockUtils{}
+	MockedUtils.On("HashPass").Return("NewHasshedPass", nil)
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	Account := models.Account{}
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_in"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL AND "id" = $4`)).WillReturnError(errors.New(("user not found")))
+
+	err := User.UpdateLastTimeLoggedIn(&Account)
+	assert.Contains(t, err.Error(), "user not found")
+	assert.Error(t, sqlMock.ExpectationsWereMet())
+}
