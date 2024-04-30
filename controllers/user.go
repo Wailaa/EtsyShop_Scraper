@@ -241,7 +241,6 @@ func GetTokens(ctx *gin.Context) (map[string]*models.Token, error) {
 }
 
 func (s *User) LogOutAccount(ctx *gin.Context) {
-	now := time.Now().UTC()
 	var userUUID uuid.UUID
 
 	tokenList, err := GetTokens(ctx)
@@ -260,7 +259,7 @@ func (s *User) LogOutAccount(ctx *gin.Context) {
 
 			userUUID = tokenClaims.UserUUID
 
-			if err = s.DB.Model(&models.Account{}).Where("id = ?", userUUID).Update("last_time_logged_out", now).Error; err != nil {
+			if err = s.UpdateLastTimeLoggedOut(userUUID); err != nil {
 				log.Println(err)
 				ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": "failed to update logout details"})
 				return
