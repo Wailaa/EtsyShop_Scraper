@@ -212,7 +212,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		log.Println(err)
 	}
 
-	if err := s.DB.Preload("ShopsFollowing").First(&result, result.ID).Error; err != nil {
+	if err := s.JoinShopFollowing(result); err != nil {
 		log.Println(err)
 		return
 	}
