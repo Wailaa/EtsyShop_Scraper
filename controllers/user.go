@@ -217,13 +217,6 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	for i := range result.ShopsFollowing {
-		if err := s.DB.Preload("ShopMenu").Preload("Reviews").Preload("Member").First(&result.ShopsFollowing[i]).Error; err != nil {
-			log.Println(err)
-			return
-		}
-	}
-
 	user := UserData{
 		Name:  result.FirstName,
 		Email: result.Email,
@@ -491,6 +484,13 @@ func (s *User) JoinShopFollowing(Account *models.Account) error {
 	if err := s.DB.Preload("ShopsFollowing").First(Account, Account.ID).Error; err != nil {
 		log.Println(err)
 		return err
+	}
+
+	for i := range Account.ShopsFollowing {
+		if err := s.DB.Preload("ShopMenu").Preload("Reviews").Preload("Member").First(&Account.ShopsFollowing[i]).Error; err != nil {
+			log.Println(err)
+			return err
+		}
 	}
 
 	return nil
