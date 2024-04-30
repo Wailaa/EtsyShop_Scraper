@@ -496,3 +496,21 @@ func (s *User) JoinShopFollowing(Account *models.Account) error {
 	return nil
 
 }
+
+func (s *User) GenerateLoginResponce(Account *models.Account, AccessToken, RefreshToken *models.Token) *LoginResponse {
+
+	user := UserData{
+		Name:  Account.FirstName,
+		Email: Account.Email,
+		Shops: Account.ShopsFollowing,
+	}
+
+	loginResponse := &LoginResponse{
+		TokenType:    "Bearer",
+		AccessToken:  AccessToken,
+		RefreshToken: RefreshToken,
+		User:         user,
+	}
+
+	return loginResponse
+}
