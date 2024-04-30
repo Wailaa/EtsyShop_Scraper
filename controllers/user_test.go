@@ -1497,7 +1497,7 @@ func TestUpdateLastTimeLoggedIn(t *testing.T) {
 	defer testDB.Close()
 
 	MockedUtils := &mockUtils{}
-	MockedUtils.On("HashPass").Return("NewHasshedPass", nil)
+
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
 
 	Account := models.Account{}
@@ -1518,7 +1518,7 @@ func TestUpdateLastTimeLoggedIn_Failed(t *testing.T) {
 	defer testDB.Close()
 
 	MockedUtils := &mockUtils{}
-	MockedUtils.On("HashPass").Return("NewHasshedPass", nil)
+	
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
 
 	Account := models.Account{}
