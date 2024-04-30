@@ -1530,3 +1530,51 @@ func TestUpdateLastTimeLoggedIn_Failed(t *testing.T) {
 	assert.Contains(t, err.Error(), "user not found")
 	assert.Error(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestJoinShopFollowing(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	MockedUtils := &mockUtils{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	Account := models.Account{}
+	Account.ID = uuid.New()
+	AccountIdtoString := Account.ID.String()
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE "accounts"."id" = $1 AND "accounts"."deleted_at" IS NULL AND "accounts"."id" = $2 ORDER BY "accounts"."id" LIMIT $3`)).
+		WithArgs(AccountIdtoString, AccountIdtoString, 1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(AccountIdtoString))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1`)).
+		WithArgs(AccountIdtoString).WillReturnRows(sqlmock.NewRows([]string{"account_id", "shop_id"}).AddRow(AccountIdtoString, 1))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE "shops"."id" = $1 AND "shops"."deleted_at" IS NULL`)).
+		WithArgs(1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+	err := User.JoinShopFollowing(&Account)
+
+	assert.NoError(t, err)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+func TestJoinShopFollowing_FAIL(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	MockedUtils := &mockUtils{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	Account := models.Account{}
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE "accounts"."id" = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WithArgs(Account.ID, 1).WillReturnError(errors.New("No User Found"))
+
+	err := User.JoinShopFollowing(&Account)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "No User Found")
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}

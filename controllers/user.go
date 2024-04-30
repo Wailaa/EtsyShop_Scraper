@@ -485,3 +485,14 @@ func (s *User) UpdateLastTimeLoggedIn(Account *models.Account) error {
 	}
 	return nil
 }
+
+func (s *User) JoinShopFollowing(Account *models.Account) error {
+
+	if err := s.DB.Preload("ShopsFollowing").First(Account, Account.ID).Error; err != nil {
+		log.Println(err)
+		return err
+	}
+
+	return nil
+
+}
