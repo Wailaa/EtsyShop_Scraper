@@ -1518,17 +1518,18 @@ func TestUpdateLastTimeLoggedIn_Failed(t *testing.T) {
 	defer testDB.Close()
 
 	MockedUtils := &mockUtils{}
-	
+
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
 
 	Account := models.Account{}
 
 	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_in"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL AND "id" = $4`)).WillReturnError(errors.New(("user not found")))
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_in"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL`)).WillReturnError(errors.New(("user not found")))
+	sqlMock.ExpectRollback()
 
 	err := User.UpdateLastTimeLoggedIn(&Account)
 	assert.Contains(t, err.Error(), "user not found")
-	assert.Error(t, sqlMock.ExpectationsWereMet())
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestJoinShopFollowing(t *testing.T) {
