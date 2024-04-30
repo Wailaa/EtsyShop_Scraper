@@ -3,12 +3,11 @@ package scrap
 import (
 	"EtsyScraper/collector"
 	"EtsyScraper/models"
+	"EtsyScraper/utils"
 	"fmt"
 	"log"
-	"math/rand"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/queue"
@@ -39,8 +38,8 @@ func (sc *Scraper) ScrapAllMenuItems(shop *models.Shop) *models.Shop {
 		failedURL := r.Request.URL.String()
 		log.Println("failed url is :", failedURL)
 
-		randTimeSet := time.Duration(rand.Intn(89-10) + 10)
-		time.Sleep(randTimeSet * time.Second)
+		MaxSeconds := 89
+		utils.SetSleep(MaxSeconds)
 
 		backUpQueue.AddURL(failedURL)
 		log.Println("Url is added to queue :", failedURL)
