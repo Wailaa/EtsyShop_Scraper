@@ -167,7 +167,7 @@ func (s *User) GetAccountByEmail(email string) *models.Account {
 }
 
 func (s *User) LoginAccount(ctx *gin.Context) {
-	now := time.Now().UTC()
+
 	var loginDetails *LoginRequest
 	config := initializer.LoadProjConfig(".")
 
@@ -208,7 +208,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	if err = s.DB.Model(result).Where("id = ?", result.ID).Update("last_time_logged_in", now).Error; err != nil {
+	if err = s.UpdateLastTimeLoggedIn(result); err != nil {
 		log.Println(err)
 	}
 
