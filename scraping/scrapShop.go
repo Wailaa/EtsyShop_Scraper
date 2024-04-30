@@ -4,11 +4,10 @@ import (
 	"EtsyScraper/collector"
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
+	"EtsyScraper/utils"
 	"log"
-	"math/rand"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gocolly/colly/v2"
 )
@@ -33,8 +32,8 @@ func (sc *Scraper) ScrapShop(shopName string) (*models.Shop, error) {
 		} else {
 			failedURL := "https://" + r.Request.URL.Host + r.Request.URL.RequestURI()
 
-			randTimeSet := time.Duration(rand.Intn(89-10) + 10)
-			time.Sleep(randTimeSet * time.Second)
+			MaxSeconds := 89
+			utils.SetSleep(MaxSeconds)
 
 			NewShopCollector.Visit(failedURL)
 		}
