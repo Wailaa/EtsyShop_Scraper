@@ -740,3 +740,21 @@ func FilterSoldOutItems(scrapSoldItems []models.SoldItems, existingItems []model
 	}
 	return SoldOutItems
 }
+
+func (s *Shop) CheckAndUpdateOutOfProdMenu(AllMenus []models.MenuItem, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) bool {
+	isOutOfProduction := false
+	for index, menu := range AllMenus {
+		if menu.Category == "Out Of Production" {
+			isOutOfProduction = true
+			AllMenus[index].Amount = AllMenus[index].Amount + len(SoldOutItems)
+			AllMenus[index].Items = append(menu.Items, SoldOutItems...)
+
+			s.DB.Save(&AllMenus[index])
+			ShopRequest.Status = "OutOfProduction Successfully updated"
+			s.Process.CreateShopRequest(ShopRequest)
+			log.Println("Out Of Production successfully updated for ShopRequest.ID: ", ShopRequest.ID)
+			break
+		}
+	}
+	return isOutOfProduction
+}

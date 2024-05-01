@@ -2202,3 +2202,61 @@ func TestFilterSoldOutItems(t *testing.T) {
 	assert.Equal(t, SoldOutItems[1].ListingID, ScrappedSoldItems[4].ListingID)
 
 }
+
+func TestCheckAndUpdateOutOfProdMenu(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	AllMenus := []models.MenuItem{{Category: "All"}, {Category: "UnCategorized"}, {Category: "Out Of Production"}}
+
+	SoldOutItems := []models.Item{{Name: "Example", ListingID: 12, DataShopID: "1122"}}
+	SoldOutItems[0].ID = uint(1)
+	ShopRequest := &models.ShopRequest{
+
+		ShopName: "exampleShop",
+		Status:   "Pending",
+	}
+
+	TestShop.On("CreateShopRequest").Return(nil)
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "menu_items" ("created_at","updated_at","deleted_at","shop_menu_id","category","section_id","link","amount") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "id"`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), "Out Of Production", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "items" ("created_at","updated_at","deleted_at","name","original_price","currency_symbol","sale_price","discout_percent","available","item_link","menu_item_id","listing_id","data_shop_id","id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT ("id") DO UPDATE SET "menu_item_id"="excluded"."menu_item_id" RETURNING "id"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+	sqlMock.ExpectCommit()
+
+	exists := implShop.CheckAndUpdateOutOfProdMenu(AllMenus, SoldOutItems, ShopRequest)
+
+	assert.True(t, exists)
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestCheckAndUpdateOutOfProdMenu_NoExist(t *testing.T) {
+
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	implShop := controllers.Shop{DB: MockedDataBase}
+
+	AllMenus := []models.MenuItem{{Category: "All"}, {Category: "UnCategorized"}}
+
+	SoldOutItems := []models.Item{{Name: "Example", ListingID: 12, DataShopID: "1122"}}
+
+	ShopRequest := &models.ShopRequest{
+		ShopName: "exampleShop",
+		Status:   "Pending",
+	}
+
+	exists := implShop.CheckAndUpdateOutOfProdMenu(AllMenus, SoldOutItems, ShopRequest)
+
+	assert.False(t, exists)
+
+}
