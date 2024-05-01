@@ -706,3 +706,20 @@ func (s *Shop) SaveShopToDB(scrappedShop *models.Shop, ShopRequest *models.ShopR
 	log.Println("Shop's data saved successfully while handling ShopRequest.ID: ", ShopRequest.ID)
 	return nil
 }
+
+func (s *Shop) UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopRequest) error {
+
+	err := s.DB.Save(Shop).Error
+
+	if err != nil {
+		ShopRequest.Status = "failed"
+		log.Println("failed to save Shop's menu into database for ShopRequest.ID: ", ShopRequest.ID)
+		s.Process.CreateShopRequest(ShopRequest)
+		return err
+	}
+
+	ShopRequest.Status = "done"
+	s.Process.CreateShopRequest(ShopRequest)
+	log.Println("Shop's menu data saved successfully while handling ShopRequest.ID: ", ShopRequest.ID)
+	return nil
+}
