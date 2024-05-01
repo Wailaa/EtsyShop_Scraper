@@ -511,3 +511,12 @@ func (s *User) UpdateLastTimeLoggedOut(UserID uuid.UUID) error {
 	}
 	return nil
 }
+
+func (s *User) UpdateAccountAfterVerify(Account *models.Account) error {
+
+	err := s.DB.Model(Account).Updates(map[string]interface{}{"email_verified": true, "email_verification_token": ""}).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -1652,3 +1652,48 @@ func TestUpdateLastTimeLoggedOut_Failed(t *testing.T) {
 	assert.Contains(t, err.Error(), "user not found")
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestUpdateAccountAfterVerify(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	MockedUtils := &mockUtils{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	Account := &models.Account{}
+	Account.ID = uuid.New()
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "email_verification_token"=$1,"email_verified"=$2,"updated_at"=$3 WHERE "accounts"."deleted_at" IS NULL AND "id" = $4`)).
+		WithArgs("", true, sqlmock.AnyArg(), Account.ID).WillReturnResult(sqlmock.NewResult(1, 3))
+	sqlMock.ExpectCommit()
+
+	err := User.UpdateAccountAfterVerify(Account)
+	assert.NoError(t, err)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestUpdateAccountAfterVerify_Fail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	MockedUtils := &mockUtils{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	Account := &models.Account{}
+	Account.ID = uuid.New()
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "email_verification_token"=$1,"email_verified"=$2,"updated_at"=$3 WHERE "accounts"."deleted_at" IS NULL AND "id" = $4`)).
+		WithArgs("", true, sqlmock.AnyArg(), Account.ID).WillReturnError(errors.New("error while changing data"))
+	sqlMock.ExpectRollback()
+
+	err := User.UpdateAccountAfterVerify(Account)
+
+	assert.Contains(t, err.Error(), "error while changing data")
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
