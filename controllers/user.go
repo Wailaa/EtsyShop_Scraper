@@ -402,7 +402,12 @@ func (s *User) ForgotPassReq(ctx *gin.Context) {
 	}
 	Account.RequestChangePass = true
 	Account.AccountPassResetToken = ResetPassToken
-	s.DB.Save(Account)
+
+	if err := s.DB.Save(Account).Error; err != nil {
+		log.Println("Failed to save account:", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"status": "fail", "message": "Failed to save account"})
+		return
+	}
 
 	go s.utils.SendResetPassEmail(Account)
 	ctx.JSON(http.StatusOK, gin.H{"status": "success"})
