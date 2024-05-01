@@ -81,7 +81,6 @@ type UserController interface {
 func (s *User) RegisterUser(ctx *gin.Context) {
 
 	var account *RegisterAccount
-	newUUID := uuid.New()
 
 	if err := ctx.ShouldBindJSON(&account); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
@@ -110,26 +109,9 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	newAccount := &models.Account{
-		ID:                     newUUID,
-		FirstName:              account.FirstName,
-		LastName:               account.LastName,
-		Email:                  account.Email,
-		PasswordHashed:         passwardHashed,
-		SubscriptionType:       account.SubscriptionType,
-		EmailVerificationToken: EmailVerificationToken,
-	}
-
-	res := s.DB.Create(&newAccount)
-
-	if res.Error != nil {
-		if strings.Contains(res.Error.Error(), "email") {
-			message := "this email is already in use"
-			ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
-			return
-		}
-		message := "internal issue"
-		ctx.JSON(http.StatusConflict, gin.H{"status": "failed", "message": message})
+	newAccount, err := s.CreateNewAccountRecord(account, passwardHashed, EmailVerificationToken)
+	if err != nil {
+		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": err.Error()})
 		return
 	}
 
