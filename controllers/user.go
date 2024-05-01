@@ -365,7 +365,12 @@ func (s *User) ChangePass(ctx *gin.Context) {
 		return
 	}
 
-	s.DB.Model(Account).Update("password_hashed", passwardHashed)
+	if err := s.UpdateAccountNewPass(Account, passwardHashed); err != nil {
+		log.Println(err)
+		message := "internal error"
+		ctx.JSON(http.StatusInternalServerError, gin.H{"status": "registraition rejected", "message": message})
+		return
+	}
 
 	message := "password changed"
 	ctx.JSON(http.StatusOK, gin.H{"status": "registraition rejected", "message": message})
