@@ -290,7 +290,11 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 	}
 	SoldOutItems := FilterSoldOutItems(scrapSoldItems, getAllItems, FilterSoldItems)
 
-	isOutOfProduction := s.CheckAndUpdateOutOfProdMenu(Shop.ShopMenu.Menu, SoldOutItems, ShopRequest)
+	isOutOfProduction, err := s.CheckAndUpdateOutOfProdMenu(Shop.ShopMenu.Menu, SoldOutItems, ShopRequest)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 
 	if len(SoldOutItems) != 0 && !isOutOfProduction {
 		Menu := models.MenuItem{
@@ -731,7 +735,7 @@ func FilterSoldOutItems(scrapSoldItems []models.SoldItems, existingItems []model
 	return SoldOutItems
 }
 
-func (s *Shop) CheckAndUpdateOutOfProdMenu(AllMenus []models.MenuItem, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) bool {
+func (s *Shop) CheckAndUpdateOutOfProdMenu(AllMenus []models.MenuItem, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) (bool, error) {
 	isOutOfProduction := false
 	for index, menu := range AllMenus {
 		if menu.Category == "Out Of Production" {
@@ -739,12 +743,14 @@ func (s *Shop) CheckAndUpdateOutOfProdMenu(AllMenus []models.MenuItem, SoldOutIt
 			AllMenus[index].Amount = AllMenus[index].Amount + len(SoldOutItems)
 			AllMenus[index].Items = append(menu.Items, SoldOutItems...)
 
-			s.DB.Save(&AllMenus[index])
+			if err := s.DB.Save(&AllMenus[index]).Error; err != nil {
+				return false, err
+			}
 			ShopRequest.Status = "OutOfProduction Successfully updated"
 			s.Process.CreateShopRequest(ShopRequest)
 			log.Println("Out Of Production successfully updated for ShopRequest.ID: ", ShopRequest.ID)
 			break
 		}
 	}
-	return isOutOfProduction
+	return isOutOfProduction, nil
 }

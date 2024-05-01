@@ -2231,10 +2231,10 @@ func TestCheckAndUpdateOutOfProdMenu(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	sqlMock.ExpectCommit()
 
-	exists := implShop.CheckAndUpdateOutOfProdMenu(AllMenus, SoldOutItems, ShopRequest)
+	exists, err := implShop.CheckAndUpdateOutOfProdMenu(AllMenus, SoldOutItems, ShopRequest)
 
 	assert.True(t, exists)
-
+	assert.NoError(t, err)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
@@ -2255,8 +2255,9 @@ func TestCheckAndUpdateOutOfProdMenu_NoExist(t *testing.T) {
 		Status:   "Pending",
 	}
 
-	exists := implShop.CheckAndUpdateOutOfProdMenu(AllMenus, SoldOutItems, ShopRequest)
+	exists, err := implShop.CheckAndUpdateOutOfProdMenu(AllMenus, SoldOutItems, ShopRequest)
 
 	assert.False(t, exists)
+	assert.NoError(t, err)
 
 }
