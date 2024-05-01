@@ -698,3 +698,17 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 
 	return stats, nil
 }
+
+func (s *Shop) SaveShopToDB(scrappedShop *models.Shop, ShopRequest *models.ShopRequest) error {
+
+	err := s.DB.Create(scrappedShop).Error
+	if err != nil {
+		log.Println("failed to save Shop's data while handling ShopRequest.ID: ", ShopRequest.ID)
+		ShopRequest.Status = "failed"
+		s.Process.CreateShopRequest(ShopRequest)
+		return err
+	}
+
+	log.Println("Shop's data saved successfully while handling ShopRequest.ID: ", ShopRequest.ID)
+	return nil
+}
