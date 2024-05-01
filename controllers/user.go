@@ -441,7 +441,7 @@ func (s *User) ResetPass(ctx *gin.Context) {
 		return
 	}
 
-	if reflect.DeepEqual(*VerifyUser, models.Account{}) {
+	if reflect.DeepEqual(*VerifyUser, models.Account{}) || VerifyUser.AccountPassResetToken == "" {
 		message := "Invalid verification code or account does not exists"
 		log.Println(message)
 		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
@@ -450,13 +450,6 @@ func (s *User) ResetPass(ctx *gin.Context) {
 	if VerifyUser.AccountPassResetToken != reqChangePass.RCP {
 		message := "failed to change password"
 		log.Println(message, "rcp and AccountPassResetToken no match")
-		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
-		return
-	}
-
-	if VerifyUser.AccountPassResetToken == "" {
-		message := "this link is not valid anymore"
-		log.Println(message)
 		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
 		return
 	}
