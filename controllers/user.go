@@ -462,7 +462,12 @@ func (s *User) ResetPass(ctx *gin.Context) {
 		return
 	}
 
-	s.DB.Model(VerifyUser).Updates(map[string]interface{}{"request_change_pass": false, "account_pass_reset_token": "", "password_hashed": newPasswardHashed})
+	if err = s.UpdateAccountAfterResetPass(VerifyUser, newPasswardHashed); err != nil {
+		log.Println(err)
+		message := "internal error"
+		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
+		return
+	}
 
 	message := "Password changed successfully"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
