@@ -381,7 +381,7 @@ func (s *User) ForgotPassReq(ctx *gin.Context) {
 	ForgotAccountPass := &UserReqForgotPassword{}
 	if err := ctx.ShouldBindJSON(&ForgotAccountPass); err != nil {
 		message := "failed to fetch change password request"
-		log.Println(message)
+		log.Println(err)
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
 		return
 	}
