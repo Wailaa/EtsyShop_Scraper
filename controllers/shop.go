@@ -129,14 +129,14 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 	ShopRequest.AccountID = currentUserUUID
 	ShopRequest.ShopName = shop.ShopName
 
-	IsShop, err := s.Process.GetShopByName(shop.ShopName)
+	existedShop, err := s.Process.GetShopByName(shop.ShopName)
 	if err != nil && err.Error() != "record not found" {
 		log.Println(err)
 		ShopRequest.Status = "failed"
 		s.Process.CreateShopRequest(ShopRequest)
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "internal error"})
 		return
-	} else if IsShop != nil {
+	} else if existedShop != nil {
 		ShopRequest.Status = "denied"
 		s.Process.CreateShopRequest(ShopRequest)
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "Shop already exists"})
