@@ -734,3 +734,26 @@ func (s *Shop) UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uin
 
 	return nil
 }
+
+func FilterSoldOutItems(scrapSoldItems []models.SoldItems, existingItems []models.Item, FilterSoldItems map[uint]struct{}) []models.Item {
+	SoldOutItems := []models.Item{}
+
+	for i, scrapedItem := range scrapSoldItems {
+		for _, item := range existingItems {
+			if scrapedItem.ListingID == item.ListingID && scrapedItem.ItemID == 0 {
+				scrapSoldItems[i].ItemID = item.ID
+				break
+			}
+
+		}
+		if scrapSoldItems[i].ItemID == 0 {
+			if _, exists := FilterSoldItems[scrapedItem.ListingID]; !exists {
+				FilterSoldItems[scrapedItem.ListingID] = struct{}{}
+				SoldItem := models.CreateSoldOutItem(&scrapedItem)
+				SoldOutItems = append(SoldOutItems, *SoldItem)
+			}
+		}
+
+	}
+	return SoldOutItems
+}

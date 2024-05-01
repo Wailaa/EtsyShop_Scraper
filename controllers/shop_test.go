@@ -2186,3 +2186,19 @@ func TestUpdateDailySales_Failed(t *testing.T) {
 	assert.Contains(t, err.Error(), "error while saving data to dailyShopSales")
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestFilterSoldOutItems(t *testing.T) {
+	FilterSoldItems := map[uint]struct{}{}
+	ScrappedSoldItems := []models.SoldItems{{Name: "Example", ListingID: 12, DataShopID: "1122"}, {Name: "Example2", ListingID: 13, DataShopID: "1122"}, {Name: "Example", ListingID: 12, DataShopID: "1122"}, {Name: "Example", ListingID: 17, DataShopID: "1122"}, {Name: "Example2", ListingID: 19, DataShopID: "1122"}}
+	existingItems := []models.Item{{ListingID: 12}, {ListingID: 13}, {ListingID: 14}, {ListingID: 15}}
+	for index := range existingItems {
+		existingItems[index].ID = uint(index + 1)
+	}
+
+	SoldOutItems := controllers.FilterSoldOutItems(ScrappedSoldItems, existingItems, FilterSoldItems)
+
+	assert.Equal(t, len(SoldOutItems), 2)
+	assert.Equal(t, SoldOutItems[0].ListingID, ScrappedSoldItems[3].ListingID)
+	assert.Equal(t, SoldOutItems[1].ListingID, ScrappedSoldItems[4].ListingID)
+
+}
