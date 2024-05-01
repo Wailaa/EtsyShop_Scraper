@@ -281,7 +281,7 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 	}
 
 	if len(scrapSoldItems) == 0 {
-		return nil, fmt.Errorf("empty scrapped Sold data")
+		return scrapSoldItems, nil
 	}
 
 	getAllItems, err := s.Process.GetItemsByShopID(Shop.ID)
