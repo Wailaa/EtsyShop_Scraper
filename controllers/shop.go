@@ -272,7 +272,6 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 
 func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error) {
 
-	SoldOutItems := []models.Item{}
 	FilterSoldItems := map[uint]struct{}{}
 
 	scrapSoldItems, NewTask := s.Scraper.ScrapSalesHistory(Shop.Name, Task)
@@ -289,24 +288,8 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 		log.Println(err)
 		return nil, err
 	}
+	SoldOutItems := FilterSoldOutItems(scrapSoldItems, getAllItems, FilterSoldItems)
 
-	for i, scrapedItem := range scrapSoldItems {
-		for _, item := range getAllItems {
-			if scrapedItem.ListingID == item.ListingID && scrapedItem.ItemID == 0 {
-				scrapSoldItems[i].ItemID = item.ID
-				break
-			}
-
-		}
-		if scrapSoldItems[i].ItemID == 0 {
-			if _, exists := FilterSoldItems[scrapedItem.ListingID]; !exists {
-				FilterSoldItems[scrapedItem.ListingID] = struct{}{}
-				SoldItem := models.CreateSoldOutItem(&scrapedItem)
-				SoldOutItems = append(SoldOutItems, *SoldItem)
-			}
-		}
-
-	}
 	isOutOfProduction := false
 	for index, menu := range Shop.ShopMenu.Menu {
 		if menu.Category == "Out Of Production" {
