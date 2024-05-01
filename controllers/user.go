@@ -350,21 +350,23 @@ func (s *User) ChangePass(ctx *gin.Context) {
 		return
 	}
 
-	if reqPassChange.NewPass == reqPassChange.ConfirmPass {
-		passwardHashed, err := s.utils.HashPass(reqPassChange.NewPass)
-		if err != nil {
-			log.Println(err)
-			message := "error while hashing password"
-			ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
-			return
-		}
-		s.DB.Model(Account).Update("password_hashed", passwardHashed)
-	} else {
+	if reqPassChange.NewPass != reqPassChange.ConfirmPass {
 		message := "new password is not confirmed"
 		ctx.JSON(http.StatusUnauthorized, gin.H{"status": "failed", "message": message})
 		ctx.Abort()
 		return
 	}
+
+	passwardHashed, err := s.utils.HashPass(reqPassChange.NewPass)
+	if err != nil {
+		log.Println(err)
+		message := "error while hashing password"
+		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
+		return
+	}
+
+	s.DB.Model(Account).Update("password_hashed", passwardHashed)
+
 	message := "password changed"
 	ctx.JSON(http.StatusOK, gin.H{"status": "registraition rejected", "message": message})
 	s.LogOutAccount(ctx)
