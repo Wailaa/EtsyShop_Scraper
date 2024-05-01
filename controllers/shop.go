@@ -232,7 +232,7 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 		return err
 	}
 
-	if reflect.DeepEqual(ScrappedSoldItems, []models.SoldItems{}) {
+	if len(ScrappedSoldItems) == 0 {
 		return fmt.Errorf("empty scrapped Sold data")
 	}
 
