@@ -527,3 +527,12 @@ func (s *User) UpdateAccountAfterVerify(Account *models.Account) error {
 	}
 	return nil
 }
+
+func (s *User) UpdateAccountNewPass(Account *models.Account, passwardHashed string) error {
+
+	err := s.DB.Model(Account).Update("password_hashed", passwardHashed).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}

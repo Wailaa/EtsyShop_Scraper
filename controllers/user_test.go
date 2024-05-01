@@ -1697,3 +1697,51 @@ func TestUpdateAccountAfterVerify_Fail(t *testing.T) {
 	assert.Contains(t, err.Error(), "error while changing data")
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestUpdateAccountNewPass(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	MockedUtils := &mockUtils{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	HashedPass := "SomeHashedPass"
+	Account := &models.Account{}
+	Account.ID = uuid.New()
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "password_hashed"=$1,"updated_at"=$2 WHERE "accounts"."deleted_at" IS NULL AND "id" = $3`)).
+		WithArgs(HashedPass, sqlmock.AnyArg(), Account.ID).WillReturnResult(sqlmock.NewResult(1, 2))
+	sqlMock.ExpectCommit()
+
+	err := User.UpdateAccountNewPass(Account, HashedPass)
+
+	assert.NoError(t, err)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestUpdateAccountNewPass_Fail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	MockedUtils := &mockUtils{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	HashedPass := "SomeHashedPass"
+	Account := &models.Account{}
+	Account.ID = uuid.New()
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "password_hashed"=$1,"updated_at"=$2 WHERE "accounts"."deleted_at" IS NULL AND "id" = $3`)).
+		WithArgs(HashedPass, sqlmock.AnyArg(), Account.ID).WillReturnError(errors.New("error while changing data"))
+	sqlMock.ExpectRollback()
+
+	err := User.UpdateAccountNewPass(Account, HashedPass)
+
+	assert.Contains(t, err.Error(), "error while changing data")
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
