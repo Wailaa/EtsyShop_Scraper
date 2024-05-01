@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"reflect"
 	"sync"
 	"time"
 
@@ -281,8 +280,8 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 		go s.SoldItemsTask(Shop, NewTask, ShopRequest)
 	}
 
-	if reflect.DeepEqual(scrapSoldItems, []models.SoldItems{}) {
-		return scrapSoldItems, nil
+	if len(scrapSoldItems) == 0 {
+		return nil, fmt.Errorf("empty scrapped Sold data")
 	}
 
 	getAllItems, err := s.Process.GetItemsByShopID(Shop.ID)
