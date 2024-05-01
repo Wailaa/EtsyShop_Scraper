@@ -187,20 +187,14 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 
 	scrappedShop.CreatedByUserID = ShopRequest.AccountID
 
-	result := s.DB.Create(scrappedShop)
-	if result.Error != nil {
-		log.Println("failed to save Shop's data while handling ShopRequest.ID: ", ShopRequest.ID)
-		ShopRequest.Status = "failed"
-		s.Process.CreateShopRequest(ShopRequest)
-		return result.Error
+	err = s.SaveShopToDB(scrappedShop, ShopRequest)
+	if err != nil {
+		return err
 	}
-
-	log.Println("Shop's data saved successfully while handling ShopRequest.ID: ", ShopRequest.ID)
-
 	log.Println("starting Shop's menu scraping for ShopRequest.ID: ", ShopRequest.ID)
 	scrapeMenu := s.Scraper.ScrapAllMenuItems(scrappedShop)
 
-	result = s.DB.Save(scrapeMenu)
+	result := s.DB.Save(scrapeMenu)
 	if result.Error != nil {
 		ShopRequest.Status = "failed"
 		log.Println("failed to save Shop's menu into database for ShopRequest.ID: ", ShopRequest.ID)
