@@ -286,7 +286,6 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 
 	getAllItems, err := s.Process.GetItemsByShopID(Shop.ID)
 	if err != nil {
-		log.Println("UpdateDiscontinuedItems failed for ShopRequest.ID: ", ShopRequest.ID)
 		log.Println(err)
 		return nil, err
 	}
