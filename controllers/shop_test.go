@@ -2135,3 +2135,54 @@ func TestSaveSoldItemsToDB_Fail(t *testing.T) {
 	assert.Contains(t, err.Error(), "error while saving sold item")
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestUpdateDailySales_Success(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	TestShop := &MockedShop{}
+
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	Shop := controllers.NewShopController(implShop)
+
+	ExampleShopID := uint(10)
+	dailyRevenue := 98.9
+	SoldItems := []models.SoldItems{{Name: "Example", ItemID: 1, ListingID: 12, DataShopID: "1122"}, {Name: "Example2", ItemID: 2, ListingID: 13, DataShopID: "1122"}}
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "daily_shop_sales" SET "updated_at"=$1,"daily_revenue"=$2,"sold_items"=$3 WHERE created_at > $4 AND shop_id = $5 AND "daily_shop_sales"."deleted_at" IS NULL`)).
+		WithArgs(sqlmock.AnyArg(), dailyRevenue, sqlmock.AnyArg(), sqlmock.AnyArg(), ExampleShopID).WillReturnResult(sqlmock.NewResult(1, 3))
+	sqlMock.ExpectCommit()
+
+	err := Shop.UpdateDailySales(SoldItems, ExampleShopID, dailyRevenue)
+
+	assert.NoError(t, err)
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestUpdateDailySales_Failed(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	TestShop := &MockedShop{}
+
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	Shop := controllers.NewShopController(implShop)
+
+	ExampleShopID := uint(10)
+	dailyRevenue := 98.9
+	SoldItems := []models.SoldItems{{Name: "Example", ItemID: 1, ListingID: 12, DataShopID: "1122"}, {Name: "Example2", ItemID: 2, ListingID: 13, DataShopID: "1122"}}
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "daily_shop_sales" SET "updated_at"=$1,"daily_revenue"=$2,"sold_items"=$3 WHERE created_at > $4 AND shop_id = $5 AND "daily_shop_sales"."deleted_at" IS NULL`)).
+		WillReturnError(errors.New("error while saving data to dailyShopSales"))
+	sqlMock.ExpectRollback()
+
+	err := Shop.UpdateDailySales(SoldItems, ExampleShopID, dailyRevenue)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "error while saving data to dailyShopSales")
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}

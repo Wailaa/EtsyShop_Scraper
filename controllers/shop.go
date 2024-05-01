@@ -726,3 +726,25 @@ func (s *Shop) SaveSoldItemsToDB(ScrappedSoldItems []models.SoldItems) error {
 	}
 	return nil
 }
+
+func (s *Shop) UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uint, dailyRevenue float64) error {
+
+	now := time.Now().UTC().Truncate(24 * time.Hour)
+
+	UpdatedSoldItemIDs := []uint{}
+	for _, UpdatedSoldItem := range ScrappedSoldItems {
+		UpdatedSoldItemIDs = append(UpdatedSoldItemIDs, UpdatedSoldItem.ID)
+	}
+
+	jsonArray, err := json.Marshal(UpdatedSoldItemIDs)
+	if err != nil {
+		log.Println("Error marshaling JSON:", err)
+		return err
+	}
+	dailyRevenue = math.Round(dailyRevenue*100) / 100
+	if err = s.DB.Model(&models.DailyShopSales{}).Where("created_at > ?", now).Where("shop_id = ?", ShopID).Updates(&models.DailyShopSales{SoldItems: jsonArray, DailyRevenue: dailyRevenue}).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
