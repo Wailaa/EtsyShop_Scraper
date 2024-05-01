@@ -1800,3 +1800,84 @@ func TestUpdateAccountAfter_Fail(t *testing.T) {
 	assert.Contains(t, err.Error(), "error while saving record")
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestCreateNewAccountRecord_Success(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	MockedUtils := &mockUtils{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	AccountRequestInfo := &controllers.RegisterAccount{
+
+		FirstName:        "Testing",
+		LastName:         "User",
+		Email:            "test11@testing.com",
+		Password:         "1111qqqq",
+		PasswordConfirm:  "2222wwww",
+		SubscriptionType: "free",
+	}
+
+	HashedPass := "SomeHashedPass"
+	EmailVerificationToken := "SomeTokenString"
+
+	newAccount := &models.Account{
+
+		FirstName:              AccountRequestInfo.FirstName,
+		LastName:               AccountRequestInfo.LastName,
+		Email:                  AccountRequestInfo.Email,
+		PasswordHashed:         HashedPass,
+		SubscriptionType:       AccountRequestInfo.SubscriptionType,
+		EmailVerificationToken: EmailVerificationToken,
+	}
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "accounts" ("id","created_at","updated_at","deleted_at","first_name","last_name","email","password_hashed","subscription_type","email_verified","email_verification_token","request_change_pass","account_pass_reset_token","last_time_logged_in","last_time_logged_out") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING "id"`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), nil, AccountRequestInfo.FirstName, AccountRequestInfo.LastName, AccountRequestInfo.Email, HashedPass, newAccount.SubscriptionType, false, EmailVerificationToken, false, "", sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(newAccount.ID.String()))
+	sqlMock.ExpectCommit()
+
+	_, err := User.CreateNewAccountRecord(AccountRequestInfo, HashedPass, EmailVerificationToken)
+
+	assert.NoError(t, err)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestCreateNewAccountRecord_Fail(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	MockedUtils := &mockUtils{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	AccountRequestInfo := &controllers.RegisterAccount{
+
+		FirstName:        "Testing",
+		LastName:         "User",
+		Email:            "test11@testing.com",
+		Password:         "1111qqqq",
+		PasswordConfirm:  "2222wwww",
+		SubscriptionType: "free",
+	}
+
+	HashedPass := "SomeHashedPass"
+	EmailVerificationToken := "SomeTokenString"
+
+	TestCases := []string{"this email is already in use", "error while handling DataBase operations"}
+	for _, TestCase := range TestCases {
+		sqlMock.ExpectBegin()
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "accounts" ("id","created_at","updated_at","deleted_at","first_name","last_name","email","password_hashed","subscription_type","email_verified","email_verification_token","request_change_pass","account_pass_reset_token","last_time_logged_in","last_time_logged_out") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING "id"`)).WillReturnError(errors.New(TestCase))
+		sqlMock.ExpectRollback()
+
+		_, err := User.CreateNewAccountRecord(AccountRequestInfo, HashedPass, EmailVerificationToken)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), TestCase)
+	}
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}

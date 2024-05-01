@@ -4,6 +4,7 @@ import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	"EtsyScraper/utils"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -552,4 +553,31 @@ func (s *User) UpdateAccountAfterResetPass(Account *models.Account, newPasswardH
 		return err
 	}
 	return nil
+}
+
+func (s *User) CreateNewAccountRecord(account *RegisterAccount, passwardHashed, EmailVerificationToken string) (*models.Account, error) {
+	newUUID := uuid.New()
+
+	newAccount := &models.Account{
+		ID:                     newUUID,
+		FirstName:              account.FirstName,
+		LastName:               account.LastName,
+		Email:                  account.Email,
+		PasswordHashed:         passwardHashed,
+		SubscriptionType:       account.SubscriptionType,
+		EmailVerificationToken: EmailVerificationToken,
+	}
+
+	err := s.DB.Create(newAccount).Error
+
+	if err != nil {
+		if strings.Contains(err.Error(), "email") {
+			log.Println(err)
+			message := "this email is already in use"
+			return newAccount, errors.New(message)
+		}
+
+		return newAccount, err
+	}
+	return newAccount, nil
 }
