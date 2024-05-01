@@ -539,3 +539,12 @@ func (s *User) UpdateAccountNewPass(Account *models.Account, passwardHashed stri
 	}
 	return nil
 }
+
+func (s *User) UpdateAccountAfterResetPass(Account *models.Account, newPasswardHashed string) error {
+
+	err := s.DB.Model(Account).Updates(map[string]interface{}{"request_change_pass": false, "account_pass_reset_token": "", "password_hashed": newPasswardHashed}).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}

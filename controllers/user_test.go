@@ -1750,3 +1750,53 @@ func TestUpdateAccountNewPass_Fail(t *testing.T) {
 	assert.Contains(t, err.Error(), "error while changing data")
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestUpdateAccountAfterResetPass(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	MockedUtils := &mockUtils{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	HashedPass := "SomeHashedPass"
+	Account := &models.Account{}
+	Account.ID = uuid.New()
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "account_pass_reset_token"=$1,"password_hashed"=$2,"request_change_pass"=$3,"updated_at"=$4 WHERE "accounts"."deleted_at" IS NULL AND "id" = $5`)).
+		WithArgs("", HashedPass, false, sqlmock.AnyArg(), Account.ID).WillReturnResult(sqlmock.NewResult(1, 2))
+	sqlMock.ExpectCommit()
+
+	err := User.UpdateAccountAfterResetPass(Account, HashedPass)
+
+	assert.NoError(t, err)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestUpdateAccountAfter_Fail(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	MockedUtils := &mockUtils{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils)
+
+	HashedPass := "SomeHashedPass"
+	Account := &models.Account{}
+	Account.ID = uuid.New()
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "account_pass_reset_token"=$1,"password_hashed"=$2,"request_change_pass"=$3,"updated_at"=$4 WHERE "accounts"."deleted_at" IS NULL AND "id" = $5`)).
+		WithArgs("", HashedPass, false, sqlmock.AnyArg(), Account.ID).WillReturnError(errors.New("error while saving record"))
+	sqlMock.ExpectRollback()
+
+	err := User.UpdateAccountAfterResetPass(Account, HashedPass)
+
+	assert.Contains(t, err.Error(), "error while saving record")
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
