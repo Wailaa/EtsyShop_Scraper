@@ -717,3 +717,13 @@ func ReverseSoldItems(ScrappedSoldItems []models.SoldItems) []models.SoldItems {
 	}
 	return ScrappedSoldItems
 }
+
+func (s *Shop) SaveSoldItemsToDB(ScrappedSoldItems []models.SoldItems) error {
+	err := s.DB.Create(&ScrappedSoldItems).Error
+
+	if err != nil {
+		log.Println("Shop's selling history failed while saving to database")
+		return err
+	}
+	return nil
+}
