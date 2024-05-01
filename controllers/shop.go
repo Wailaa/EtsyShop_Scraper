@@ -251,9 +251,7 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 		}
 	}
 
-	for i, j := 0, len(ScrappedSoldItems)-1; i < j; i, j = i+1, j-1 {
-		ScrappedSoldItems[i], ScrappedSoldItems[j] = ScrappedSoldItems[j], ScrappedSoldItems[i]
-	}
+	ScrappedSoldItems = ReverseSoldItems(ScrappedSoldItems)
 
 	result := s.DB.Create(&ScrappedSoldItems)
 
