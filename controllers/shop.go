@@ -297,17 +297,10 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 	}
 
 	if len(SoldOutItems) != 0 && !isOutOfProduction {
-		Menu := models.MenuItem{
-			ShopMenuID: Shop.ShopMenu.ID,
-			Category:   "Out Of Production",
-			SectionID:  "0",
-			Amount:     len(SoldOutItems),
-			Items:      SoldOutItems,
+		if err := s.CreateOutOfProdMenu(Shop, SoldOutItems, ShopRequest); err != nil {
+			log.Println(err)
+			return nil, err
 		}
-
-		Shop.ShopMenu.Menu = append(Shop.ShopMenu.Menu, Menu)
-		s.DB.Save(Shop)
-		log.Println("Out Of Production successfully created for ShopRequest.ID: ", ShopRequest.ID)
 
 	}
 
