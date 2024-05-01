@@ -259,21 +259,9 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 
 	if Task.UpdateSoldItems > 0 {
 
-		now := time.Now().UTC().Truncate(24 * time.Hour)
-
-		UpdatedSoldItemIDs := []uint{}
-		for _, UpdatedSoldItem := range ScrappedSoldItems {
-			UpdatedSoldItemIDs = append(UpdatedSoldItemIDs, UpdatedSoldItem.ID)
-		}
-
-		jsonArray, err := json.Marshal(UpdatedSoldItemIDs)
-		if err != nil {
-			log.Println("Error marshaling JSON:", err)
+		if err = s.UpdateDailySales(ScrappedSoldItems, Shop.ID, dailyRevenue); err != nil {
 			return err
 		}
-		dailyRevenue = math.Round(dailyRevenue*100) / 100
-		s.DB.Model(&models.DailyShopSales{}).Where("created_at > ?", now).Where("shop_id = ?", Shop.ID).Updates(&models.DailyShopSales{SoldItems: jsonArray, DailyRevenue: dailyRevenue})
-
 	}
 
 	ShopRequest.Status = "done"
