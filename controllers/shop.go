@@ -201,13 +201,7 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 		return err
 	}
 
-	Task := &models.TaskSchedule{
-		IsScrapeFinished:     false,
-		IsPaginationScrapped: false,
-		CurrentPage:          0,
-		LastPage:             0,
-		UpdateSoldItems:      0,
-	}
+	Task := new(models.TaskSchedule)
 
 	if scrapeMenu.HasSoldHistory && scrapeMenu.TotalSales > 0 {
 		log.Println("Shop's selling history initiated for ShopRequest.ID: ", ShopRequest.ID)
