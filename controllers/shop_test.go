@@ -2081,3 +2081,12 @@ func TestUpdateShopMenuToDB_Fail(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestReverseSoldItems(t *testing.T) {
+	SoldItems := []models.SoldItems{{Name: "1"}, {Name: "2"}, {Name: "3"}, {Name: "4"}, {Name: "5"}, {Name: "6"}}
+	ReversedSoldItems := []models.SoldItems{{Name: "6"}, {Name: "5"}, {Name: "4"}, {Name: "3"}, {Name: "2"}, {Name: "1"}}
+
+	result := controllers.ReverseSoldItems(SoldItems)
+
+	assert.Equal(t, ReversedSoldItems, result, "checking if the slice got reversed")
+}

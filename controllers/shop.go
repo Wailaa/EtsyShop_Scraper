@@ -712,3 +712,10 @@ func (s *Shop) UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopReq
 	log.Println("Shop's menu data saved successfully while handling ShopRequest.ID: ", ShopRequest.ID)
 	return nil
 }
+
+func ReverseSoldItems(ScrappedSoldItems []models.SoldItems) []models.SoldItems {
+	for i, j := 0, len(ScrappedSoldItems)-1; i < j; i, j = i+1, j-1 {
+		ScrappedSoldItems[i], ScrappedSoldItems[j] = ScrappedSoldItems[j], ScrappedSoldItems[i]
+	}
+	return ScrappedSoldItems
+}
