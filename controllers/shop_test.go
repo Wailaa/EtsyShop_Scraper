@@ -2261,3 +2261,82 @@ func TestCheckAndUpdateOutOfProdMenu_NoExist(t *testing.T) {
 	assert.NoError(t, err)
 
 }
+
+func TestCreateNewOutOfProdMenu(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	SoldOutItems := []models.Item{{Name: "Example", ListingID: 12, DataShopID: "1122"}}
+
+	ShopExample := &models.Shop{
+		Name:           "exampleShop",
+		TotalSales:     10,
+		HasSoldHistory: true,
+	}
+
+	ShopRequest := &models.ShopRequest{
+		ShopName: "exampleShop",
+		Status:   "Pending",
+	}
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shop_menus"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"shop_id"}).AddRow(1))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "menu_items"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "Category"}).AddRow(1, "Out Of Production"))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "items"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+	sqlMock.ExpectCommit()
+
+	err := implShop.CreateOutOfProdMenu(ShopExample, SoldOutItems, ShopRequest)
+
+	assert.NoError(t, err)
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestCreateNewOutOfProdMenu_Fail(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	SoldOutItems := []models.Item{{Name: "Example", ListingID: 12, DataShopID: "1122"}}
+
+	ShopExample := &models.Shop{
+		Name:           "exampleShop",
+		TotalSales:     10,
+		HasSoldHistory: true,
+	}
+
+	ShopRequest := &models.ShopRequest{
+		ShopName: "exampleShop",
+		Status:   "Pending",
+	}
+
+	TestShop.On("CreateShopRequest").Return(nil)
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops"`)).
+		WillReturnError(errors.New("error while creating menu"))
+
+	err := implShop.CreateOutOfProdMenu(ShopExample, SoldOutItems, ShopRequest)
+
+	assert.Error(t, err)
+
+	assert.Contains(t, err.Error(), "error while creating menu")
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}

@@ -754,3 +754,21 @@ func (s *Shop) CheckAndUpdateOutOfProdMenu(AllMenus []models.MenuItem, SoldOutIt
 	}
 	return isOutOfProduction, nil
 }
+
+func (s *Shop) CreateOutOfProdMenu(Shop *models.Shop, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) error {
+	Menu := models.MenuItem{
+		ShopMenuID: Shop.ShopMenu.ID,
+		Category:   "Out Of Production",
+		SectionID:  "0",
+		Amount:     len(SoldOutItems),
+		Items:      SoldOutItems,
+	}
+
+	Shop.ShopMenu.Menu = append(Shop.ShopMenu.Menu, Menu)
+	if err := s.DB.Save(Shop).Error; err != nil {
+		return err
+	}
+
+	log.Println("Out Of Production successfully created for ShopRequest.ID: ", ShopRequest.ID)
+	return nil
+}
