@@ -253,12 +253,11 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 
 	ScrappedSoldItems = ReverseSoldItems(ScrappedSoldItems)
 
-	result := s.DB.Create(&ScrappedSoldItems)
+	if err = s.SaveSoldItemsToDB(ScrappedSoldItems); err != nil {
+		return err
+	}
 
-	if result.Error != nil {
-		log.Println("Shop's selling history failed while saving to database for ShopRequest.ID: ", ShopRequest.ID)
-		return result.Error
-	} else if Task.UpdateSoldItems > 0 {
+	if Task.UpdateSoldItems > 0 {
 
 		now := time.Now().UTC().Truncate(24 * time.Hour)
 
