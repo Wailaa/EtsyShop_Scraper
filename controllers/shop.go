@@ -191,20 +191,15 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 	if err != nil {
 		return err
 	}
+
 	log.Println("starting Shop's menu scraping for ShopRequest.ID: ", ShopRequest.ID)
+
 	scrapeMenu := s.Scraper.ScrapAllMenuItems(scrappedShop)
 
-	result := s.DB.Save(scrapeMenu)
-	if result.Error != nil {
-		ShopRequest.Status = "failed"
-		log.Println("failed to save Shop's menu into database for ShopRequest.ID: ", ShopRequest.ID)
-		s.Process.CreateShopRequest(ShopRequest)
-		return result.Error
+	err = s.UpdateShopMenuToDB(scrapeMenu, ShopRequest)
+	if err != nil {
+		return err
 	}
-
-	ShopRequest.Status = "done"
-	s.Process.CreateShopRequest(ShopRequest)
-	log.Println("Shop's menu data saved successfully while handling ShopRequest.ID: ", ShopRequest.ID)
 
 	Task := &models.TaskSchedule{
 		IsScrapeFinished:     false,
