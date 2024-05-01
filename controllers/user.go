@@ -305,7 +305,12 @@ func (s *User) VerifyAccount(ctx *gin.Context) {
 		return
 	}
 
-	s.DB.Model(VerifyUser).Updates(map[string]interface{}{"email_verified": true, "email_verification_token": ""})
+	if err := s.UpdateAccountAfterVerify(VerifyUser); err != nil {
+		message := "internal error"
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"status": "fail", "message": message})
+		return
+	}
 
 	message := "Email has been verified"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
