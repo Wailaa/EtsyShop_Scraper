@@ -607,9 +607,7 @@ func (s *Shop) SaveShopToDB(scrappedShop *models.Shop, ShopRequest *models.ShopR
 
 func (s *Shop) UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopRequest) error {
 
-	err := s.DB.Save(Shop).Error
-
-	if err != nil {
+	if err := s.DB.Save(Shop).Error; err != nil {
 		ShopRequest.Status = "failed"
 		log.Println("failed to save Shop's menu into database for ShopRequest.ID: ", ShopRequest.ID)
 		s.Process.CreateShopRequest(ShopRequest)
