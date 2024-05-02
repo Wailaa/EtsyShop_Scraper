@@ -515,10 +515,9 @@ func (pr *ShopCreators) CreateShopRequest(ShopRequest *models.ShopRequest) error
 		return errors.New("no AccountID was passed")
 	}
 
-	result := pr.DB.Save(ShopRequest)
-	if result.Error != nil {
-		log.Println(result.Error)
-		return result.Error
+	if err := pr.DB.Save(ShopRequest).Error; err != nil {
+		log.Println(err)
+		return err
 	}
 
 	return nil
