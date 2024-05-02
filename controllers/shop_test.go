@@ -1655,7 +1655,7 @@ func TestGetTotalRevenue_Success(t *testing.T) {
 	AvarageItemPrice := 19.2
 	revenueExpected := 485.68
 
-	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQauntity: 3}, {Available: true, OriginalPrice: 19.12, SoldQauntity: 10}, {Available: true, OriginalPrice: 124.44, SoldQauntity: 2}}, nil)
+	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQuantity: 3}, {Available: true, OriginalPrice: 19.12, SoldQuantity: 10}, {Available: true, OriginalPrice: 124.44, SoldQuantity: 2}}, nil)
 
 	Revenue, err := Shop.GetTotalRevenue(ShopExample.ID, AvarageItemPrice)
 
@@ -1679,7 +1679,7 @@ func TestSoldItemsTask(t *testing.T) {
 	AvarageItemPrice := 19.2
 	revenueExpected := 485.68
 
-	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQauntity: 3}, {Available: true, OriginalPrice: 19.12, SoldQauntity: 10}, {Available: true, OriginalPrice: 124.44, SoldQauntity: 2}}, nil)
+	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQuantity: 3}, {Available: true, OriginalPrice: 19.12, SoldQuantity: 10}, {Available: true, OriginalPrice: 124.44, SoldQuantity: 2}}, nil)
 
 	Revenue, err := Shop.GetTotalRevenue(ShopExample.ID, AvarageItemPrice)
 

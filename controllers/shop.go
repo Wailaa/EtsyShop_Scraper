@@ -61,7 +61,7 @@ type ResponseSoldItemInfo struct {
 	DiscoutPercent string
 	ItemLink       string
 	Available      bool
-	SoldQauntity   int
+	SoldQuantity   int
 }
 
 type DailySoldStats struct {
@@ -450,7 +450,7 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 		for _, item := range AllItems {
 			if key == item.ID {
 				SoldItemInfo := CreateSoldItemInfo(&item)
-				SoldItemInfo.SoldQauntity = value
+				SoldItemInfo.SoldQuantity = value
 				SoldItemInfos = append(SoldItemInfos, *SoldItemInfo)
 			}
 		}
@@ -493,7 +493,7 @@ func (s *Shop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, 
 		} else {
 			ItemPrice = AverageItemPrice
 		}
-		revenue += ItemPrice * float64(soldItem.SoldQauntity)
+		revenue += ItemPrice * float64(soldItem.SoldQuantity)
 	}
 	revenue = RoundToTwoDecimalDigits(revenue)
 	return revenue, nil
