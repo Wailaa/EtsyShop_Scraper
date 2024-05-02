@@ -473,7 +473,7 @@ func (s *ShopCreators) GetAvarageItemPrice(ShopID uint) (float64, error) {
 
 		return 0, err
 	}
-	averagePrice = math.Round(averagePrice*100) / 100
+	averagePrice = RoundToTwoDecimalDigits(averagePrice)
 
 	return averagePrice, nil
 }
