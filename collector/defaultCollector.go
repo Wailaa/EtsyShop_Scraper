@@ -48,8 +48,8 @@ func NewCollyCollector() *DefaultCollector {
 
 	c.OnRequest(func(r *colly.Request) {
 
-		fmt.Println("-----------------------------")
-		fmt.Println("Visiting", r.URL)
+		log.Println("-----------------------------")
+		log.Println("Visiting", r.URL)
 		r.Headers.Set("Accept-Language", "en-US,en;q=0.9")
 		r.Headers.Set("Accept", "test/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 		r.Headers.Set("Accept-Encoding", "gzip, deflate, br")
@@ -60,10 +60,10 @@ func NewCollyCollector() *DefaultCollector {
 
 	c.OnResponse(func(r *colly.Response) {
 
-		fmt.Println("-----------------------------")
-		fmt.Println(r.StatusCode)
+		log.Println("-----------------------------")
+		log.Println(r.StatusCode)
 
-		fmt.Println("ProxyProvider :", getProxy.Provider)
+		log.Println("ProxyProvider :", getProxy.Provider)
 
 		if r.StatusCode != 200 {
 			for key, value := range *r.Headers {
@@ -75,7 +75,7 @@ func NewCollyCollector() *DefaultCollector {
 
 	c.OnError(func(r *colly.Response, err error) {
 
-		fmt.Println("ProxyProvider :", getProxy.Provider)
+		log.Println("ProxyProvider :", getProxy.Provider)
 
 		getProxy = utils.PickProxyProvider()
 
@@ -83,7 +83,7 @@ func NewCollyCollector() *DefaultCollector {
 			r.Request.Abort()
 			log.Println("shop was not found. error 404 was returned")
 		} else {
-			fmt.Println("Request URL: ", r.Request.URL, " failed with response: ", r, "\nError: ", err)
+			log.Println("Request URL: ", r.Request.URL, " failed with response: ", r, "\nError: ", err)
 
 			if getProxy.Url != "" {
 				c.SetProxy(getProxy.Url)
@@ -96,8 +96,8 @@ func NewCollyCollector() *DefaultCollector {
 	})
 
 	c.OnScraped(func(r *colly.Response) {
-		fmt.Println("-----------------------------")
-		fmt.Println("Done scraping")
+		log.Println("-----------------------------")
+		log.Println("Done scraping")
 	})
 
 	return &DefaultCollector{
