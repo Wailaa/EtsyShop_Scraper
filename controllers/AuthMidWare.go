@@ -60,9 +60,8 @@ func AuthMiddleWare(Process utils.UtilsProcess) gin.HandlerFunc {
 
 		ctx.SetCookie("access_token", string(*accessToken), int(config.AccTokenExp.Seconds()), "/", "localhost", false, true)
 
-		result := initializer.DB.Where("id = ?", userClaims.UserUUID).First(user)
-		if result.Error != nil {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": result.Error})
+		if err := initializer.DB.Where("id = ?", userClaims.UserUUID).First(user).Error; err != nil {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": err})
 			ctx.Abort()
 			return
 		}
