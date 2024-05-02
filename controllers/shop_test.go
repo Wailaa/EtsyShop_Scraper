@@ -2365,3 +2365,68 @@ func TestPopulateItemIDsFromListings(t *testing.T) {
 	assert.Equal(t, expectedID, actualInjectedID)
 	assert.Equal(t, expectedRevenue, dailRevenue)
 }
+
+func TestUpdateAccountShopRelation(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	ShopExample := &models.Shop{
+		Name:           "exampleShop",
+		TotalSales:     10,
+		HasSoldHistory: true,
+	}
+	userID := uuid.New()
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(userID.String()))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1`)).
+		WithArgs(userID.String()).WillReturnRows(sqlmock.NewRows([]string{"shop_id", "account_id"}).AddRow(1, userID.String()))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE "shops"."id" = $1 AND "shops"."deleted_at" IS NULL`)).
+		WithArgs(1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1 AND "account_shop_following"."shop_id" IN (NULL)`)).
+		WithArgs(userID.String()).WillReturnResult(sqlmock.NewResult(1, 1))
+	sqlMock.ExpectCommit()
+
+	err := implShop.UpdateAccountShopRelation(ShopExample, userID)
+
+	assert.NoError(t, err)
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
+}
+
+func TestUpdateAccountShopRelation_Fail(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	ShopExample := &models.Shop{
+		Name:           "exampleShop",
+		TotalSales:     10,
+		HasSoldHistory: true,
+	}
+	userID := uuid.New()
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WillReturnError(errors.New("error while handling database operation"))
+
+	err := implShop.UpdateAccountShopRelation(ShopExample, userID)
+
+	assert.Error(t, err)
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
+}

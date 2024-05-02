@@ -767,3 +767,18 @@ func PopulateItemIDsFromListings(ScrappedSoldItems []models.SoldItems, AllItems 
 	}
 	return ScrappedSoldItems, dailyRevenue
 }
+
+func (s *Shop) UpdateAccountShopRelation(requestedShop *models.Shop, UserID uuid.UUID) error {
+	account := &models.Account{}
+
+	if err := s.DB.Preload("ShopsFollowing").Where("id = ?", UserID).First(&account).Error; err != nil {
+		log.Println(err)
+		return err
+	}
+
+	if err := s.DB.Model(&account).Association("ShopsFollowing").Delete(requestedShop); err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
