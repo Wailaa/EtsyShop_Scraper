@@ -493,7 +493,7 @@ func (s *Shop) GetTotalRevenue(ShopID uint, AvarageItemPrice float64) (float64, 
 			revenue += AvarageItemPrice * float64(soldItem.SoldQauntity)
 		}
 	}
-	revenue = math.Round(revenue*100) / 100
+	revenue = RoundToTwoDecimalDigits(revenue)
 	return revenue, nil
 }
 
