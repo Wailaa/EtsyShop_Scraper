@@ -76,9 +76,8 @@ func Authorization() gin.HandlerFunc {
 		Account := models.Account{}
 		currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 
-		result := initializer.DB.Where("id = ?", currentUserUUID).First(&Account)
-		if result.Error != nil {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": result.Error})
+		if err := initializer.DB.Where("id = ?", currentUserUUID).First(&Account).Error; err != nil {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": err})
 			ctx.Abort()
 			return
 		}
