@@ -221,7 +221,7 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 }
 
 func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
-	var dailyRevenue float64
+
 	ScrappedSoldItems, err := s.Process.ExecuteUpdateDiscontinuedItems(s, Shop, Task, ShopRequest)
 	if err != nil {
 		ShopRequest.Status = "failed"
@@ -240,15 +240,7 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 		return err
 	}
 
-	for i, ScrappedSoldItem := range ScrappedSoldItems {
-		for _, item := range AllItems {
-			if ScrappedSoldItem.ListingID == item.ListingID {
-				ScrappedSoldItems[i].ItemID = item.ID
-				dailyRevenue += item.OriginalPrice
-				break
-			}
-		}
-	}
+	ScrappedSoldItems, dailyRevenue := PopulateItemIDsFromListings(ScrappedSoldItems, AllItems)
 
 	ScrappedSoldItems = ReverseSoldItems(ScrappedSoldItems)
 
