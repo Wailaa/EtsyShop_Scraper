@@ -2430,3 +2430,40 @@ func TestUpdateAccountShopRelation_Fail(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 
 }
+
+func TestEstablishAccountShopRelation(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	ShopExample := &models.Shop{
+		Name:           "exampleShop",
+		TotalSales:     10,
+		HasSoldHistory: true,
+	}
+	userID := uuid.New()
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE ID = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WithArgs(userID.String(), 1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(userID.String()))
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "created_at"=$1,"updated_at"=$2,"deleted_at"=$3,"first_name"=$4,"last_name"=$5,"email"=$6,"password_hashed"=$7,"subscription_type"=$8,"email_verified"=$9,"email_verification_token"=$10,"request_change_pass"=$11,"account_pass_reset_token"=$12,"last_time_logged_in"=$13,"last_time_logged_out"=$14 WHERE "accounts"."deleted_at" IS NULL AND "id" = $15`)).
+		WillReturnResult(sqlmock.NewResult(1, 2))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","social_media_links","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT DO NOTHING RETURNING "id"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+	sqlMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO "account_shop_following" ("account_id","shop_id") VALUES ($1,$2) ON CONFLICT DO NOTHING`)).WithArgs(userID.String(), 1).WillReturnResult(sqlmock.NewResult(1, 1))
+	sqlMock.ExpectCommit()
+
+	err := implShop.EstablishAccountShopRelation(ShopExample, userID)
+
+	assert.NoError(t, err)
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
+}

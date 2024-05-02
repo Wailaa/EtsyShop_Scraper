@@ -774,3 +774,20 @@ func (s *Shop) UpdateAccountShopRelation(requestedShop *models.Shop, UserID uuid
 	}
 	return nil
 }
+
+func (s *Shop) EstablishAccountShopRelation(requestedShop *models.Shop, userID uuid.UUID) error {
+	utils := &utils.Utils{}
+	currentAccount, err := NewUserController(s.DB, utils).GetAccountByID(userID)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	currentAccount.ShopsFollowing = append(currentAccount.ShopsFollowing, *requestedShop)
+	if err := s.DB.Save(&currentAccount).Error; err != nil {
+		log.Println(err)
+		return err
+
+	}
+	return nil
+}
