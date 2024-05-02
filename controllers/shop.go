@@ -372,11 +372,6 @@ func (s *Shop) UnFollowShop(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
 	}
-	if err := s.DB.Save(&account).Error; err != nil {
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
-		return
-	}
 
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": "Unfollowed shop"})
 
