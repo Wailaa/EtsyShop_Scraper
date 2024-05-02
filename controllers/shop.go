@@ -665,7 +665,8 @@ func (s *Shop) UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uin
 		log.Println("Error marshaling JSON:", err)
 		return err
 	}
-	dailyRevenue = math.Round(dailyRevenue*100) / 100
+	dailyRevenue = RoundToTwoDecimalDigits(dailyRevenue)
+
 	if err = s.DB.Model(&models.DailyShopSales{}).Where("created_at > ?", now).Where("shop_id = ?", ShopID).Updates(&models.DailyShopSales{SoldItems: jsonArray, DailyRevenue: dailyRevenue}).Error; err != nil {
 		return err
 	}
