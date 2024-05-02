@@ -2340,3 +2340,33 @@ func TestCreateNewOutOfProdMenu_Fail(t *testing.T) {
 	assert.Contains(t, err.Error(), "error while creating menu")
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestPopulateItemIDsFromListings(t *testing.T) {
+	var expectedRevenue float64
+	SoldItems := []models.SoldItems{{Name: "Example", ListingID: 12, DataShopID: "1122", ItemID: 1}, {Name: "Example2", ListingID: 13, DataShopID: "1122", ItemID: 2}, {Name: "Example2", ListingID: 13, DataShopID: "1122", ItemID: 2}, {Name: "Example2", ListingID: 15, DataShopID: "1122", ItemID: 4}}
+	existingItems := []models.Item{{ListingID: 12, OriginalPrice: 19.8}, {ListingID: 13, OriginalPrice: 11.5}, {ListingID: 14, OriginalPrice: 17.6}, {ListingID: 15, OriginalPrice: 90.1}}
+	for i := range existingItems {
+		existingItems[i].ID = uint(i + 1)
+
+	}
+
+	expectedID := []uint{1, 2, 2, 4}
+	actualInjectedID := []uint{}
+
+	for _, ID := range expectedID {
+		for _, Item := range existingItems {
+			if Item.ID == ID {
+				expectedRevenue += Item.OriginalPrice
+			}
+		}
+	}
+
+	SortedItems, dailRevenue := controllers.PopulateItemIDsFromListings(SoldItems, existingItems)
+
+	for _, item := range SortedItems {
+		actualInjectedID = append(actualInjectedID, item.ItemID)
+	}
+
+	assert.Equal(t, expectedID, actualInjectedID)
+	assert.Equal(t, expectedRevenue, dailRevenue)
+}

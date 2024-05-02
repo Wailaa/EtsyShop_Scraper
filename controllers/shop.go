@@ -765,3 +765,18 @@ func (s *Shop) CreateOutOfProdMenu(Shop *models.Shop, SoldOutItems []models.Item
 	log.Println("Out Of Production successfully created for ShopRequest.ID: ", ShopRequest.ID)
 	return nil
 }
+
+func PopulateItemIDsFromListings(ScrappedSoldItems []models.SoldItems, AllItems []models.Item) ([]models.SoldItems, float64) {
+	var dailyRevenue float64
+
+	for i, ScrappedSoldItem := range ScrappedSoldItems {
+		for _, item := range AllItems {
+			if ScrappedSoldItem.ListingID == item.ListingID {
+				ScrappedSoldItems[i].ItemID = item.ID
+				dailyRevenue += item.OriginalPrice
+				break
+			}
+		}
+	}
+	return ScrappedSoldItems, dailyRevenue
+}
