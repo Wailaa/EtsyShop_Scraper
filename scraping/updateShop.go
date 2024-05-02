@@ -3,9 +3,8 @@ package scrap
 import (
 	"EtsyScraper/collector"
 	"EtsyScraper/models"
+	"EtsyScraper/utils"
 	"log"
-	"math/rand"
-	"time"
 
 	"github.com/gocolly/colly/v2"
 )
@@ -34,8 +33,8 @@ func (sc *Scraper) CheckForUpdates(Shop string, needUpdateItems bool) (*models.S
 		} else {
 			failedURL := "https://" + r.Request.URL.Host + r.Request.URL.RequestURI()
 
-			randTimeSet := time.Duration(rand.Intn(89-10) + 10)
-			time.Sleep(randTimeSet * time.Second)
+			MaxSeconds := 89
+			utils.SetSleep(MaxSeconds)
 
 			c.Visit(failedURL)
 		}

@@ -4,11 +4,10 @@ import (
 	"EtsyScraper/collector"
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
+	"EtsyScraper/utils"
 	"log"
-	"math/rand"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gocolly/colly/v2"
 )
@@ -33,8 +32,8 @@ func (sc *Scraper) ScrapShop(shopName string) (*models.Shop, error) {
 		} else {
 			failedURL := "https://" + r.Request.URL.Host + r.Request.URL.RequestURI()
 
-			randTimeSet := time.Duration(rand.Intn(89-10) + 10)
-			time.Sleep(randTimeSet * time.Second)
+			MaxSeconds := 89
+			utils.SetSleep(MaxSeconds)
 
 			NewShopCollector.Visit(failedURL)
 		}
@@ -118,7 +117,7 @@ func scrapShopTotalSales(c *colly.Collector, shop *models.Shop) error {
 
 		TotalSales := e.ChildText("div.wt-mt-lg-5 div:first-child")
 		TotalSales = strings.Split(TotalSales, " ")[0]
-		TotalSales = strings.Replace(TotalSales, ",", "", -1)
+		TotalSales = ReplaceSign(TotalSales, ",", "")
 		TotalSalesToInt, _ := strconv.Atoi(TotalSales)
 
 		shop.TotalSales = TotalSalesToInt
@@ -195,7 +194,7 @@ func scrapShopReviews(c *colly.Collector, shop *models.Shop) error {
 	c.OnHTML("div.reviews-total", func(e *colly.HTMLElement) {
 
 		ratings := e.ChildAttr("input", "value")
-		ratingsToFloat, _ := strconv.ParseFloat(ratings, 64)
+		ratingsToFloat, _ := StringToFloat(ratings)
 
 		totalReviews := e.ChildText("div:last-child")
 		totalReviews = totalReviews[1 : len(totalReviews)-1]

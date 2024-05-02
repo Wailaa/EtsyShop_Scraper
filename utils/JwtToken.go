@@ -57,14 +57,14 @@ func (ut *Utils) ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, erro
 		}
 	}
 
-	getClaimsData, ok := parcedtoken.Claims.(jwt.MapClaims)
-	getClaims := models.CreateClaims(getClaimsData)
-
-	if err := getClaimsData.Valid(); err != nil || !ok {
+	ClaimsData, ok := parcedtoken.Claims.(jwt.MapClaims)
+	if err := ClaimsData.Valid(); err != nil || !ok {
 		return nil, fmt.Errorf("invalid claims %v", ok)
 	}
 
-	return getClaims, nil
+	Claims := models.CreateClaims(ClaimsData)
+
+	return Claims, nil
 }
 
 func (ut *Utils) RefreshAccToken(token *models.Token) (*models.Token, error) {
@@ -90,15 +90,15 @@ func (ut *Utils) BlacklistJWT(token *models.Token) error {
 
 	context := context.TODO()
 
-	checkBlackList, err := ut.IsJWTBlackListed(token)
-	if checkBlackList {
+	isBlackListed, err := ut.IsJWTBlackListed(token)
+	if isBlackListed {
 		return fmt.Errorf("token is alraedy Blacklisted")
 	}
 	if err != nil {
 		return err
 	}
 
-	BlacklistedJWT, err := ut.ValidateJWT(token)
+	Claims, err := ut.ValidateJWT(token)
 	if err != nil {
 		log.Println("error while blacklisting token", err)
 		return err
@@ -107,7 +107,7 @@ func (ut *Utils) BlacklistJWT(token *models.Token) error {
 	expiredToken := TokenBlacklistPrefix + fmt.Sprint(*token)
 
 	Now := time.Now().UTC()
-	EX := time.Unix(BlacklistedJWT.ExpiresAt, 0)
+	EX := time.Unix(Claims.ExpiresAt, 0)
 	tokenExpire := EX.Sub(Now)
 
 	errToken := initializer.RedisClient.Set(context, expiredToken, "revokedToken", tokenExpire).Err()

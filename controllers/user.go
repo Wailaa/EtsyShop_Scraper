@@ -4,6 +4,7 @@ import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	"EtsyScraper/utils"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -80,7 +81,6 @@ type UserController interface {
 func (s *User) RegisterUser(ctx *gin.Context) {
 
 	var account *RegisterAccount
-	newUUID := uuid.New()
 
 	if err := ctx.ShouldBindJSON(&account); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
@@ -109,26 +109,9 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	newAccount := &models.Account{
-		ID:                     newUUID,
-		FirstName:              account.FirstName,
-		LastName:               account.LastName,
-		Email:                  account.Email,
-		PasswordHashed:         passwardHashed,
-		SubscriptionType:       account.SubscriptionType,
-		EmailVerificationToken: EmailVerificationToken,
-	}
-
-	res := s.DB.Create(&newAccount)
-
-	if res.Error != nil {
-		if strings.Contains(res.Error.Error(), "email") {
-			message := "this email is already in use"
-			ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
-			return
-		}
-		message := "internal issue"
-		ctx.JSON(http.StatusConflict, gin.H{"status": "failed", "message": message})
+	newAccount, err := s.CreateNewAccountRecord(account, passwardHashed, EmailVerificationToken)
+	if err != nil {
+		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": err.Error()})
 		return
 	}
 
@@ -167,7 +150,7 @@ func (s *User) GetAccountByEmail(email string) *models.Account {
 }
 
 func (s *User) LoginAccount(ctx *gin.Context) {
-	now := time.Now().UTC()
+
 	var loginDetails *LoginRequest
 	config := initializer.LoadProjConfig(".")
 
@@ -208,33 +191,16 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	if err = s.DB.Model(result).Where("id = ?", result.ID).Update("last_time_logged_in", now).Error; err != nil {
+	if err = s.UpdateLastTimeLoggedIn(result); err != nil {
 		log.Println(err)
 	}
 
-	if err := s.DB.Preload("ShopsFollowing").First(&result, result.ID).Error; err != nil {
+	if err := s.JoinShopFollowing(result); err != nil {
 		log.Println(err)
 		return
 	}
-	for i := range result.ShopsFollowing {
-		if err := s.DB.Preload("ShopMenu").Preload("Reviews").Preload("Member").First(&result.ShopsFollowing[i]).Error; err != nil {
-			log.Println(err)
-			return
-		}
-	}
 
-	user := UserData{
-		Name:  result.FirstName,
-		Email: result.Email,
-		Shops: result.ShopsFollowing,
-	}
-
-	loginResponse := &LoginResponse{
-		TokenType:    "Bearer",
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		User:         user,
-	}
+	loginResponse := s.GenerateLoginResponce(result, accessToken, refreshToken)
 
 	ctx.SetCookie("access_token", string(*accessToken), int(config.AccTokenExp.Seconds()), "/", "localhost", false, true)
 	ctx.SetCookie("refresh_token", string(*refreshToken), int(config.RefTokenExp.Seconds()), "/", "localhost", false, true)
@@ -245,8 +211,8 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 
 func GetTokens(ctx *gin.Context) (map[string]*models.Token, error) {
 	tokens := make(map[string]*models.Token)
-	if accesstoken, err := ctx.Cookie("access_token"); err == nil {
-		tokens["access_token"] = models.NewToken(accesstoken)
+	if accessToken, err := ctx.Cookie("access_token"); err == nil {
+		tokens["access_token"] = models.NewToken(accessToken)
 	}
 	if refreshToken, err := ctx.Cookie("refresh_token"); err == nil {
 		tokens["refresh_token"] = models.NewToken(refreshToken)
@@ -258,7 +224,6 @@ func GetTokens(ctx *gin.Context) (map[string]*models.Token, error) {
 }
 
 func (s *User) LogOutAccount(ctx *gin.Context) {
-	now := time.Now().UTC()
 	var userUUID uuid.UUID
 
 	tokenList, err := GetTokens(ctx)
@@ -268,7 +233,7 @@ func (s *User) LogOutAccount(ctx *gin.Context) {
 	}
 
 	for tokenName, token := range tokenList {
-		if reflect.ValueOf(userUUID).IsZero() {
+		if userUUID == uuid.Nil {
 			tokenClaims, err := s.utils.ValidateJWT(token)
 			if err != nil {
 				log.Println(err)
@@ -277,7 +242,7 @@ func (s *User) LogOutAccount(ctx *gin.Context) {
 
 			userUUID = tokenClaims.UserUUID
 
-			if err = s.DB.Model(&models.Account{}).Where("id = ?", userUUID).Update("last_time_logged_out", now).Error; err != nil {
+			if err = s.UpdateLastTimeLoggedOut(userUUID); err != nil {
 				log.Println(err)
 				ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": "failed to update logout details"})
 				return
@@ -323,7 +288,12 @@ func (s *User) VerifyAccount(ctx *gin.Context) {
 		return
 	}
 
-	s.DB.Model(VerifyUser).Updates(map[string]interface{}{"email_verified": true, "email_verification_token": ""})
+	if err := s.UpdateAccountAfterVerify(VerifyUser); err != nil {
+		message := "internal error"
+		log.Println(err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"status": "fail", "message": message})
+		return
+	}
 
 	message := "Email has been verified"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
@@ -363,16 +333,30 @@ func (s *User) ChangePass(ctx *gin.Context) {
 		return
 	}
 
-	if reqPassChange.NewPass == reqPassChange.ConfirmPass {
-		passwardHashed, err := s.utils.HashPass(reqPassChange.NewPass)
-		if err != nil {
-			log.Println(err)
-			message := "error while hashing password"
-			ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
-			return
-		}
-		s.DB.Model(Account).Update("password_hashed", passwardHashed)
+	if reqPassChange.NewPass != reqPassChange.ConfirmPass {
+		message := "new password is not confirmed"
+		ctx.JSON(http.StatusUnauthorized, gin.H{"status": "failed", "message": message})
+		ctx.Abort()
+		return
 	}
+
+	passwardHashed, err := s.utils.HashPass(reqPassChange.NewPass)
+	if err != nil {
+		log.Println(err)
+		message := "error while hashing password"
+		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
+		return
+	}
+
+	if err := s.UpdateAccountNewPass(Account, passwardHashed); err != nil {
+		log.Println(err)
+		message := "internal error"
+		ctx.JSON(http.StatusInternalServerError, gin.H{"status": "registraition rejected", "message": message})
+		return
+	}
+
+	message := "password changed"
+	ctx.JSON(http.StatusOK, gin.H{"status": "registraition rejected", "message": message})
 	s.LogOutAccount(ctx)
 }
 
@@ -380,7 +364,7 @@ func (s *User) ForgotPassReq(ctx *gin.Context) {
 	ForgotAccountPass := &UserReqForgotPassword{}
 	if err := ctx.ShouldBindJSON(&ForgotAccountPass); err != nil {
 		message := "failed to fetch change password request"
-		log.Println(message)
+		log.Println(err)
 		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
 		return
 	}
@@ -401,7 +385,12 @@ func (s *User) ForgotPassReq(ctx *gin.Context) {
 	}
 	Account.RequestChangePass = true
 	Account.AccountPassResetToken = ResetPassToken
-	s.DB.Save(Account)
+
+	if err := s.DB.Save(Account).Error; err != nil {
+		log.Println("Failed to save account:", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"status": "fail", "message": "Failed to save account"})
+		return
+	}
 
 	go s.utils.SendResetPassEmail(Account)
 	ctx.JSON(http.StatusOK, gin.H{"status": "success"})
@@ -421,7 +410,7 @@ func (s *User) ResetPass(ctx *gin.Context) {
 	}
 
 	if reqChangePass.NewPass != reqChangePass.ConfirmPass {
-		message := "Paswwords are not the same"
+		message := "Passwords are not the same"
 		log.Println(message)
 		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
 		return
@@ -435,7 +424,7 @@ func (s *User) ResetPass(ctx *gin.Context) {
 		return
 	}
 
-	if reflect.DeepEqual(*VerifyUser, models.Account{}) {
+	if reflect.DeepEqual(*VerifyUser, models.Account{}) || VerifyUser.AccountPassResetToken == "" {
 		message := "Invalid verification code or account does not exists"
 		log.Println(message)
 		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
@@ -448,13 +437,6 @@ func (s *User) ResetPass(ctx *gin.Context) {
 		return
 	}
 
-	if VerifyUser.AccountPassResetToken == "" {
-		message := "this link is not valid anymore"
-		log.Println(message)
-		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
-		return
-	}
-
 	newPasswardHashed, err := s.utils.HashPass(reqChangePass.NewPass)
 	if err != nil {
 		log.Println(err)
@@ -463,8 +445,121 @@ func (s *User) ResetPass(ctx *gin.Context) {
 		return
 	}
 
-	s.DB.Model(VerifyUser).Updates(map[string]interface{}{"request_change_pass": false, "account_pass_reset_token": "", "password_hashed": newPasswardHashed})
+	if err = s.UpdateAccountAfterResetPass(VerifyUser, newPasswardHashed); err != nil {
+		log.Println(err)
+		message := "internal error"
+		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
+		return
+	}
 
 	message := "Password changed successfully"
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
+}
+
+func (s *User) UpdateLastTimeLoggedIn(Account *models.Account) error {
+	now := time.Now()
+	if err := s.DB.Model(Account).Where("id = ?", Account.ID).Update("last_time_logged_in", now).Error; err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+func (s *User) JoinShopFollowing(Account *models.Account) error {
+
+	if err := s.DB.Preload("ShopsFollowing").First(Account, Account.ID).Error; err != nil {
+		log.Println(err)
+		return err
+	}
+
+	for i := range Account.ShopsFollowing {
+		if err := s.DB.Preload("ShopMenu").Preload("Reviews").Preload("Member").First(&Account.ShopsFollowing[i]).Error; err != nil {
+			log.Println(err)
+			return err
+		}
+	}
+
+	return nil
+
+}
+
+func (s *User) GenerateLoginResponce(Account *models.Account, AccessToken, RefreshToken *models.Token) *LoginResponse {
+
+	user := UserData{
+		Name:  Account.FirstName,
+		Email: Account.Email,
+		Shops: Account.ShopsFollowing,
+	}
+
+	loginResponse := &LoginResponse{
+		TokenType:    "Bearer",
+		AccessToken:  AccessToken,
+		RefreshToken: RefreshToken,
+		User:         user,
+	}
+
+	return loginResponse
+}
+
+func (s *User) UpdateLastTimeLoggedOut(UserID uuid.UUID) error {
+	now := time.Now()
+	if err := s.DB.Model(&models.Account{}).Where("id = ?", UserID).Update("last_time_logged_out", now).Error; err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+func (s *User) UpdateAccountAfterVerify(Account *models.Account) error {
+
+	err := s.DB.Model(Account).Updates(map[string]interface{}{"email_verified": true, "email_verification_token": ""}).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *User) UpdateAccountNewPass(Account *models.Account, passwardHashed string) error {
+
+	err := s.DB.Model(Account).Update("password_hashed", passwardHashed).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *User) UpdateAccountAfterResetPass(Account *models.Account, newPasswardHashed string) error {
+
+	err := s.DB.Model(Account).Updates(map[string]interface{}{"request_change_pass": false, "account_pass_reset_token": "", "password_hashed": newPasswardHashed}).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *User) CreateNewAccountRecord(account *RegisterAccount, passwardHashed, EmailVerificationToken string) (*models.Account, error) {
+	newUUID := uuid.New()
+
+	newAccount := &models.Account{
+		ID:                     newUUID,
+		FirstName:              account.FirstName,
+		LastName:               account.LastName,
+		Email:                  account.Email,
+		PasswordHashed:         passwardHashed,
+		SubscriptionType:       account.SubscriptionType,
+		EmailVerificationToken: EmailVerificationToken,
+	}
+
+	err := s.DB.Create(newAccount).Error
+
+	if err != nil {
+		if strings.Contains(err.Error(), "email") {
+			log.Println(err)
+			message := "this email is already in use"
+			return newAccount, errors.New(message)
+		}
+
+		return newAccount, err
+	}
+	return newAccount, nil
 }

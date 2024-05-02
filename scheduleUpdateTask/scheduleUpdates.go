@@ -185,7 +185,6 @@ func MenuExists(Menu string, ListOfMenus []string) bool {
 func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap.ScrapeUpdateProcess) error {
 
 	dataShopID := ""
-	existingItems := []models.Item{}
 	existingItemMap := make(map[uint]bool)
 	ListOfMenus := []string{}
 	var OutOfProductionID uint
@@ -221,12 +220,6 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 			u.DB.Where("Listing_id = ? ", item.ListingID).First(&existingItem)
 			dataShopID = existingItem.DataShopID
 
-			PriceDiscrepancy := 3.0
-			PriceChange := math.Abs((existingItem.OriginalPrice / item.OriginalPrice) - 1)
-			PriceChangePerc := math.Round(PriceChange * 100)
-
-			log.Println("the price Change is :", PriceChangePerc)
-
 			if existingItem.ID == 0 {
 				item.MenuItemID = UpdatedMenu.ID
 				u.DB.Create(&item)
@@ -244,40 +237,54 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 					NewMenuItemID: item.MenuItemID,
 				})
 
-			} else if PriceChangePerc >= PriceDiscrepancy {
-
-				log.Println("item before update : ", existingItem)
-
-				u.DB.Create(&models.ItemHistoryChange{
-					ItemID:         existingItem.ID,
-					NewItemCreated: false,
-					OldPrice:       existingItem.OriginalPrice,
-					NewPrice:       item.OriginalPrice,
-					OldAvailable:   existingItem.Available,
-					NewAvailable:   item.Available,
-					OldMenuItemID:  existingItem.MenuItemID,
-					NewMenuItemID:  UpdatedMenu.ID,
-				})
-
-				u.DB.Model(&existingItem).Updates(models.Item{
-					OriginalPrice: item.OriginalPrice,
-					Available:     item.Available,
-					MenuItemID:    UpdatedMenu.ID,
-				})
-
-				log.Println("updated item  : ", existingItem)
+			} else if ShouldUpdateItem(existingItem.OriginalPrice, item.OriginalPrice) {
+				ApplyUpdated(u.DB, existingItem, item, UpdatedMenu.ID)
 			}
 		}
 
 	}
 
+	u.HandleOutOfProductionItems(dataShopID, OutOfProductionID, Shop.ShopMenu.ID, existingItemMap)
+	return nil
+}
+
+func ShouldUpdateItem(exsistingPrice, newPrice float64) bool {
+	PriceDiscrepancy := 3.0
+	PriceChange := math.Abs((exsistingPrice / newPrice) - 1)
+	PriceChangePerc := math.Round(PriceChange * 100)
+	return PriceChangePerc >= PriceDiscrepancy
+}
+
+func ApplyUpdated(DB *gorm.DB, existingItem, item models.Item, UpdatedMenuID uint) {
+
+	DB.Create(&models.ItemHistoryChange{
+		ItemID:         existingItem.ID,
+		NewItemCreated: false,
+		OldPrice:       existingItem.OriginalPrice,
+		NewPrice:       item.OriginalPrice,
+		OldAvailable:   existingItem.Available,
+		NewAvailable:   item.Available,
+		OldMenuItemID:  existingItem.MenuItemID,
+		NewMenuItemID:  UpdatedMenuID,
+	})
+
+	DB.Model(&existingItem).Updates(models.Item{
+		OriginalPrice: item.OriginalPrice,
+		Available:     item.Available,
+		MenuItemID:    UpdatedMenuID,
+	})
+
+}
+
+func (u *UpdateDB) HandleOutOfProductionItems(dataShopID string, OutOfProductionID, ShopMenuID uint, existingItemMap map[uint]bool) {
+	existingItems := []models.Item{}
 	u.DB.Where("data_shop_id = ?", dataShopID).Find(&existingItems)
 
 	for _, item := range existingItems {
 		if _, ok := existingItemMap[item.ListingID]; !ok && item.MenuItemID != OutOfProductionID {
 			if OutOfProductionID == 0 {
 				Menu := models.CreateMenuItem(models.MenuItem{
-					ShopMenuID: Shop.ShopMenu.ID,
+					ShopMenuID: ShopMenuID,
 					Category:   "Out Of Production",
 					SectionID:  "0",
 				})
@@ -307,6 +314,4 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 			log.Println("item  not available anymore: ", item)
 		}
 	}
-
-	return nil
 }

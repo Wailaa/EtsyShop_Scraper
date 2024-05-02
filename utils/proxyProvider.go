@@ -18,12 +18,12 @@ type ProxySetting struct {
 func (ut *Utils) PickProxyProvider() ProxySetting {
 	ProxySettings := ProxySetting{}
 
-	RandomIndex := rand.Intn(len(GetAllEnvProy))
+	SelectProxyProvider := rand.Intn(len(GetAllEnvProy))
 
-	CountryList := strings.Split(GetAllEnvProy[RandomIndex], ";")
+	CountryList := strings.Split(GetAllEnvProy[SelectProxyProvider], ";")
 	Country := rand.Intn(len(CountryList))
 
-	ProxySettings.Provider = fmt.Sprint("Provider ", RandomIndex+1, " Country :", Countries[Country])
+	ProxySettings.Provider = fmt.Sprint("Provider ", SelectProxyProvider+1, " Country :", Countries[Country])
 	ProxySettings.Url = CountryList[Country]
 
 	return ProxySettings
