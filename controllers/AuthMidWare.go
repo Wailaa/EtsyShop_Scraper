@@ -30,9 +30,8 @@ func AuthMiddleWare(Process utils.UtilsProcess) gin.HandlerFunc {
 			isBlackListed, err := Process.IsJWTBlackListed(accessToken)
 			if !isBlackListed && err == nil && errClaims == nil {
 
-				result := initializer.DB.Where("id = ?", userClaims.UserUUID).First(user)
-				if result.Error != nil {
-					ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": result.Error})
+				if err := initializer.DB.Where("id = ?", userClaims.UserUUID).First(user).Error; err != nil {
+					ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": err})
 					ctx.Abort()
 					return
 				}
