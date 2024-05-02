@@ -441,12 +441,12 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 		return nil, result.Error
 	}
 
-	soldQauntity := map[uint]int{}
+	soldQuantity := map[uint]int{}
 	for _, SoldItem := range Solditems {
-		soldQauntity[SoldItem.ItemID]++
+		soldQuantity[SoldItem.ItemID]++
 	}
 
-	for key, value := range soldQauntity {
+	for key, value := range soldQuantity {
 		for _, item := range AllItems {
 			if key == item.ID {
 				SoldItemInfo := CreateSoldItemInfo(&item)
