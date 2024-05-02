@@ -784,3 +784,25 @@ func (s *Shop) EstablishAccountShopRelation(requestedShop *models.Shop, userID u
 func RoundToTwoDecimalDigits(value float64) float64 {
 	return math.Round(value*100) / 100
 }
+
+func (s *Shop) GetItemsBySoldItems(SoldItems []byte) ([]models.Item, error) {
+
+	itemIDs := []uint{}
+	item := models.Item{}
+
+	items := []models.Item{}
+
+	if err := json.Unmarshal(SoldItems, &itemIDs); err != nil {
+		log.Println("Error parsing sold items:", err)
+		return nil, err
+	}
+
+	for _, itemID := range itemIDs {
+		if err := s.DB.Raw("SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = (?)", itemID).Scan(&item).Error; err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+
+	return items, nil
+}

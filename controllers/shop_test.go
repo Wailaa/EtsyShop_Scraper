@@ -6,6 +6,7 @@ import (
 	scrap "EtsyScraper/scraping"
 	setupMockServer "EtsyScraper/setupTests"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -2509,4 +2510,54 @@ func TestRoundTwoDecimalDigits(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetItemsBySoldItems_Success(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	implShop := controllers.Shop{DB: MockedDataBase}
+
+	exampleSoldItemIds := []uint{2000, 2001, 2002, 2003, 2004}
+	SoldItems, err := json.Marshal(exampleSoldItemIds)
+	if err != nil {
+		t.Fatalf("error while marshaling json")
+	}
+
+	for i, itemID := range exampleSoldItemIds {
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = ($1)`)).
+			WithArgs(itemID).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(i + 1))
+	}
+
+	items, err := implShop.GetItemsBySoldItems(SoldItems)
+
+	assert.NoError(t, err)
+	assert.Equal(t, len(exampleSoldItemIds), len(items))
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestGetItemsBySoldItems_Fail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	implShop := controllers.Shop{DB: MockedDataBase}
+
+	exampleSoldItemIds := []uint{2000, 2001, 2002, 2003, 2004}
+	SoldItems, err := json.Marshal(exampleSoldItemIds)
+	if err != nil {
+		t.Fatalf("error while marshaling json")
+	}
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = ($1)`)).
+		WithArgs(exampleSoldItemIds[0]).WillReturnError(errors.New("error while processing database operations"))
+
+	_, err = implShop.GetItemsBySoldItems(SoldItems)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "error while processing database operations")
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
