@@ -564,11 +564,9 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 
 	stats := make(map[string]DailySoldStats)
 
-	result := s.DB.Where("shop_id = ? AND created_at > ?", ShopID, timePeriod).Find(&dailyShopSales)
-
-	if result.Error != nil {
-		log.Println(result.Error)
-		return nil, result.Error
+	if err := s.DB.Where("shop_id = ? AND created_at > ?", ShopID, timePeriod).Find(&dailyShopSales).Error; err != nil {
+		log.Println(err)
+		return nil, err
 	}
 
 	for _, sales := range dailyShopSales {
