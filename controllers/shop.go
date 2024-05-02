@@ -478,7 +478,7 @@ func (s *ShopCreators) GetAvarageItemPrice(ShopID uint) (float64, error) {
 	return averagePrice, nil
 }
 
-func (s *Shop) GetTotalRevenue(ShopID uint, AvarageItemPrice float64) (float64, error) {
+func (s *Shop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error) {
 	var revenue float64
 
 	soldItems, err := s.Process.ExecuteGetSoldItemsByShopID(s, ShopID)
@@ -490,7 +490,7 @@ func (s *Shop) GetTotalRevenue(ShopID uint, AvarageItemPrice float64) (float64, 
 		if soldItem.Available {
 			revenue += soldItem.OriginalPrice * float64(soldItem.SoldQauntity)
 		} else {
-			revenue += AvarageItemPrice * float64(soldItem.SoldQauntity)
+			revenue += AverageItemPrice * float64(soldItem.SoldQauntity)
 		}
 	}
 	revenue = RoundToTwoDecimalDigits(revenue)
