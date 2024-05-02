@@ -359,15 +359,7 @@ func (s *Shop) UnFollowShop(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
 	}
-
-	account := &models.Account{}
-	if err := s.DB.Preload("ShopsFollowing").Where("id = ?", currentUserUUID).First(&account).Error; err != nil {
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
-		return
-	}
-
-	if err := s.DB.Model(&account).Association("ShopsFollowing").Delete(requestedShop); err != nil {
+	if err := s.UpdateAccountShopRelation(requestedShop, currentUserUUID); err != nil {
 		log.Println(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
