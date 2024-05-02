@@ -246,9 +246,10 @@ func TestRegisterUser_DataBaseError(t *testing.T) {
 
 	router.POST("/register", User.RegisterUser)
 	for _, Error := range ErrorCases {
-
+		sqlMock.ExpectBegin()
 		sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "accounts" ("id","created_at","updated_at","deleted_at","first_name","last_name","email","password_hashed","subscription_type","email_verified","email_verification_token","request_change_pass","account_pass_reset_token","last_time_logged_in","last_time_logged_out") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING "id"`)).
 			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), "Testing", "User", "test@test1242q21.com", "", "free", false, "", false, "", sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnError(errors.New(Error))
+		sqlMock.ExpectRollback()
 
 		MockedUtils.On("HashPass").Return("", nil)
 		MockedUtils.On("CreateVerificationString").Return("", nil)
@@ -269,7 +270,7 @@ func TestRegisterUser_DataBaseError(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusConflict, w.Code)
-		assert.Error(t, sqlMock.ExpectationsWereMet())
+		assert.NoError(t, sqlMock.ExpectationsWereMet())
 	}
 }
 
