@@ -780,3 +780,7 @@ func (s *Shop) EstablishAccountShopRelation(requestedShop *models.Shop, userID u
 	}
 	return nil
 }
+
+func RoundToTwoDecimalDigits(value float64) float64 {
+	return math.Round(value*100) / 100
+}
