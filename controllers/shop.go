@@ -559,8 +559,6 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context, ShopID uint, Period string)
 func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error) {
 
 	dailyShopSales := []models.DailyShopSales{}
-	itemIDs := []uint{}
-	item := models.Item{}
 
 	stats := make(map[string]DailySoldStats)
 
@@ -570,7 +568,7 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 	}
 
 	for _, sales := range dailyShopSales {
-		items := []models.Item{}
+
 		dateCreated := sales.CreatedAt.Format("2006-01-02")
 
 		if len(sales.SoldItems) == 0 {
@@ -579,17 +577,9 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 			}
 			continue
 		}
-
-		if err := json.Unmarshal(sales.SoldItems, &itemIDs); err != nil {
-			fmt.Println("Error parsing sold items:", err)
+		items, err := s.GetItemsBySoldItems(sales.SoldItems)
+		if err != nil {
 			return nil, err
-		}
-		for _, itemID := range itemIDs {
-			result := s.DB.Raw("SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = (?)", itemID).Scan(&item)
-			if result.Error != nil {
-				return nil, result.Error
-			}
-			items = append(items, item)
 		}
 
 		stats[dateCreated] = DailySoldStats{
