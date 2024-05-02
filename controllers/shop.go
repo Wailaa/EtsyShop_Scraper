@@ -319,20 +319,9 @@ func (s *Shop) FollowShop(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "error while processing the request"})
 		return
 	}
-	utils := &utils.Utils{}
-	currentAccount, err := NewUserController(s.DB, utils).GetAccountByID(currentUserUUID)
-	if err != nil {
+	if err := s.EstablishAccountShopRelation(requestedShop, currentUserUUID); err != nil {
 		log.Println(err)
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
-		return
-	}
-
-	currentAccount.ShopsFollowing = append(currentAccount.ShopsFollowing, *requestedShop)
-	if err := s.DB.Save(&currentAccount).Error; err != nil {
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
-		return
-
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": "following shop"})
