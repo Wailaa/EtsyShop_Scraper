@@ -483,7 +483,7 @@ func (s *Shop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, 
 
 	soldItems, err := s.Process.ExecuteGetSoldItemsByShopID(s, ShopID)
 	if err != nil {
-		log.Println("error while calculating revenue")
+		log.Println("error while calculating revenue", err)
 		return 0, err
 	}
 	for _, soldItem := range soldItems {
