@@ -2,13 +2,23 @@ package routes
 
 import (
 	"EtsyScraper/controllers"
-	initializer "EtsyScraper/init"
 	"EtsyScraper/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 type UserRoute struct {
+	UserController UserControllerInterface
+}
+
+type UserControllerInterface interface {
+	RegisterUser(c *gin.Context)
+	VerifyAccount(c *gin.Context)
+	LoginAccount(c *gin.Context)
+	LogOutAccount(c *gin.Context)
+	ForgotPassReq(c *gin.Context)
+	ChangePass(c *gin.Context)
+	ResetPass(c *gin.Context)
 }
 
 func (ur *UserRoute) GeneraluserRoutes(server *gin.Engine) {
@@ -17,13 +27,13 @@ func (ur *UserRoute) GeneraluserRoutes(server *gin.Engine) {
 
 	router := server.Group("/auth")
 
-	register := controllers.NewUserController(initializer.DB, utils).RegisterUser
-	confirmEmail := controllers.NewUserController(initializer.DB, utils).VerifyAccount
-	login := controllers.NewUserController(initializer.DB, utils).LoginAccount
-	logOut := controllers.NewUserController(initializer.DB, utils).LogOutAccount
-	forgotPass := controllers.NewUserController(initializer.DB, utils).ForgotPassReq
-	changePass := controllers.NewUserController(initializer.DB, utils).ChangePass
-	resetPass := controllers.NewUserController(initializer.DB, utils).ResetPass
+	register := ur.UserController.RegisterUser
+	confirmEmail := ur.UserController.VerifyAccount
+	login := ur.UserController.LoginAccount
+	logOut := ur.UserController.LogOutAccount
+	forgotPass := ur.UserController.ForgotPassReq
+	changePass := ur.UserController.ChangePass
+	resetPass := ur.UserController.ResetPass
 
 	router.POST("/register", register)
 	router.POST("/login", login)
