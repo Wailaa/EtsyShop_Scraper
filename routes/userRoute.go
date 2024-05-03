@@ -18,6 +18,10 @@ type UserControllerInterface interface {
 	ResetPass(c *gin.Context)
 }
 
+func NewUserRouteController(process UserControllerInterface) *UserRoute {
+	return &UserRoute{UserController: process}
+}
+
 func (ur *UserRoute) GeneraluserRoutes(server *gin.Engine, authentication, authorization gin.HandlerFunc) {
 
 	router := server.Group("/auth")
