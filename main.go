@@ -48,12 +48,6 @@ func main() {
 	Creatrors := &controllers.ShopCreators{DB: initializer.DB}
 	implShop := controllers.Shop{DB: initializer.DB, Scraper: Scraper, Process: Creatrors}
 
-	router := server.Group("/auth")
-	router.GET("/test", controllers.AuthMiddleWare(utils), func(ctx *gin.Context) {
-		message := "Welcome to EtsyScraper"
-		ctx.JSON(http.StatusOK, gin.H{"HTTPstatus": http.StatusOK, "message": message})
-	})
-
 	userRoutes := routes.NewUserRouteController(controllers.NewUserController(initializer.DB, utils))
 
 	userRoutes.GeneraluserRoutes(server, controllers.AuthMiddleWare(utils), controllers.Authorization())
