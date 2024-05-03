@@ -4,6 +4,7 @@ import (
 	"EtsyScraper/controllers"
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
+	"EtsyScraper/routes"
 	scheduleUpdates "EtsyScraper/scheduleUpdateTask"
 	scrap "EtsyScraper/scraping"
 	"EtsyScraper/utils"
@@ -53,21 +54,9 @@ func main() {
 		ctx.JSON(http.StatusOK, gin.H{"HTTPstatus": http.StatusOK, "message": message})
 	})
 
-	register := controllers.NewUserController(initializer.DB, utils).RegisterUser
-	confirmEmail := controllers.NewUserController(initializer.DB, utils).VerifyAccount
-	login := controllers.NewUserController(initializer.DB, utils).LoginAccount
-	logOut := controllers.NewUserController(initializer.DB, utils).LogOutAccount
-	forgotPass := controllers.NewUserController(initializer.DB, utils).ForgotPassReq
-	changePass := controllers.NewUserController(initializer.DB, utils).ChangePass
-	resetPass := controllers.NewUserController(initializer.DB, utils).ResetPass
+	userRoutes := routes.NewUserRouteController(controllers.NewUserController(initializer.DB, utils))
 
-	router.POST("/register", register)
-	router.POST("/login", login)
-	router.GET("/logout", logOut)
-	router.GET("/verifyaccount", confirmEmail)
-	router.POST("/forgotpassword", forgotPass)
-	router.POST("/resetpassword", resetPass)
-	router.POST("/changepassword", controllers.AuthMiddleWare(utils), controllers.Authorization(), changePass)
+	userRoutes.GeneraluserRoutes(server, controllers.AuthMiddleWare(utils), controllers.Authorization())
 
 	shopRoute := server.Group("/shop")
 	createNewShopRequest := controllers.NewShopController(implShop).CreateNewShopRequest
