@@ -1,9 +1,6 @@
 package routes
 
 import (
-	"EtsyScraper/controllers"
-	"EtsyScraper/utils"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,9 +18,7 @@ type UserControllerInterface interface {
 	ResetPass(c *gin.Context)
 }
 
-func (ur *UserRoute) GeneraluserRoutes(server *gin.Engine) {
-
-	utils := &utils.Utils{}
+func (ur *UserRoute) GeneraluserRoutes(server *gin.Engine, authentication, authorization gin.HandlerFunc) {
 
 	router := server.Group("/auth")
 
@@ -41,5 +36,5 @@ func (ur *UserRoute) GeneraluserRoutes(server *gin.Engine) {
 	router.GET("/verifyaccount", confirmEmail)
 	router.POST("/forgotpassword", forgotPass)
 	router.POST("/resetpassword", resetPass)
-	router.POST("/changepassword", controllers.AuthMiddleWare(utils), controllers.Authorization(), changePass)
+	router.POST("/changepassword", authentication, authorization, changePass)
 }
