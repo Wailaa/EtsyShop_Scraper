@@ -2,36 +2,43 @@ package routes
 
 import (
 	"EtsyScraper/controllers"
-	initializer "EtsyScraper/init"
-	scrap "EtsyScraper/scraping"
 	"EtsyScraper/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ShopRoutes struct {
+	ShopController ShopRoutesInterface
 }
 
-func NewShopRoutesController() *ShopRoutes {
-	return &ShopRoutes{}
+type ShopRoutesInterface interface {
+	CreateNewShopRequest(ctx *gin.Context)
+	FollowShop(ctx *gin.Context)
+	UnFollowShop(ctx *gin.Context)
+	HandleGetShopByID(ctx *gin.Context)
+	HandleGetItemsByShopID(ctx *gin.Context)
+	HandleGetSoldItemsByShopID(ctx *gin.Context)
+	ProcessStatsRequest(ctx *gin.Context)
+	HandleGetItemsCountByShopID(ctx *gin.Context)
+}
+
+func NewShopRouteController(process ShopRoutesInterface) *ShopRoutes {
+	return &ShopRoutes{ShopController: process}
 }
 
 func (us *ShopRoutes) GeneralShopRoutes(server *gin.Engine) {
 	utils := &utils.Utils{}
-	Scraper := &scrap.Scraper{}
-	Creatrors := &controllers.ShopCreators{DB: initializer.DB}
-	implShop := controllers.Shop{DB: initializer.DB, Scraper: Scraper, Process: Creatrors}
 
 	shopRoute := server.Group("/shop")
 
-	createNewShopRequest := controllers.NewShopController(implShop).CreateNewShopRequest
-	followShop := controllers.NewShopController(implShop).FollowShop
-	unFollowShop := controllers.NewShopController(implShop).UnFollowShop
-	getShopByID := controllers.NewShopController(implShop).HandleGetShopByID
-	getAllItemsByShopID := controllers.NewShopController(implShop).HandleGetItemsByShopID
-	getAllSoldItemsByShopID := controllers.NewShopController(implShop).HandleGetSoldItemsByShopID
-	getShopStats := controllers.NewShopController(implShop).ProcessStatsRequest
-	getItemsCountByShopID := controllers.NewShopController(implShop).HandleGetItemsCountByShopID
+	createNewShopRequest := us.ShopController.CreateNewShopRequest
+	followShop := us.ShopController.FollowShop
+	unFollowShop := us.ShopController.UnFollowShop
+	getShopByID := us.ShopController.HandleGetShopByID
+	getAllItemsByShopID := us.ShopController.HandleGetItemsByShopID
+	getAllSoldItemsByShopID := us.ShopController.HandleGetSoldItemsByShopID
+	getShopStats := us.ShopController.ProcessStatsRequest
+	getItemsCountByShopID := us.ShopController.HandleGetItemsCountByShopID
 
 	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(utils), controllers.Authorization(), createNewShopRequest)
 	shopRoute.GET("/follow_shop", controllers.AuthMiddleWare(utils), controllers.Authorization(), followShop)
