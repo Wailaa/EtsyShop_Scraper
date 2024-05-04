@@ -2700,3 +2700,74 @@ func TestHandleGetItemsByShopID__Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 }
+
+func TestHandleGetSoldItemsByShopID__NoShop(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	router.GET("/testroute/:shopID/all_sold_items", implShop.HandleGetSoldItemsByShopID)
+
+	TestShop.On("GetItemsByShopID").Return(nil, errors.New("no shop found"))
+
+	req, err := http.NewRequest("GET", "/testroute//all_sold_items", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code, "GetItemsByShopID found no shop in db")
+
+}
+
+func TestHandleGetSoldItemsByShopID_Fail(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	TestShop.On("ExecuteGetSoldItemsByShopID").Return(nil, errors.New("error getting data"))
+
+	router.GET("/testroute/:shopID/all_sold_items", implShop.HandleGetSoldItemsByShopID)
+
+	req, err := http.NewRequest("GET", "/testroute/1/all_sold_items", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code, "no id passed")
+
+}
+
+func TestHandleGetSoldItemsByShopID_Success(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{}, nil)
+
+	router.GET("/testroute/:shopID/all_sold_items", implShop.HandleGetSoldItemsByShopID)
+
+	req, err := http.NewRequest("GET", "/testroute/1/all_sold_items", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+}

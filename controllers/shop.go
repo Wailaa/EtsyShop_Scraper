@@ -494,6 +494,22 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 	return
 }
 
+func (s *Shop) HandleGetSoldItemsByShopID(ctx *gin.Context) {
+	ShopID := ctx.Param("shopID")
+	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		return
+	}
+
+	Items, err := s.Process.ExecuteGetSoldItemsByShopID(s, uint(ShopIDToUint))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, Items)
+}
+
 func (s *ShopCreators) GetAvarageItemPrice(ShopID uint) (float64, error) {
 	var averagePrice float64
 
