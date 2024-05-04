@@ -455,6 +455,21 @@ func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
 	return itemCount, nil
 }
 
+func (s *Shop) HandleGetItemsCountByShopID(ctx *gin.Context) {
+	ShopID := ctx.Param("shopID")
+	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		return
+	}
+	Items, err := s.GetItemsCountByShopID(uint(ShopIDToUint))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, Items)
+}
+
 func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error) {
 	listingIDs := []uint{}
 	Solditems := []models.SoldItems{}

@@ -2768,3 +2768,70 @@ func TestHandleGetSoldItemsByShopID_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 }
+
+func TestHandleGetItemsCountByShopID__NoShop(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	router.GET("/testroute/:shopID/items_count", implShop.HandleGetItemsCountByShopID)
+
+	req, err := http.NewRequest("GET", "/testroute/d/items_count", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code, "GetItemsByShopID found no shop in db")
+
+}
+
+func TestHandleGetItemsCountByShopID__Fail(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	router.GET("/testroute/:shopID/items_count", implShop.HandleGetItemsCountByShopID)
+
+	TestShop.On("GetItemsByShopID").Return(nil, errors.New("no shop found"))
+
+	req, err := http.NewRequest("GET", "/testroute/1/items_count", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+}
+
+func TestHandleGetItemsCountByShopID_Success(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	router.GET("/testroute/:shopID/items_count", implShop.HandleGetItemsCountByShopID)
+
+	TestShop.On("GetItemsByShopID").Return([]models.Item{}, nil)
+
+	req, err := http.NewRequest("GET", "/testroute/1/items_count", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+}
