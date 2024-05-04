@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"strconv"
 	"sync"
 	"time"
 
@@ -419,6 +420,21 @@ func (ps *ShopCreators) GetItemsByShopID(ID uint) (items []models.Item, err erro
 		items = append(items, menu.Items...)
 	}
 	return
+}
+
+func (ps *ShopCreators) HandleGetItemsByShopID(ctx *gin.Context) {
+	ShopID := ctx.Param("shopID")
+	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		return
+	}
+	Items, err := ps.GetItemsByShopID(uint(ShopIDToUint))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, Items)
 }
 
 func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
