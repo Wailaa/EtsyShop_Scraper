@@ -34,7 +34,7 @@ type Shop struct {
 	HasSoldHistory    bool     `json:"-" `
 	OnVacation        bool     `json:"-" `
 	Revenue           float64  `json:"revenue" gorm:"-"`
-	AverageItemsPrice float64  `json:"avarage_item_price" gorm:"-"`
+	AverageItemsPrice float64  `json:"average_item_price" gorm:"-"`
 
 	Member   []ShopMember `json:"shop_member" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
 	ShopMenu ShopMenu     `json:"shop_menu" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
