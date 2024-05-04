@@ -100,14 +100,14 @@ type ShopCreatorGetters interface {
 	ExecuteCreateShop(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest)
 	ExecuteUpdateSellingHistory(dispatch ShopController, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
 	ExecuteUpdateDiscontinuedItems(dispatch ShopController, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
-	ExecuteGetTotalRevenue(dispatch ExecShopMethodProcess, ShopID uint, AvarageItemPrice float64) (float64, error)
+	ExecuteGetTotalRevenue(dispatch ExecShopMethodProcess, ShopID uint, AverageItemPrice float64) (float64, error)
 	ExecuteGetSoldItemsByShopID(dispatch ExecShopMethodProcess, ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error)
 	ExecuteGetSellingStatsByPeriod(dispatch ExecShopMethodProcess, ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error)
 }
 
 type ExecShopMethodProcess interface {
 	CreateNewShop(ShopRequest *models.ShopRequest) error
-	GetTotalRevenue(ShopID uint, AvarageItemPrice float64) (float64, error)
+	GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error)
 	GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error)
 	GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error)
 }
@@ -163,8 +163,8 @@ func (ps *ShopCreators) ExecuteUpdateDiscontinuedItems(dispatch ShopController, 
 	return ScrappedSoldItems, err
 }
 
-func (ps *ShopCreators) ExecuteGetTotalRevenue(dispatch ExecShopMethodProcess, ShopID uint, AvarageItemPrice float64) (float64, error) {
-	Avarage, err := dispatch.GetTotalRevenue(ShopID, AvarageItemPrice)
+func (ps *ShopCreators) ExecuteGetTotalRevenue(dispatch ExecShopMethodProcess, ShopID uint, AverageItemPrice float64) (float64, error) {
+	Avarage, err := dispatch.GetTotalRevenue(ShopID, AverageItemPrice)
 	return Avarage, err
 }
 func (ps *ShopCreators) ExecuteGetSoldItemsByShopID(dispatch ExecShopMethodProcess, ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error) {

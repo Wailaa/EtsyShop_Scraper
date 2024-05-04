@@ -34,7 +34,7 @@ func (m *MockedShop) GetAverageItemPrice(ShopID uint) (float64, error) {
 	args := m.Called()
 	return args.Get(0).(float64), args.Error(1)
 }
-func (m *MockedShop) ExecuteGetTotalRevenue(dispatch controllers.ExecShopMethodProcess, ShopID uint, AvarageItemPrice float64) (float64, error) {
+func (m *MockedShop) ExecuteGetTotalRevenue(dispatch controllers.ExecShopMethodProcess, ShopID uint, AverageItemPrice float64) (float64, error) {
 	args := m.Called()
 	return args.Get(0).(float64), args.Error(1)
 }
@@ -1631,10 +1631,10 @@ func TestGetTotalRevenue_Fail(t *testing.T) {
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	AvarageItemPrice := 19.2
+	AverageItemPrice := 19.2
 	TestShop.On("ExecuteGetSoldItemsByShopID").Return(nil, errors.New("Sold items where not found"))
 
-	_, err := Shop.GetTotalRevenue(ShopExample.ID, AvarageItemPrice)
+	_, err := Shop.GetTotalRevenue(ShopExample.ID, AverageItemPrice)
 
 	TestShop.AssertNumberOfCalls(t, "ExecuteGetSoldItemsByShopID", 1)
 
@@ -1652,12 +1652,12 @@ func TestGetTotalRevenue_Success(t *testing.T) {
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	AvarageItemPrice := 19.2
+	AverageItemPrice := 19.2
 	revenueExpected := 485.68
 
 	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQuantity: 3}, {Available: true, OriginalPrice: 19.12, SoldQuantity: 10}, {Available: true, OriginalPrice: 124.44, SoldQuantity: 2}}, nil)
 
-	Revenue, err := Shop.GetTotalRevenue(ShopExample.ID, AvarageItemPrice)
+	Revenue, err := Shop.GetTotalRevenue(ShopExample.ID, AverageItemPrice)
 
 	TestShop.AssertNumberOfCalls(t, "ExecuteGetSoldItemsByShopID", 1)
 	assert.NoError(t, err)
@@ -1676,12 +1676,12 @@ func TestSoldItemsTask(t *testing.T) {
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	AvarageItemPrice := 19.2
+	AverageItemPrice := 19.2
 	revenueExpected := 485.68
 
 	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQuantity: 3}, {Available: true, OriginalPrice: 19.12, SoldQuantity: 10}, {Available: true, OriginalPrice: 124.44, SoldQuantity: 2}}, nil)
 
-	Revenue, err := Shop.GetTotalRevenue(ShopExample.ID, AvarageItemPrice)
+	Revenue, err := Shop.GetTotalRevenue(ShopExample.ID, AverageItemPrice)
 
 	TestShop.AssertNumberOfCalls(t, "ExecuteGetSoldItemsByShopID", 1)
 	assert.NoError(t, err)
