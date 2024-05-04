@@ -200,7 +200,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	loginResponse := s.GenerateLoginResponce(result, accessToken, refreshToken)
+	loginResponse := s.GenerateLoginResponse(result, accessToken, refreshToken)
 
 	ctx.SetCookie("access_token", string(*accessToken), int(config.AccTokenExp.Seconds()), "/", "localhost", false, true)
 	ctx.SetCookie("refresh_token", string(*refreshToken), int(config.RefTokenExp.Seconds()), "/", "localhost", false, true)
@@ -483,7 +483,7 @@ func (s *User) JoinShopFollowing(Account *models.Account) error {
 
 }
 
-func (s *User) GenerateLoginResponce(Account *models.Account, AccessToken, RefreshToken *models.Token) *LoginResponse {
+func (s *User) GenerateLoginResponse(Account *models.Account, AccessToken, RefreshToken *models.Token) *LoginResponse {
 
 	user := UserData{
 		Name:  Account.FirstName,

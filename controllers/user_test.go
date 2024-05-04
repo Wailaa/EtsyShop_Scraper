@@ -1598,14 +1598,14 @@ func TestJoinShopFollowing_FAIL(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestGenerateLoginResponce(t *testing.T) {
+func TestGenerateLoginResponse(t *testing.T) {
 
 	user := controllers.User{}
 	Account := models.Account{FirstName: "John", Email: "test@Test.com", ShopsFollowing: []models.Shop{{Name: "ExampleShopName"}, {Name: "ExampleShop2"}}}
 	AccessToken := models.Token("Example Token")
 	RefreshToken := models.Token("Example Token")
 
-	loginResponse := user.GenerateLoginResponce(&Account, &AccessToken, &RefreshToken)
+	loginResponse := user.GenerateLoginResponse(&Account, &AccessToken, &RefreshToken)
 
 	assert.Equal(t, &AccessToken, loginResponse.AccessToken)
 	assert.Equal(t, &RefreshToken, loginResponse.RefreshToken)
