@@ -2579,7 +2579,7 @@ func TestHandleHandleGetShopByID__NoShop(t *testing.T) {
 	}
 
 	router.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusBadRequest, w.Code, "GetShopByID gound no shop in db")
+	assert.Equal(t, http.StatusBadRequest, w.Code, "GetShopByID found no shop in db")
 
 }
 
@@ -2599,7 +2599,7 @@ func TestHandleHandleGetShopByID__fail(t *testing.T) {
 	}
 
 	router.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusNotFound, w.Code, "no id passe")
+	assert.Equal(t, http.StatusNotFound, w.Code, "no id passed")
 
 }
 
