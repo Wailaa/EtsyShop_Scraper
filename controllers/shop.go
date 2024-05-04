@@ -376,13 +376,13 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 		return nil, err
 	}
 
-	shop.AvarageItemsPrice, err = s.Process.GetAverageItemPrice(shop.ID)
+	shop.AverageItemsPrice, err = s.Process.GetAverageItemPrice(shop.ID)
 	if err != nil {
 		log.Println("error while calculating item avarage price")
 		return nil, err
 	}
 
-	shop.Revenue, err = s.Process.ExecuteGetTotalRevenue(s, shop.ID, shop.AvarageItemsPrice)
+	shop.Revenue, err = s.Process.ExecuteGetTotalRevenue(s, shop.ID, shop.AverageItemsPrice)
 	if err != nil {
 		log.Println("error while calculating shop's revenue")
 		return nil, err
