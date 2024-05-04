@@ -57,7 +57,7 @@ func main() {
 	followShop := controllers.NewShopController(implShop).FollowShop
 	unFollowShop := controllers.NewShopController(implShop).UnFollowShop
 	getShopByID := controllers.NewShopController(implShop).HandleGetShopByID
-	getAllItemsByShopID := controllers.NewShopCreators(initializer.DB).HandleGetItemsByShopID
+	getAllItemsByShopID := controllers.NewShopController(implShop).HandleGetItemsByShopID
 	getAllSoldItemsByShopID := controllers.NewShopController(implShop).GetSoldItemsByShopID
 	getShopStats := controllers.NewShopController(implShop).ProcessStatsRequest
 	getItemsCountByShopID := controllers.NewShopController(implShop).GetItemsCountByShopID

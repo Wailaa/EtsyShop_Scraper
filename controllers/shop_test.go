@@ -2634,16 +2634,18 @@ func TestHandleHandleGetShopByID__Success(t *testing.T) {
 }
 
 func TestHandleGetItemsByShopID__NoShop(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
 	_, router, w := SetGinTestMode()
 
-	TestShop := &controllers.ShopCreators{DB: MockedDataBase}
-	router.GET("/testroute/:shopID", TestShop.HandleGetItemsByShopID)
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	router.GET("/testroute/:shopID", implShop.HandleGetItemsByShopID)
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnError(errors.New("failed to get shop"))
+	TestShop.On("GetItemsByShopID").Return(nil, errors.New("no shop found"))
+
 	req, err := http.NewRequest("GET", "/testroute/1", nil)
 	if err != nil {
 		t.Fatalf("Failed to create test request: %v", err)
@@ -2661,8 +2663,10 @@ func TestHandleGetItemsByShopID_Fail(t *testing.T) {
 
 	_, router, w := SetGinTestMode()
 
-	TestShop := &controllers.ShopCreators{DB: MockedDataBase}
-	router.GET("/testroute/:shopID", TestShop.HandleGetItemsByShopID)
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	router.GET("/testroute/:shopID", implShop.HandleGetItemsByShopID)
 
 	req, err := http.NewRequest("GET", "/testroute", nil)
 	if err != nil {
@@ -2675,20 +2679,17 @@ func TestHandleGetItemsByShopID_Fail(t *testing.T) {
 }
 
 func TestHandleGetItemsByShopID__Success(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
 	_, router, w := SetGinTestMode()
 
-	TestShop := &controllers.ShopCreators{DB: MockedDataBase}
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
 
-	router.GET("/testroute/:shopID", TestShop.HandleGetItemsByShopID)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "shop_id"}).AddRow(1, 1))
-	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopMenuID"}).AddRow(1, 1))
-	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "MenuItemID"}).AddRow(1, 1))
+	TestShop.On("GetItemsByShopID").Return([]models.Item{}, nil)
+	router.GET("/testroute/:shopID", implShop.HandleGetItemsByShopID)
 
 	req, err := http.NewRequest("GET", "/testroute/1", nil)
 	if err != nil {

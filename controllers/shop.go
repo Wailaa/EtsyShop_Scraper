@@ -422,14 +422,14 @@ func (ps *ShopCreators) GetItemsByShopID(ID uint) (items []models.Item, err erro
 	return
 }
 
-func (ps *ShopCreators) HandleGetItemsByShopID(ctx *gin.Context) {
+func (s *Shop) HandleGetItemsByShopID(ctx *gin.Context) {
 	ShopID := ctx.Param("shopID")
 	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
 		return
 	}
-	Items, err := ps.GetItemsByShopID(uint(ShopIDToUint))
+	Items, err := s.Process.GetItemsByShopID(uint(ShopIDToUint))
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
