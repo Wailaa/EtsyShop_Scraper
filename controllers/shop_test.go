@@ -6,6 +6,7 @@ import (
 	scrap "EtsyScraper/scraping"
 	setupMockServer "EtsyScraper/setupTests"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -1237,11 +1238,6 @@ func TestUnFollowShop_Success(t *testing.T) {
 		WithArgs(currentUserUUID.String(), 2).WillReturnResult(sqlmock.NewResult(1, 2))
 	sqlMock.ExpectCommit()
 
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "created_at"=$1,"updated_at"=$2,"deleted_at"=$3,"first_name"=$4,"last_name"=$5,"email"=$6,"password_hashed"=$7,"subscription_type"=$8,"email_verified"=$9,"email_verification_token"=$10,"request_change_pass"=$11,"account_pass_reset_token"=$12,"last_time_logged_in"=$13,"last_time_logged_out"=$14 WHERE "accounts"."deleted_at" IS NULL AND "id" = $15`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), currentUserUUID.String()).WillReturnResult(sqlmock.NewResult(1, 1))
-	sqlMock.ExpectCommit()
-
 	router.POST("/unfollow_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
 	}, Shop.UnFollowShop)
@@ -1659,7 +1655,7 @@ func TestGetTotalRevenue_Success(t *testing.T) {
 	AvarageItemPrice := 19.2
 	revenueExpected := 485.68
 
-	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQauntity: 3}, {Available: true, OriginalPrice: 19.12, SoldQauntity: 10}, {Available: true, OriginalPrice: 124.44, SoldQauntity: 2}}, nil)
+	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQuantity: 3}, {Available: true, OriginalPrice: 19.12, SoldQuantity: 10}, {Available: true, OriginalPrice: 124.44, SoldQuantity: 2}}, nil)
 
 	Revenue, err := Shop.GetTotalRevenue(ShopExample.ID, AvarageItemPrice)
 
@@ -1683,7 +1679,7 @@ func TestSoldItemsTask(t *testing.T) {
 	AvarageItemPrice := 19.2
 	revenueExpected := 485.68
 
-	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQauntity: 3}, {Available: true, OriginalPrice: 19.12, SoldQauntity: 10}, {Available: true, OriginalPrice: 124.44, SoldQauntity: 2}}, nil)
+	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQuantity: 3}, {Available: true, OriginalPrice: 19.12, SoldQuantity: 10}, {Available: true, OriginalPrice: 124.44, SoldQuantity: 2}}, nil)
 
 	Revenue, err := Shop.GetTotalRevenue(ShopExample.ID, AvarageItemPrice)
 
@@ -1764,12 +1760,11 @@ func TestProcessStatsRequest_InvalidPeriod(t *testing.T) {
 
 	ShopID := uint(2)
 	Period := "InvalidPeriod"
-	var err error
 
 	route := fmt.Sprintf("/stats/%v/%s", ShopID, Period)
 
-	router.GET(route, func(ctx *gin.Context) {
-		err = Shop.ProcessStatsRequest(ctx, ShopID, Period)
+	router.GET("/stats/:shopID/:period", func(ctx *gin.Context) {
+		Shop.ProcessStatsRequest(ctx)
 	})
 
 	req, _ := http.NewRequest("GET", route, nil)
@@ -1777,8 +1772,8 @@ func TestProcessStatsRequest_InvalidPeriod(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	assert.Contains(t, err.Error(), "invalid period provided")
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "invalid period provided")
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 }
 func TestProcessStatsRequest_GetSellingStatsByPeriod_Fail(t *testing.T) {
@@ -1795,14 +1790,13 @@ func TestProcessStatsRequest_GetSellingStatsByPeriod_Fail(t *testing.T) {
 
 	ShopID := uint(2)
 	Period := "lastSevenDays"
-	var err error
 
 	route := fmt.Sprintf("/stats/%v/%s", ShopID, Period)
 
 	TestShop.On("ExecuteGetSellingStatsByPeriod").Return(nil, errors.New("error while fetcheing data from db"))
 
-	router.GET(route, func(ctx *gin.Context) {
-		err = Shop.ProcessStatsRequest(ctx, ShopID, Period)
+	router.GET("/stats/:shopID/:period", func(ctx *gin.Context) {
+		Shop.ProcessStatsRequest(ctx)
 	})
 
 	req, _ := http.NewRequest("GET", route, nil)
@@ -1811,7 +1805,7 @@ func TestProcessStatsRequest_GetSellingStatsByPeriod_Fail(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	TestShop.AssertNumberOfCalls(t, "ExecuteGetSellingStatsByPeriod", 1)
-	assert.Contains(t, err.Error(), "error while fetcheing data from db")
+	assert.Contains(t, w.Body.String(), "error while handling stats")
 
 }
 func TestProcessStatsRequest_Success(t *testing.T) {
@@ -1828,7 +1822,6 @@ func TestProcessStatsRequest_Success(t *testing.T) {
 
 	ShopID := uint(2)
 	Period := "lastSevenDays"
-	var err error
 
 	route := fmt.Sprintf("/stats/%v/%s", ShopID, Period)
 
@@ -1841,8 +1834,8 @@ func TestProcessStatsRequest_Success(t *testing.T) {
 
 	TestShop.On("ExecuteGetSellingStatsByPeriod").Return(stats, nil)
 
-	router.GET(route, func(ctx *gin.Context) {
-		err = Shop.ProcessStatsRequest(ctx, ShopID, Period)
+	router.GET("/stats/:shopID/:period", func(ctx *gin.Context) {
+		Shop.ProcessStatsRequest(ctx)
 	})
 
 	req, _ := http.NewRequest("GET", route, nil)
@@ -1851,7 +1844,7 @@ func TestProcessStatsRequest_Success(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	TestShop.AssertNumberOfCalls(t, "ExecuteGetSellingStatsByPeriod", 1)
-	assert.NoError(t, err)
+
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
@@ -2339,4 +2332,506 @@ func TestCreateNewOutOfProdMenu_Fail(t *testing.T) {
 
 	assert.Contains(t, err.Error(), "error while creating menu")
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestPopulateItemIDsFromListings(t *testing.T) {
+	var expectedRevenue float64
+	SoldItems := []models.SoldItems{{Name: "Example", ListingID: 12, DataShopID: "1122", ItemID: 1}, {Name: "Example2", ListingID: 13, DataShopID: "1122", ItemID: 2}, {Name: "Example2", ListingID: 13, DataShopID: "1122", ItemID: 2}, {Name: "Example2", ListingID: 15, DataShopID: "1122", ItemID: 4}}
+	existingItems := []models.Item{{ListingID: 12, OriginalPrice: 19.8}, {ListingID: 13, OriginalPrice: 11.5}, {ListingID: 14, OriginalPrice: 17.6}, {ListingID: 15, OriginalPrice: 90.1}}
+	for i := range existingItems {
+		existingItems[i].ID = uint(i + 1)
+
+	}
+
+	expectedID := []uint{1, 2, 2, 4}
+	actualInjectedID := []uint{}
+
+	for _, ID := range expectedID {
+		for _, Item := range existingItems {
+			if Item.ID == ID {
+				expectedRevenue += Item.OriginalPrice
+			}
+		}
+	}
+
+	SortedItems, dailRevenue := controllers.PopulateItemIDsFromListings(SoldItems, existingItems)
+
+	for _, item := range SortedItems {
+		actualInjectedID = append(actualInjectedID, item.ItemID)
+	}
+
+	assert.Equal(t, expectedID, actualInjectedID)
+	assert.Equal(t, expectedRevenue, dailRevenue)
+}
+
+func TestUpdateAccountShopRelation(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	ShopExample := &models.Shop{
+		Name:           "exampleShop",
+		TotalSales:     10,
+		HasSoldHistory: true,
+	}
+	userID := uuid.New()
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(userID.String()))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1`)).
+		WithArgs(userID.String()).WillReturnRows(sqlmock.NewRows([]string{"shop_id", "account_id"}).AddRow(1, userID.String()))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE "shops"."id" = $1 AND "shops"."deleted_at" IS NULL`)).
+		WithArgs(1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1 AND "account_shop_following"."shop_id" IN (NULL)`)).
+		WithArgs(userID.String()).WillReturnResult(sqlmock.NewResult(1, 1))
+	sqlMock.ExpectCommit()
+
+	err := implShop.UpdateAccountShopRelation(ShopExample, userID)
+
+	assert.NoError(t, err)
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
+}
+
+func TestUpdateAccountShopRelation_Fail(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	ShopExample := &models.Shop{
+		Name:           "exampleShop",
+		TotalSales:     10,
+		HasSoldHistory: true,
+	}
+	userID := uuid.New()
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WillReturnError(errors.New("error while handling database operation"))
+
+	err := implShop.UpdateAccountShopRelation(ShopExample, userID)
+
+	assert.Error(t, err)
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
+}
+
+func TestEstablishAccountShopRelation(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	ShopExample := &models.Shop{
+		Name:           "exampleShop",
+		TotalSales:     10,
+		HasSoldHistory: true,
+	}
+	userID := uuid.New()
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE ID = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WithArgs(userID.String(), 1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(userID.String()))
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "created_at"=$1,"updated_at"=$2,"deleted_at"=$3,"first_name"=$4,"last_name"=$5,"email"=$6,"password_hashed"=$7,"subscription_type"=$8,"email_verified"=$9,"email_verification_token"=$10,"request_change_pass"=$11,"account_pass_reset_token"=$12,"last_time_logged_in"=$13,"last_time_logged_out"=$14 WHERE "accounts"."deleted_at" IS NULL AND "id" = $15`)).
+		WillReturnResult(sqlmock.NewResult(1, 2))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","social_media_links","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT DO NOTHING RETURNING "id"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+	sqlMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO "account_shop_following" ("account_id","shop_id") VALUES ($1,$2) ON CONFLICT DO NOTHING`)).WithArgs(userID.String(), 1).WillReturnResult(sqlmock.NewResult(1, 1))
+	sqlMock.ExpectCommit()
+
+	err := implShop.EstablishAccountShopRelation(ShopExample, userID)
+
+	assert.NoError(t, err)
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
+}
+
+func TestRoundTwoDecimalDigits(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    float64
+		expected float64
+	}{
+		{
+			name:     "several digits after decimal point",
+			value:    19.32333333,
+			expected: 19.32,
+		},
+		{
+			name:     "two digits after decimal point",
+			value:    19.32,
+			expected: 19.32,
+		},
+		{
+			name:     "one digits after decimal point",
+			value:    19.3,
+			expected: 19.3,
+		},
+		{
+			name:     "no digits after decimal point",
+			value:    19,
+			expected: 19,
+		},
+		{
+			name:     "zero value",
+			value:    0,
+			expected: 0,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := controllers.RoundToTwoDecimalDigits(tc.value)
+			if actual != tc.expected {
+				t.Errorf("Expected RoundTwoDecimalDigits(%v) to be %v, but got %v", tc.value, tc.expected, actual)
+			}
+		})
+	}
+}
+
+func TestGetItemsBySoldItems_Success(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	implShop := controllers.Shop{DB: MockedDataBase}
+
+	exampleSoldItemIds := []uint{2000, 2001, 2002, 2003, 2004}
+	SoldItems, err := json.Marshal(exampleSoldItemIds)
+	if err != nil {
+		t.Fatalf("error while marshaling json")
+	}
+
+	for i, itemID := range exampleSoldItemIds {
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = ($1)`)).
+			WithArgs(itemID).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(i + 1))
+	}
+
+	items, err := implShop.GetItemsBySoldItems(SoldItems)
+
+	assert.NoError(t, err)
+	assert.Equal(t, len(exampleSoldItemIds), len(items))
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestGetItemsBySoldItems_Fail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	implShop := controllers.Shop{DB: MockedDataBase}
+
+	exampleSoldItemIds := []uint{2000, 2001, 2002, 2003, 2004}
+	SoldItems, err := json.Marshal(exampleSoldItemIds)
+	if err != nil {
+		t.Fatalf("error while marshaling json")
+	}
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = ($1)`)).
+		WithArgs(exampleSoldItemIds[0]).WillReturnError(errors.New("error while processing database operations"))
+
+	_, err = implShop.GetItemsBySoldItems(SoldItems)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "error while processing database operations")
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestHandleHandleGetShopByID__NoShop(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	implShop := controllers.Shop{DB: MockedDataBase}
+	router.GET("/testroute/:shopID", implShop.HandleGetShopByID)
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnError(errors.New("failed to get shop"))
+	req, err := http.NewRequest("GET", "/testroute/1", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code, "GetShopByID found no shop in db")
+
+}
+
+func TestHandleHandleGetShopByID__fail(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	implShop := controllers.Shop{DB: MockedDataBase}
+	router.GET("/testroute/:shopID", implShop.HandleGetShopByID)
+
+	req, err := http.NewRequest("GET", "/testroute", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code, "no id passed")
+
+}
+
+func TestHandleHandleGetShopByID__Success(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	router.GET("/testroute/:shopID", implShop.HandleGetShopByID)
+
+	TestShop.On("GetAvarageItemPrice").Return(1.0, nil)
+	TestShop.On("ExecuteGetTotalRevenue").Return(1.0, nil)
+	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "shop_id"}).AddRow(1, 1))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "shop_id"}).AddRow(1, 1))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "ReviewsID", "Keyword"}).AddRow(5, 1, "Test1"))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "shop_id"}).AddRow(9, 1))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopMenuID"}).AddRow(1, 9))
+
+	req, err := http.NewRequest("GET", "/testroute/1", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+}
+
+func TestHandleGetItemsByShopID__NoShop(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	router.GET("/testroute/:shopID", implShop.HandleGetItemsByShopID)
+
+	TestShop.On("GetItemsByShopID").Return(nil, errors.New("no shop found"))
+
+	req, err := http.NewRequest("GET", "/testroute/1", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code, "GetItemsByShopID found no shop in db")
+
+}
+
+func TestHandleGetItemsByShopID_Fail(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	router.GET("/testroute/:shopID", implShop.HandleGetItemsByShopID)
+
+	req, err := http.NewRequest("GET", "/testroute", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code, "no id passed")
+
+}
+
+func TestHandleGetItemsByShopID__Success(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	TestShop.On("GetItemsByShopID").Return([]models.Item{}, nil)
+	router.GET("/testroute/:shopID", implShop.HandleGetItemsByShopID)
+
+	req, err := http.NewRequest("GET", "/testroute/1", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+}
+
+func TestHandleGetSoldItemsByShopID__NoShop(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	router.GET("/testroute/:shopID/all_sold_items", implShop.HandleGetSoldItemsByShopID)
+
+	TestShop.On("GetItemsByShopID").Return(nil, errors.New("no shop found"))
+
+	req, err := http.NewRequest("GET", "/testroute//all_sold_items", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code, "GetItemsByShopID found no shop in db")
+
+}
+
+func TestHandleGetSoldItemsByShopID_Fail(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	TestShop.On("ExecuteGetSoldItemsByShopID").Return(nil, errors.New("error getting data"))
+
+	router.GET("/testroute/:shopID/all_sold_items", implShop.HandleGetSoldItemsByShopID)
+
+	req, err := http.NewRequest("GET", "/testroute/1/all_sold_items", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code, "no id passed")
+
+}
+
+func TestHandleGetSoldItemsByShopID_Success(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+
+	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{}, nil)
+
+	router.GET("/testroute/:shopID/all_sold_items", implShop.HandleGetSoldItemsByShopID)
+
+	req, err := http.NewRequest("GET", "/testroute/1/all_sold_items", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+}
+
+func TestHandleGetItemsCountByShopID__NoShop(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	router.GET("/testroute/:shopID/items_count", implShop.HandleGetItemsCountByShopID)
+
+	req, err := http.NewRequest("GET", "/testroute/d/items_count", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code, "GetItemsByShopID found no shop in db")
+
+}
+
+func TestHandleGetItemsCountByShopID__Fail(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	router.GET("/testroute/:shopID/items_count", implShop.HandleGetItemsCountByShopID)
+
+	TestShop.On("GetItemsByShopID").Return(nil, errors.New("no shop found"))
+
+	req, err := http.NewRequest("GET", "/testroute/1/items_count", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+}
+
+func TestHandleGetItemsCountByShopID_Success(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	router.GET("/testroute/:shopID/items_count", implShop.HandleGetItemsCountByShopID)
+
+	TestShop.On("GetItemsByShopID").Return([]models.Item{}, nil)
+
+	req, err := http.NewRequest("GET", "/testroute/1/items_count", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
 }
