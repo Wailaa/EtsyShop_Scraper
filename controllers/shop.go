@@ -390,6 +390,24 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 	return
 }
 
+func (s *Shop) HandleGetShopByID(ctx *gin.Context) {
+
+	ShopID := ctx.Param("shopID")
+	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		return
+	}
+	Shop, err := s.GetShopByID(uint(ShopIDToUint))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, Shop)
+
+}
+
 func (ps *ShopCreators) GetItemsByShopID(ID uint) (items []models.Item, err error) {
 	shop := &models.Shop{}
 	if err := ps.DB.Preload("ShopMenu.Menu.Items").Where("id = ?", ID).First(shop).Error; err != nil {

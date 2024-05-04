@@ -2561,3 +2561,74 @@ func TestGetItemsBySoldItems_Fail(t *testing.T) {
 
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestHandleHandleGetShopByID__NoShop(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	implShop := controllers.Shop{DB: MockedDataBase}
+	router.GET("/testroute/:shopID", implShop.HandleGetShopByID)
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnError(errors.New("failed to get shop"))
+	req, err := http.NewRequest("GET", "/testroute/1", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code, "GetShopByID gound no shop in db")
+
+}
+
+func TestHandleHandleGetShopByID__fail(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	implShop := controllers.Shop{DB: MockedDataBase}
+	router.GET("/testroute/:shopID", implShop.HandleGetShopByID)
+
+	req, err := http.NewRequest("GET", "/testroute", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code, "no id passe")
+
+}
+
+func TestHandleHandleGetShopByID__Success(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	_, router, w := SetGinTestMode()
+
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	router.GET("/testroute/:shopID", implShop.HandleGetShopByID)
+
+	TestShop.On("GetAvarageItemPrice").Return(1.0, nil)
+	TestShop.On("ExecuteGetTotalRevenue").Return(1.0, nil)
+	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "shop_id"}).AddRow(1, 1))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "shop_id"}).AddRow(1, 1))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "ReviewsID", "Keyword"}).AddRow(5, 1, "Test1"))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "shop_id"}).AddRow(9, 1))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopMenuID"}).AddRow(1, 9))
+
+	req, err := http.NewRequest("GET", "/testroute/1", nil)
+	if err != nil {
+		t.Fatalf("Failed to create test request: %v", err)
+	}
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+}
