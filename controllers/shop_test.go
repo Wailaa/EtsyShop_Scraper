@@ -30,7 +30,7 @@ func (m *MockedShop) ExecuteCreateShop(dispatch controllers.ExecShopMethodProces
 
 }
 
-func (m *MockedShop) GetAvarageItemPrice(ShopID uint) (float64, error) {
+func (m *MockedShop) GetAverageItemPrice(ShopID uint) (float64, error) {
 	args := m.Called()
 	return args.Get(0).(float64), args.Error(1)
 }
@@ -1321,7 +1321,7 @@ func TestGetShopByID_AvaragePriceFail(t *testing.T) {
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	TestShop.On("GetAvarageItemPrice").Return(float64(0), errors.New("error getting Item avarage price"))
+	TestShop.On("GetAverageItemPrice").Return(float64(0), errors.New("error getting Item avarage price"))
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
 		WithArgs(ShopExample.ID, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(ShopExample.ID, ShopExample.Name))
@@ -1361,7 +1361,7 @@ func TestGetShopByID_RevenueFail(t *testing.T) {
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	TestShop.On("GetAvarageItemPrice").Return(float64(15.5), nil)
+	TestShop.On("GetAverageItemPrice").Return(float64(15.5), nil)
 	TestShop.On("ExecuteGetTotalRevenue").Return(float64(0), errors.New("Error while getting Total revenue"))
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
@@ -1401,7 +1401,7 @@ func TestGetShopByID_Success(t *testing.T) {
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	TestShop.On("GetAvarageItemPrice").Return(float64(15.5), nil)
+	TestShop.On("GetAverageItemPrice").Return(float64(15.5), nil)
 	TestShop.On("ExecuteGetTotalRevenue").Return(float64(120), nil)
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
@@ -1579,7 +1579,7 @@ func TestGetSoldItemsByShopID_NoSoldItemsInDB(t *testing.T) {
 	assert.Contains(t, err.Error(), "items were not found")
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestGetAvarageItemPrice_Success(t *testing.T) {
+func TestGetAverageItemPrice_Success(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1593,14 +1593,14 @@ func TestGetAvarageItemPrice_Success(t *testing.T) {
 	sqlMock.ExpectQuery("SELECT AVG\\(items.original_price\\) as average_price").
 		WithArgs(2).WillReturnRows(rows)
 
-	Avarage, err := TestShop.GetAvarageItemPrice(ShopExample.ID)
+	Avarage, err := TestShop.GetAverageItemPrice(ShopExample.ID)
 
 	assert.Equal(t, 10.5, Avarage)
 	assert.NoError(t, err)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 
 }
-func TestGetAvarageItemPrice_Fail(t *testing.T) {
+func TestGetAverageItemPrice_Fail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1613,7 +1613,7 @@ func TestGetAvarageItemPrice_Fail(t *testing.T) {
 	sqlMock.ExpectQuery("SELECT AVG\\(items.original_price\\) as average_price").
 		WithArgs(2).WillReturnError(errors.New("Error generateing average price"))
 
-	_, err := TestShop.GetAvarageItemPrice(ShopExample.ID)
+	_, err := TestShop.GetAverageItemPrice(ShopExample.ID)
 
 	assert.Contains(t, err.Error(), "Error generateing average price")
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
@@ -2611,7 +2611,7 @@ func TestHandleHandleGetShopByID__Success(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
 	router.GET("/testroute/:shopID", implShop.HandleGetShopByID)
 
-	TestShop.On("GetAvarageItemPrice").Return(1.0, nil)
+	TestShop.On("GetAverageItemPrice").Return(1.0, nil)
 	TestShop.On("ExecuteGetTotalRevenue").Return(1.0, nil)
 	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "shop_id"}).AddRow(1, 1))

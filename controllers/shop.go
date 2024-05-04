@@ -95,7 +95,7 @@ type ShopController interface {
 type ShopCreatorGetters interface {
 	GetShopByName(ShopName string) (shop *models.Shop, err error)
 	GetItemsByShopID(ID uint) (items []models.Item, err error)
-	GetAvarageItemPrice(ShopID uint) (float64, error)
+	GetAverageItemPrice(ShopID uint) (float64, error)
 	CreateShopRequest(ShopRequest *models.ShopRequest) error
 	ExecuteCreateShop(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest)
 	ExecuteUpdateSellingHistory(dispatch ShopController, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
@@ -376,7 +376,7 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 		return nil, err
 	}
 
-	shop.AvarageItemsPrice, err = s.Process.GetAvarageItemPrice(shop.ID)
+	shop.AvarageItemsPrice, err = s.Process.GetAverageItemPrice(shop.ID)
 	if err != nil {
 		log.Println("error while calculating item avarage price")
 		return nil, err
@@ -525,7 +525,7 @@ func (s *Shop) HandleGetSoldItemsByShopID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, Items)
 }
 
-func (s *ShopCreators) GetAvarageItemPrice(ShopID uint) (float64, error) {
+func (s *ShopCreators) GetAverageItemPrice(ShopID uint) (float64, error) {
 	var averagePrice float64
 
 	if err := s.DB.Table("items").
