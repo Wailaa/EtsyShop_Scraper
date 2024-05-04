@@ -9,7 +9,6 @@ import (
 	scrap "EtsyScraper/scraping"
 	"EtsyScraper/utils"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -60,7 +59,7 @@ func main() {
 	getAllItemsByShopID := controllers.NewShopController(implShop).HandleGetItemsByShopID
 	getAllSoldItemsByShopID := controllers.NewShopController(implShop).HandleGetSoldItemsByShopID
 	getShopStats := controllers.NewShopController(implShop).ProcessStatsRequest
-	getItemsCountByShopID := controllers.NewShopController(implShop).GetItemsCountByShopID
+	getItemsCountByShopID := controllers.NewShopController(implShop).HandleGetItemsCountByShopID
 
 	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(utils), controllers.Authorization(), createNewShopRequest)
 	shopRoute.GET("/follow_shop", controllers.AuthMiddleWare(utils), controllers.Authorization(), followShop)
@@ -70,20 +69,7 @@ func main() {
 
 	shopRoute.GET("/:shopID/all_sold_items", controllers.AuthMiddleWare(utils), controllers.Authorization(), getAllSoldItemsByShopID)
 
-	shopRoute.GET("/:shopID/items_count", controllers.AuthMiddleWare(utils), controllers.Authorization(), func(ctx *gin.Context) {
-		ShopID := ctx.Param("shopID")
-		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
-			return
-		}
-		Items, err := getItemsCountByShopID(uint(ShopIDToUint))
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
-			return
-		}
-		ctx.JSON(http.StatusOK, Items)
-	})
+	shopRoute.GET("/:shopID/items_count", controllers.AuthMiddleWare(utils), controllers.Authorization(), getItemsCountByShopID)
 
 	shopRoute.GET("/stats/:shopID/:period", controllers.AuthMiddleWare(utils), controllers.Authorization(), getShopStats)
 
