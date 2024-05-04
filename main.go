@@ -58,7 +58,7 @@ func main() {
 	unFollowShop := controllers.NewShopController(implShop).UnFollowShop
 	getShopByID := controllers.NewShopController(implShop).HandleGetShopByID
 	getAllItemsByShopID := controllers.NewShopController(implShop).HandleGetItemsByShopID
-	getAllSoldItemsByShopID := controllers.NewShopController(implShop).GetSoldItemsByShopID
+	getAllSoldItemsByShopID := controllers.NewShopController(implShop).HandleGetSoldItemsByShopID
 	getShopStats := controllers.NewShopController(implShop).ProcessStatsRequest
 	getItemsCountByShopID := controllers.NewShopController(implShop).GetItemsCountByShopID
 
@@ -68,20 +68,7 @@ func main() {
 	shopRoute.GET("/:shopID", controllers.AuthMiddleWare(utils), controllers.Authorization(), getShopByID)
 	shopRoute.GET("/:shopID/all_items", controllers.AuthMiddleWare(utils), controllers.Authorization(), getAllItemsByShopID)
 
-	shopRoute.GET("/:shopID/all_sold_items", controllers.AuthMiddleWare(utils), controllers.Authorization(), func(ctx *gin.Context) {
-		ShopID := ctx.Param("shopID")
-		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
-			return
-		}
-		Items, err := getAllSoldItemsByShopID(uint(ShopIDToUint))
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
-			return
-		}
-		ctx.JSON(http.StatusOK, Items)
-	})
+	shopRoute.GET("/:shopID/all_sold_items", controllers.AuthMiddleWare(utils), controllers.Authorization(), getAllSoldItemsByShopID)
 
 	shopRoute.GET("/:shopID/items_count", controllers.AuthMiddleWare(utils), controllers.Authorization(), func(ctx *gin.Context) {
 		ShopID := ctx.Param("shopID")
