@@ -1,9 +1,6 @@
 package routes
 
 import (
-	"EtsyScraper/controllers"
-	"EtsyScraper/utils"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,8 +23,7 @@ func NewShopRouteController(process ShopRoutesInterface) *ShopRoutes {
 	return &ShopRoutes{ShopController: process}
 }
 
-func (us *ShopRoutes) GeneralShopRoutes(server *gin.Engine) {
-	utils := &utils.Utils{}
+func (us *ShopRoutes) GeneralShopRoutes(server *gin.Engine, authentication, authorization gin.HandlerFunc) {
 
 	shopRoute := server.Group("/shop")
 
@@ -40,13 +36,13 @@ func (us *ShopRoutes) GeneralShopRoutes(server *gin.Engine) {
 	getShopStats := us.ShopController.ProcessStatsRequest
 	getItemsCountByShopID := us.ShopController.HandleGetItemsCountByShopID
 
-	shopRoute.GET("/create_shop", controllers.AuthMiddleWare(utils), controllers.Authorization(), createNewShopRequest)
-	shopRoute.GET("/follow_shop", controllers.AuthMiddleWare(utils), controllers.Authorization(), followShop)
-	shopRoute.GET("/unfollow_shop", controllers.AuthMiddleWare(utils), controllers.Authorization(), unFollowShop)
-	shopRoute.GET("/:shopID", controllers.AuthMiddleWare(utils), controllers.Authorization(), getShopByID)
-	shopRoute.GET("/:shopID/all_items", controllers.AuthMiddleWare(utils), controllers.Authorization(), getAllItemsByShopID)
-	shopRoute.GET("/:shopID/all_sold_items", controllers.AuthMiddleWare(utils), controllers.Authorization(), getAllSoldItemsByShopID)
-	shopRoute.GET("/:shopID/items_count", controllers.AuthMiddleWare(utils), controllers.Authorization(), getItemsCountByShopID)
-	shopRoute.GET("/stats/:shopID/:period", controllers.AuthMiddleWare(utils), controllers.Authorization(), getShopStats)
+	shopRoute.GET("/create_shop", authentication, authorization, createNewShopRequest)
+	shopRoute.GET("/follow_shop", authentication, authorization, followShop)
+	shopRoute.GET("/unfollow_shop", authentication, authorization, unFollowShop)
+	shopRoute.GET("/:shopID", authentication, authorization, getShopByID)
+	shopRoute.GET("/:shopID/all_items", authentication, authorization, getAllItemsByShopID)
+	shopRoute.GET("/:shopID/all_sold_items", authentication, authorization, getAllSoldItemsByShopID)
+	shopRoute.GET("/:shopID/items_count", authentication, authorization, getItemsCountByShopID)
+	shopRoute.GET("/stats/:shopID/:period", authentication, authorization, getShopStats)
 
 }
