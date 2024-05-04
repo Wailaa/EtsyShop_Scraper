@@ -85,21 +85,7 @@ func main() {
 		ctx.JSON(http.StatusOK, Items)
 	})
 
-	shopRoute.GET("/stats/:shopID/:period", controllers.AuthMiddleWare(utils), controllers.Authorization(), func(ctx *gin.Context) {
-		ShopID := ctx.Param("shopID")
-		Period := ctx.Param("period")
-		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
-			return
-		}
-		err = getShopStats(ctx, uint(ShopIDToUint), Period)
-		if err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
-			return
-		}
-
-	})
+	shopRoute.GET("/stats/:shopID/:period", controllers.AuthMiddleWare(utils), controllers.Authorization(), getShopStats)
 
 	server.Static("/static", "./static")
 	server.LoadHTMLGlob("static/templates/*")

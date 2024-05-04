@@ -573,7 +573,15 @@ func (pr *ShopCreators) CreateShopRequest(ShopRequest *models.ShopRequest) error
 	return nil
 }
 
-func (s *Shop) ProcessStatsRequest(ctx *gin.Context, ShopID uint, Period string) error {
+func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
+
+	ShopID := ctx.Param("shopID")
+	Period := ctx.Param("period")
+	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		return
+	}
 
 	year, month, day := 0, 0, 0
 
@@ -589,21 +597,23 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context, ShopID uint, Period string)
 	case "lastYear":
 		year = -1
 	default:
-
-		return fmt.Errorf("invalid period provided")
+		ctx.JSON(http.StatusInternalServerError, gin.H{"messege": "invalid period provided"})
+		return
 
 	}
+
 	date := time.Now().AddDate(year, month, day)
 	dateMidnight := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 
-	LastSevenDays, err := s.Process.ExecuteGetSellingStatsByPeriod(s, ShopID, dateMidnight)
+	LastSevenDays, err := s.Process.ExecuteGetSellingStatsByPeriod(s, uint(ShopIDToUint), dateMidnight)
 	if err != nil {
 		log.Println("error while retreiving shop selling stats ,error :", err)
-		return fmt.Errorf("error while retreiving shop selling stats ,error : %s", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"messege": "error while handling stats"})
+		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "stats": LastSevenDays})
-	return nil
+
 }
 
 func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error) {

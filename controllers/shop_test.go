@@ -1760,12 +1760,11 @@ func TestProcessStatsRequest_InvalidPeriod(t *testing.T) {
 
 	ShopID := uint(2)
 	Period := "InvalidPeriod"
-	var err error
 
 	route := fmt.Sprintf("/stats/%v/%s", ShopID, Period)
 
-	router.GET(route, func(ctx *gin.Context) {
-		err = Shop.ProcessStatsRequest(ctx, ShopID, Period)
+	router.GET("/stats/:shopID/:period", func(ctx *gin.Context) {
+		Shop.ProcessStatsRequest(ctx)
 	})
 
 	req, _ := http.NewRequest("GET", route, nil)
@@ -1773,8 +1772,8 @@ func TestProcessStatsRequest_InvalidPeriod(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	assert.Contains(t, err.Error(), "invalid period provided")
-	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "invalid period provided")
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 }
 func TestProcessStatsRequest_GetSellingStatsByPeriod_Fail(t *testing.T) {
@@ -1791,14 +1790,13 @@ func TestProcessStatsRequest_GetSellingStatsByPeriod_Fail(t *testing.T) {
 
 	ShopID := uint(2)
 	Period := "lastSevenDays"
-	var err error
 
 	route := fmt.Sprintf("/stats/%v/%s", ShopID, Period)
 
 	TestShop.On("ExecuteGetSellingStatsByPeriod").Return(nil, errors.New("error while fetcheing data from db"))
 
-	router.GET(route, func(ctx *gin.Context) {
-		err = Shop.ProcessStatsRequest(ctx, ShopID, Period)
+	router.GET("/stats/:shopID/:period", func(ctx *gin.Context) {
+		Shop.ProcessStatsRequest(ctx)
 	})
 
 	req, _ := http.NewRequest("GET", route, nil)
@@ -1807,7 +1805,7 @@ func TestProcessStatsRequest_GetSellingStatsByPeriod_Fail(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	TestShop.AssertNumberOfCalls(t, "ExecuteGetSellingStatsByPeriod", 1)
-	assert.Contains(t, err.Error(), "error while fetcheing data from db")
+	assert.Contains(t, w.Body.String(), "error while handling stats")
 
 }
 func TestProcessStatsRequest_Success(t *testing.T) {
@@ -1824,7 +1822,6 @@ func TestProcessStatsRequest_Success(t *testing.T) {
 
 	ShopID := uint(2)
 	Period := "lastSevenDays"
-	var err error
 
 	route := fmt.Sprintf("/stats/%v/%s", ShopID, Period)
 
@@ -1837,8 +1834,8 @@ func TestProcessStatsRequest_Success(t *testing.T) {
 
 	TestShop.On("ExecuteGetSellingStatsByPeriod").Return(stats, nil)
 
-	router.GET(route, func(ctx *gin.Context) {
-		err = Shop.ProcessStatsRequest(ctx, ShopID, Period)
+	router.GET("/stats/:shopID/:period", func(ctx *gin.Context) {
+		Shop.ProcessStatsRequest(ctx)
 	})
 
 	req, _ := http.NewRequest("GET", route, nil)
@@ -1847,7 +1844,7 @@ func TestProcessStatsRequest_Success(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	TestShop.AssertNumberOfCalls(t, "ExecuteGetSellingStatsByPeriod", 1)
-	assert.NoError(t, err)
+
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
