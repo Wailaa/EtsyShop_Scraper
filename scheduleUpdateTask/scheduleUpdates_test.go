@@ -103,7 +103,7 @@ func TestGetAllShops_Success(t *testing.T) {
 
 	_, err := updateDB.GetAllShops()
 	if err != nil {
-		t.Errorf("An Error accured While testing getAllShops()")
+		t.Errorf("An Error occurred While testing getAllShops()")
 	}
 
 	assert.Nil(t, mock.ExpectationsWereMet())
