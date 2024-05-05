@@ -156,7 +156,7 @@ func scrapShopMenu(c *colly.Collector, shop *models.Shop) error {
 			dataSectionId_link := Shoplink + shop.Name + "?&section_id=" + dataSectionId
 
 			if i == 0 {
-				shop.ShopMenu.TotalItemsAmmount = valueToInt
+				shop.ShopMenu.TotalItemsAmount = valueToInt
 			}
 			Menu = append(Menu, models.MenuItem{
 				Category:  key,
