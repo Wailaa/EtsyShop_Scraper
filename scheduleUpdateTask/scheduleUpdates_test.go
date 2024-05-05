@@ -113,10 +113,10 @@ func TestGetAllShops_Error(t *testing.T) {
 	mock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	defer testDB.Close()
 
-	expextedQuery := `SELECT * FROM "shops" WHERE "shops"."deleted_at"`
+	expectedQuery := `SELECT * FROM "shops" WHERE "shops"."deleted_at"`
 
 	mock.MatchExpectationsInOrder(true)
-	mock.ExpectQuery(regexp.QuoteMeta(expextedQuery)).WillReturnError(gorm.ErrRecordNotFound)
+	mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).WillReturnError(gorm.ErrRecordNotFound)
 
 	updateDB := scheduleUpdates.NewUpdateDB(MockedDataBase)
 
