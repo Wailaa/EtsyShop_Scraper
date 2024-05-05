@@ -612,7 +612,7 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 	case "lastYear":
 		year = -1
 	default:
-		ctx.JSON(http.StatusInternalServerError, gin.H{"messege": "invalid period provided"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "invalid period provided"})
 		return
 
 	}
@@ -623,7 +623,7 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 	LastSevenDays, err := s.Process.ExecuteGetSellingStatsByPeriod(s, uint(ShopIDToUint), dateMidnight)
 	if err != nil {
 		log.Println("error while retrieving shop selling stats ,error :", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"messege": "error while handling stats"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "error while handling stats"})
 		return
 	}
 
