@@ -164,8 +164,8 @@ func (ps *ShopCreators) ExecuteUpdateDiscontinuedItems(dispatch ShopController, 
 }
 
 func (ps *ShopCreators) ExecuteGetTotalRevenue(dispatch ExecShopMethodProcess, ShopID uint, AverageItemPrice float64) (float64, error) {
-	Avarage, err := dispatch.GetTotalRevenue(ShopID, AverageItemPrice)
-	return Avarage, err
+	Average, err := dispatch.GetTotalRevenue(ShopID, AverageItemPrice)
+	return Average, err
 }
 func (ps *ShopCreators) ExecuteGetSoldItemsByShopID(dispatch ExecShopMethodProcess, ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error) {
 	SoldItems, err := dispatch.GetSoldItemsByShopID(ID)
@@ -378,7 +378,7 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 
 	shop.AverageItemsPrice, err = s.Process.GetAverageItemPrice(shop.ID)
 	if err != nil {
-		log.Println("error while calculating item avarage price")
+		log.Println("error while calculating item avearage price")
 		return nil, err
 	}
 
@@ -441,7 +441,7 @@ func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
 	itemCount := itemsCount{}
 	items, err := s.Process.GetItemsByShopID(ID)
 	if err != nil {
-		log.Println("error while calculating item avarage price")
+		log.Println("error while calculating item average price")
 		return itemCount, err
 	}
 	for _, item := range items {
