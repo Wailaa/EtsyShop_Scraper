@@ -83,7 +83,7 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 
 	Shops, err := u.GetAllShops()
 	if err != nil {
-		log.Println("error while retreiving Shops rows. error :", err)
+		log.Println("error while retrieving Shops rows. error :", err)
 		return err
 	}
 
@@ -165,7 +165,7 @@ func (u *UpdateDB) GetAllShops() (*[]models.Shop, error) {
 
 	result := u.DB.Preload("ShopMenu.Menu").Find(AllShops)
 	if result.Error != nil {
-		log.Println("error while retreiving shops data , error :", result.Error)
+		log.Println("error while retrieving shops data , error :", result.Error)
 		return nil, result.Error
 	}
 

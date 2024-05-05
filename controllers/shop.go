@@ -622,7 +622,7 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 
 	LastSevenDays, err := s.Process.ExecuteGetSellingStatsByPeriod(s, uint(ShopIDToUint), dateMidnight)
 	if err != nil {
-		log.Println("error while retreiving shop selling stats ,error :", err)
+		log.Println("error while retrieving shop selling stats ,error :", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"messege": "error while handling stats"})
 		return
 	}
