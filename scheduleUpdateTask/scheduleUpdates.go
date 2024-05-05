@@ -248,9 +248,9 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 	return nil
 }
 
-func ShouldUpdateItem(exsistingPrice, newPrice float64) bool {
+func ShouldUpdateItem(existingPrice, newPrice float64) bool {
 	PriceDiscrepancy := 3.0
-	PriceChange := math.Abs((exsistingPrice / newPrice) - 1)
+	PriceChange := math.Abs((existingPrice / newPrice) - 1)
 	PriceChangePerc := math.Round(PriceChange * 100)
 	return PriceChangePerc >= PriceDiscrepancy
 }
