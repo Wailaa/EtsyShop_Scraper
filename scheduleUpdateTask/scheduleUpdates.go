@@ -78,12 +78,12 @@ func ScheduleScrapUpdate(c CronJob) error {
 }
 
 func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpdateProcess) error {
-	SoldItemsQueue := UpdateSoldItemsQueue{}
-	AddSoldItemsQueue := []UpdateSoldItemsQueue{}
+	// SoldItemsQueue := UpdateSoldItemsQueue{}
+	SoldItemsQueueList := []UpdateSoldItemsQueue{}
 
 	Shops, err := u.GetAllShops()
 	if err != nil {
-		log.Println("error while retreiving Shops rows. error :", err)
+		log.Println("error while retrieving Shops rows. error :", err)
 		return err
 	}
 
@@ -99,18 +99,7 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 		NewAdmirers := updatedShop.Admirers - Shop.Admirers
 
 		if NewSoldItems > 0 && Shop.HasSoldHistory {
-
-			Task := models.TaskSchedule{
-				IsScrapeFinished:     false,
-				IsPaginationScrapped: false,
-				CurrentPage:          0,
-				LastPage:             0,
-				UpdateSoldItems:      NewSoldItems,
-			}
-			SoldItemsQueue.Shop = Shop
-			SoldItemsQueue.Task = Task
-			AddSoldItemsQueue = append(AddSoldItemsQueue, SoldItemsQueue)
-
+			SoldItemsQueueList = AddSoldItemsQueueList(SoldItemsQueueList, NewSoldItems, Shop)
 		}
 
 		if updatedShop.OnVacation {
@@ -123,13 +112,10 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 			"admirers":    updatedShop.Admirers,
 		}
 
-		dailySales := models.DailyShopSales{
-			ShopID:     Shop.ID,
-			TotalSales: updatedShop.TotalSales,
-			Admirers:   updatedShop.Admirers,
-		}
+		if err := u.CreateDailySales(Shop.ID, updatedShop.TotalSales, updatedShop.Admirers); err != nil {
 
-		u.DB.Create(&dailySales)
+			return err
+		}
 
 		if NewAdmirers > 0 || NewSoldItems > 0 {
 			log.Printf("Shop's name: %s , TotalSales was: %v , TotalSales now: %v \n", Shop.Name, Shop.TotalSales, updatedShop.TotalSales)
@@ -142,8 +128,8 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 		}
 
 	}
-	if len(AddSoldItemsQueue) > 0 {
-		for _, queue := range AddSoldItemsQueue {
+	if len(SoldItemsQueueList) > 0 {
+		for _, queue := range SoldItemsQueueList {
 
 			newController := controllers.NewShopController(controllers.Shop{DB: u.DB, Process: &controllers.ShopCreators{DB: u.DB}, Scraper: &scrap.Scraper{}})
 			UpdateSoldItems(queue, newController)
@@ -163,10 +149,9 @@ func UpdateSoldItems(queue UpdateSoldItemsQueue, newController controllers.ShopC
 func (u *UpdateDB) GetAllShops() (*[]models.Shop, error) {
 	AllShops := &[]models.Shop{}
 
-	result := u.DB.Preload("ShopMenu.Menu").Find(AllShops)
-	if result.Error != nil {
-		log.Println("error while retreiving shops data , error :", result.Error)
-		return nil, result.Error
+	if err := u.DB.Preload("ShopMenu.Menu").Find(AllShops).Error; err != nil {
+		log.Println("error while retrieving shops data , error :", err)
+		return nil, err
 	}
 
 	return AllShops, nil
@@ -222,20 +207,7 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 
 			if existingItem.ID == 0 {
 				item.MenuItemID = UpdatedMenu.ID
-				u.DB.Create(&item)
-
-				log.Println("new item created : ", item)
-
-				u.DB.Create(&models.ItemHistoryChange{
-					ItemID:         item.ID,
-					NewItemCreated: true,
-					OldPrice:       0,
-					NewPrice:       item.OriginalPrice,
-					OldAvailable:   false,
-					NewAvailable:   true,
-
-					NewMenuItemID: item.MenuItemID,
-				})
+				u.AddNewItem(item)
 
 			} else if ShouldUpdateItem(existingItem.OriginalPrice, item.OriginalPrice) {
 				ApplyUpdated(u.DB, existingItem, item, UpdatedMenu.ID)
@@ -248,9 +220,9 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 	return nil
 }
 
-func ShouldUpdateItem(exsistingPrice, newPrice float64) bool {
+func ShouldUpdateItem(existingPrice, newPrice float64) bool {
 	PriceDiscrepancy := 3.0
-	PriceChange := math.Abs((exsistingPrice / newPrice) - 1)
+	PriceChange := math.Abs((existingPrice / newPrice) - 1)
 	PriceChangePerc := math.Round(PriceChange * 100)
 	return PriceChangePerc >= PriceDiscrepancy
 }
@@ -314,4 +286,59 @@ func (u *UpdateDB) HandleOutOfProductionItems(dataShopID string, OutOfProduction
 			log.Println("item  not available anymore: ", item)
 		}
 	}
+}
+
+func (u *UpdateDB) AddNewItem(item models.Item) error {
+
+	if err := u.DB.Create(&item).Error; err != nil {
+		return err
+	}
+
+	log.Println("new item created : ", item)
+
+	changeRecords := &models.ItemHistoryChange{
+		ItemID:         item.ID,
+		NewItemCreated: true,
+		OldPrice:       0,
+		NewPrice:       item.OriginalPrice,
+		OldAvailable:   false,
+		NewAvailable:   true,
+
+		NewMenuItemID: item.MenuItemID,
+	}
+
+	if err := u.DB.Create(changeRecords).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func AddSoldItemsQueueList(SoldItemsQueueList []UpdateSoldItemsQueue, NewSoldItems int, Shop models.Shop) []UpdateSoldItemsQueue {
+	SoldItemsQueue := UpdateSoldItemsQueue{}
+	Task := models.TaskSchedule{
+		IsScrapeFinished:     false,
+		IsPaginationScrapped: false,
+		CurrentPage:          0,
+		LastPage:             0,
+		UpdateSoldItems:      NewSoldItems,
+	}
+	SoldItemsQueue.Shop = Shop
+	SoldItemsQueue.Task = Task
+	SoldItemsQueueList = append(SoldItemsQueueList, SoldItemsQueue)
+
+	return SoldItemsQueueList
+}
+
+func (u *UpdateDB) CreateDailySales(ShopID uint, TotalSales, Admirers int) error {
+	dailySales := models.DailyShopSales{
+		ShopID:     ShopID,
+		TotalSales: TotalSales,
+		Admirers:   Admirers,
+	}
+
+	if err := u.DB.Create(&dailySales).Error; err != nil {
+		return err
+	}
+	return nil
 }

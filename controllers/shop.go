@@ -164,8 +164,8 @@ func (ps *ShopCreators) ExecuteUpdateDiscontinuedItems(dispatch ShopController, 
 }
 
 func (ps *ShopCreators) ExecuteGetTotalRevenue(dispatch ExecShopMethodProcess, ShopID uint, AverageItemPrice float64) (float64, error) {
-	Avarage, err := dispatch.GetTotalRevenue(ShopID, AverageItemPrice)
-	return Avarage, err
+	Average, err := dispatch.GetTotalRevenue(ShopID, AverageItemPrice)
+	return Average, err
 }
 func (ps *ShopCreators) ExecuteGetSoldItemsByShopID(dispatch ExecShopMethodProcess, ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error) {
 	SoldItems, err := dispatch.GetSoldItemsByShopID(ID)
@@ -378,7 +378,7 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 
 	shop.AverageItemsPrice, err = s.Process.GetAverageItemPrice(shop.ID)
 	if err != nil {
-		log.Println("error while calculating item avarage price")
+		log.Println("error while calculating item avearage price")
 		return nil, err
 	}
 
@@ -446,7 +446,7 @@ func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
 	itemCount := itemsCount{}
 	items, err := s.Process.GetItemsByShopID(ID)
 	if err != nil {
-		log.Println("error while calculating item avarage price")
+		log.Println("error while calculating item average price")
 		return itemCount, err
 	}
 	for _, item := range items {
@@ -549,23 +549,13 @@ func (s *ShopCreators) GetAverageItemPrice(ShopID uint) (float64, error) {
 }
 
 func (s *Shop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error) {
-	var revenue float64
-	var ItemPrice float64
 
 	soldItems, err := s.Process.ExecuteGetSoldItemsByShopID(s, ShopID)
 	if err != nil {
 		log.Println("error while calculating revenue", err)
 		return 0, err
 	}
-	for _, soldItem := range soldItems {
-		if soldItem.Available {
-			ItemPrice = soldItem.OriginalPrice
-		} else {
-			ItemPrice = AverageItemPrice
-		}
-		revenue += ItemPrice * float64(soldItem.SoldQuantity)
-	}
-	revenue = RoundToTwoDecimalDigits(revenue)
+	revenue := CalculateTotalRevenue(soldItems, AverageItemPrice)
 	return revenue, nil
 }
 
@@ -617,7 +607,7 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 	case "lastYear":
 		year = -1
 	default:
-		ctx.JSON(http.StatusInternalServerError, gin.H{"messege": "invalid period provided"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "invalid period provided"})
 		return
 
 	}
@@ -627,8 +617,8 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 
 	LastSevenDays, err := s.Process.ExecuteGetSellingStatsByPeriod(s, uint(ShopIDToUint), dateMidnight)
 	if err != nil {
-		log.Println("error while retreiving shop selling stats ,error :", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"messege": "error while handling stats"})
+		log.Println("error while retrieving shop selling stats ,error :", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "error while handling stats"})
 		return
 	}
 
@@ -872,4 +862,20 @@ func (s *Shop) GetItemsBySoldItems(SoldItems []byte) ([]models.Item, error) {
 	}
 
 	return items, nil
+}
+
+func CalculateTotalRevenue(soldItems []ResponseSoldItemInfo, AverageItemPrice float64) float64 {
+	var revenue float64
+	var ItemPrice float64
+
+	for _, soldItem := range soldItems {
+		if soldItem.OriginalPrice > 0 {
+			ItemPrice = soldItem.OriginalPrice
+		} else {
+			ItemPrice = AverageItemPrice
+		}
+		revenue += ItemPrice * float64(soldItem.SoldQuantity)
+	}
+	revenue = RoundToTwoDecimalDigits(revenue)
+	return revenue
 }

@@ -15,7 +15,6 @@ var ModelsGroup = []interface{}{
 	&ReviewsTopic{},
 	&Item{},
 	&SoldItems{},
-	&CreateShopTaskQueue{},
 	&ShopRequest{},
 	&DailyShopSales{},
 	&ItemHistoryChange{},
@@ -49,13 +48,6 @@ type ShopRequest struct {
 	AccountID uuid.UUID
 	ShopName  string `json:"shop_name"`
 	Status    string
-}
-
-type CreateShopTaskQueue struct {
-	gorm.Model
-	ShopName  string `json:"shop_name"`
-	ShopID    uint
-	AccountID uuid.UUID `json:"-" gorm:"type:uuid"`
 }
 
 type SoldItems struct {
@@ -94,10 +86,10 @@ type MenuItem struct {
 }
 
 type ShopMenu struct {
-	gorm.Model        `json:"-"`
-	ShopID            uint       `json:"-" `
-	TotalItemsAmmount int        `json:"total_items_amount"`
-	Menu              []MenuItem `json:"items_category" gorm:"foreignKey:ShopMenuID;constraint:OnDelete:CASCADE;"`
+	gorm.Model       `json:"-"`
+	ShopID           uint       `json:"-" `
+	TotalItemsAmount int        `json:"total_items_amount"`
+	Menu             []MenuItem `json:"items_category" gorm:"foreignKey:ShopMenuID;constraint:OnDelete:CASCADE;"`
 }
 type Reviews struct {
 	gorm.Model   `json:"-"`
@@ -167,9 +159,9 @@ func CreateShop(newShop *Shop) *Shop {
 
 func CreateShopMenu(newShopMenu *ShopMenu) *ShopMenu {
 	NewShopMenu := &ShopMenu{
-		ShopID:            newShopMenu.ShopID,
-		TotalItemsAmmount: newShopMenu.TotalItemsAmmount,
-		Menu:              newShopMenu.Menu,
+		ShopID:           newShopMenu.ShopID,
+		TotalItemsAmount: newShopMenu.TotalItemsAmount,
+		Menu:             newShopMenu.Menu,
 	}
 	return NewShopMenu
 }
