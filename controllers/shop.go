@@ -382,6 +382,11 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 		return nil, err
 	}
 
+	if !shop.HasSoldHistory {
+		shop.Revenue = shop.AverageItemsPrice * float64(shop.TotalSales)
+		return
+	}
+
 	shop.Revenue, err = s.Process.ExecuteGetTotalRevenue(s, shop.ID, shop.AverageItemsPrice)
 	if err != nil {
 		log.Println("error while calculating shop's revenue")
