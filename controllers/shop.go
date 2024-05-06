@@ -553,7 +553,7 @@ func (s *Shop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, 
 		return 0, err
 	}
 	for _, soldItem := range soldItems {
-		if soldItem.Available {
+		if soldItem.OriginalPrice > 0 {
 			ItemPrice = soldItem.OriginalPrice
 		} else {
 			ItemPrice = AverageItemPrice
