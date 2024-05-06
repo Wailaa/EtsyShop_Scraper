@@ -314,3 +314,29 @@ func (u *UpdateDB) HandleOutOfProductionItems(dataShopID string, OutOfProduction
 		}
 	}
 }
+
+func (u *UpdateDB) AddNewItem(item models.Item) error {
+
+	if err := u.DB.Create(&item).Error; err != nil {
+		return err
+	}
+
+	log.Println("new item created : ", item)
+
+	changeRecords := &models.ItemHistoryChange{
+		ItemID:         item.ID,
+		NewItemCreated: true,
+		OldPrice:       0,
+		NewPrice:       item.OriginalPrice,
+		OldAvailable:   false,
+		NewAvailable:   true,
+
+		NewMenuItemID: item.MenuItemID,
+	}
+
+	if err := u.DB.Create(changeRecords).Error; err != nil {
+		return err
+	}
+
+	return nil
+}

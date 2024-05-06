@@ -847,3 +847,74 @@ func TestHandleOutOfProductionItems_Exists(t *testing.T) {
 
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestAddNewItem_Success(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	sqlMock.MatchExpectationsInOrder(true)
+	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase}
+
+	Item := models.Item{
+		Name:           "testItem",
+		OriginalPrice:  20.0,
+		CurrencySymbol: "$",
+		SalePrice:      -1,
+		DiscoutPercent: "",
+		Available:      true,
+		ItemLink:       "www.examplelink.com",
+		MenuItemID:     10,
+		ListingID:      101010,
+		DataShopID:     "1234",
+	}
+	Item.ID = 7
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`NSERT INTO "items" ("created_at","updated_at","deleted_at","name","original_price","currency_symbol","sale_price","discout_percent","available","item_link","menu_item_id","listing_id","data_shop_id","id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING "id"`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, Item.Name, Item.OriginalPrice, Item.CurrencySymbol, Item.SalePrice, Item.DiscoutPercent, Item.Available, Item.ItemLink, Item.MenuItemID, Item.ListingID, Item.DataShopID, Item.ID).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(7))
+	sqlMock.ExpectCommit()
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "item_history_changes" ("created_at","updated_at","deleted_at","item_id","new_item_created","old_price","new_price","old_available","new_available","old_menu_item_id","new_menu_item_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, Item.ID, sqlmock.AnyArg(), float64(0), Item.OriginalPrice, false, true, 0, Item.MenuItemID).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+	sqlMock.ExpectCommit()
+
+	_ = updateDB.AddNewItem(Item)
+
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestAddNewItem_Fail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	sqlMock.MatchExpectationsInOrder(true)
+	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase}
+
+	Item := models.Item{
+		Name:           "testItem",
+		OriginalPrice:  20.0,
+		CurrencySymbol: "$",
+		SalePrice:      -1,
+		DiscoutPercent: "",
+		Available:      true,
+		ItemLink:       "www.examplelink.com",
+		MenuItemID:     10,
+		ListingID:      101010,
+		DataShopID:     "1234",
+	}
+	Item.ID = 7
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`NSERT INTO "items" ("created_at","updated_at","deleted_at","name","original_price","currency_symbol","sale_price","discout_percent","available","item_link","menu_item_id","listing_id","data_shop_id","id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING "id"`)).
+		WillReturnError(errors.New("error while handling db operation"))
+
+	sqlMock.ExpectRollback()
+
+	err := updateDB.AddNewItem(Item)
+
+	assert.Contains(t, err.Error(), "error while handling db operation")
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}
