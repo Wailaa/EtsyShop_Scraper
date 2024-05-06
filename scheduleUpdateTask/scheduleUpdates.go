@@ -78,7 +78,7 @@ func ScheduleScrapUpdate(c CronJob) error {
 }
 
 func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpdateProcess) error {
-	SoldItemsQueue := UpdateSoldItemsQueue{}
+	// SoldItemsQueue := UpdateSoldItemsQueue{}
 	SoldItemsQueueList := []UpdateSoldItemsQueue{}
 
 	Shops, err := u.GetAllShops()
@@ -99,18 +99,7 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 		NewAdmirers := updatedShop.Admirers - Shop.Admirers
 
 		if NewSoldItems > 0 && Shop.HasSoldHistory {
-
-			Task := models.TaskSchedule{
-				IsScrapeFinished:     false,
-				IsPaginationScrapped: false,
-				CurrentPage:          0,
-				LastPage:             0,
-				UpdateSoldItems:      NewSoldItems,
-			}
-			SoldItemsQueue.Shop = Shop
-			SoldItemsQueue.Task = Task
-			SoldItemsQueueList = append(SoldItemsQueueList, SoldItemsQueue)
-
+			SoldItemsQueueList = AddSoldItemsQueueList(SoldItemsQueueList, NewSoldItems, Shop)
 		}
 
 		if updatedShop.OnVacation {
