@@ -544,23 +544,13 @@ func (s *ShopCreators) GetAverageItemPrice(ShopID uint) (float64, error) {
 }
 
 func (s *Shop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error) {
-	var revenue float64
-	var ItemPrice float64
 
 	soldItems, err := s.Process.ExecuteGetSoldItemsByShopID(s, ShopID)
 	if err != nil {
 		log.Println("error while calculating revenue", err)
 		return 0, err
 	}
-	for _, soldItem := range soldItems {
-		if soldItem.OriginalPrice > 0 {
-			ItemPrice = soldItem.OriginalPrice
-		} else {
-			ItemPrice = AverageItemPrice
-		}
-		revenue += ItemPrice * float64(soldItem.SoldQuantity)
-	}
-	revenue = RoundToTwoDecimalDigits(revenue)
+	revenue := CalculateTotalRevenue(soldItems, AverageItemPrice)
 	return revenue, nil
 }
 
