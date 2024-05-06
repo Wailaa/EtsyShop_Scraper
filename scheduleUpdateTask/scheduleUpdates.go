@@ -112,13 +112,10 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 			"admirers":    updatedShop.Admirers,
 		}
 
-		dailySales := models.DailyShopSales{
-			ShopID:     Shop.ID,
-			TotalSales: updatedShop.TotalSales,
-			Admirers:   updatedShop.Admirers,
-		}
+		if err := u.CreateDailySales(Shop.ID, updatedShop.TotalSales, updatedShop.Admirers); err != nil {
 
-		u.DB.Create(&dailySales)
+			return err
+		}
 
 		if NewAdmirers > 0 || NewSoldItems > 0 {
 			log.Printf("Shop's name: %s , TotalSales was: %v , TotalSales now: %v \n", Shop.Name, Shop.TotalSales, updatedShop.TotalSales)
