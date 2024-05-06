@@ -332,3 +332,16 @@ func AddSoldItemsQueueList(SoldItemsQueueList []UpdateSoldItemsQueue, NewSoldIte
 
 	return SoldItemsQueueList
 }
+
+func (u *UpdateDB) CreateDailySales(ShopID uint, TotalSales, Admirers int) error {
+	dailySales := models.DailyShopSales{
+		ShopID:     ShopID,
+		TotalSales: TotalSales,
+		Admirers:   Admirers,
+	}
+
+	if err := u.DB.Create(&dailySales).Error; err != nil {
+		return err
+	}
+	return nil
+}

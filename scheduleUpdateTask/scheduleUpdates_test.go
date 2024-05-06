@@ -930,3 +930,49 @@ func TestAddSoldItemsQueueList(t *testing.T) {
 	assert.Equal(t, Shop, SoldItemsQueueList[0].Shop)
 	assert.Equal(t, NewSoldItems, SoldItemsQueueList[0].Task.UpdateSoldItems)
 }
+
+func TestCreateDailySales(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase}
+
+	ShopID := uint(10)
+	TotalSales := 100
+	Admirers := 90
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "daily_shop_sales" ("created_at","updated_at","deleted_at","shop_id","total_sales","admirers","daily_revenue","sold_items") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "id"`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), ShopID, TotalSales, Admirers, float64(0), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"1", "2"}))
+	sqlMock.ExpectCommit()
+
+	updateDB.CreateDailySales(ShopID, TotalSales, Admirers)
+
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+
+}
+
+func TestCreateDailySales_Fail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase}
+
+	ShopID := uint(10)
+	TotalSales := 100
+	Admirers := 90
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "daily_shop_sales" ("created_at","updated_at","deleted_at","shop_id","total_sales","admirers","daily_revenue","sold_items") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "id"`)).
+		WillReturnError(errors.New("error while handling database operation"))
+	sqlMock.ExpectRollback()
+
+	err := updateDB.CreateDailySales(ShopID, TotalSales, Admirers)
+
+	assert.Contains(t, err.Error(), "error while handling database operation")
+
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+
+}
