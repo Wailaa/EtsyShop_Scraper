@@ -221,20 +221,7 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 
 			if existingItem.ID == 0 {
 				item.MenuItemID = UpdatedMenu.ID
-				u.DB.Create(&item)
-
-				log.Println("new item created : ", item)
-
-				u.DB.Create(&models.ItemHistoryChange{
-					ItemID:         item.ID,
-					NewItemCreated: true,
-					OldPrice:       0,
-					NewPrice:       item.OriginalPrice,
-					OldAvailable:   false,
-					NewAvailable:   true,
-
-					NewMenuItemID: item.MenuItemID,
-				})
+				u.AddNewItem(item)
 
 			} else if ShouldUpdateItem(existingItem.OriginalPrice, item.OriginalPrice) {
 				ApplyUpdated(u.DB, existingItem, item, UpdatedMenu.ID)
