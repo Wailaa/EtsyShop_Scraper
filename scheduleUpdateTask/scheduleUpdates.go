@@ -79,7 +79,7 @@ func ScheduleScrapUpdate(c CronJob) error {
 
 func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpdateProcess) error {
 	SoldItemsQueue := UpdateSoldItemsQueue{}
-	AddSoldItemsQueue := []UpdateSoldItemsQueue{}
+	SoldItemsQueueList := []UpdateSoldItemsQueue{}
 
 	Shops, err := u.GetAllShops()
 	if err != nil {
@@ -109,7 +109,7 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 			}
 			SoldItemsQueue.Shop = Shop
 			SoldItemsQueue.Task = Task
-			AddSoldItemsQueue = append(AddSoldItemsQueue, SoldItemsQueue)
+			SoldItemsQueueList = append(SoldItemsQueueList, SoldItemsQueue)
 
 		}
 
@@ -142,8 +142,8 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 		}
 
 	}
-	if len(AddSoldItemsQueue) > 0 {
-		for _, queue := range AddSoldItemsQueue {
+	if len(SoldItemsQueueList) > 0 {
+		for _, queue := range SoldItemsQueueList {
 
 			newController := controllers.NewShopController(controllers.Shop{DB: u.DB, Process: &controllers.ShopCreators{DB: u.DB}, Scraper: &scrap.Scraper{}})
 			UpdateSoldItems(queue, newController)
@@ -327,3 +327,5 @@ func (u *UpdateDB) AddNewItem(item models.Item) error {
 
 	return nil
 }
+
+// func (u *UpdateDB)
