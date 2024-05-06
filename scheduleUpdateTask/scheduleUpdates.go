@@ -163,10 +163,9 @@ func UpdateSoldItems(queue UpdateSoldItemsQueue, newController controllers.ShopC
 func (u *UpdateDB) GetAllShops() (*[]models.Shop, error) {
 	AllShops := &[]models.Shop{}
 
-	result := u.DB.Preload("ShopMenu.Menu").Find(AllShops)
-	if result.Error != nil {
-		log.Println("error while retrieving shops data , error :", result.Error)
-		return nil, result.Error
+	if err := u.DB.Preload("ShopMenu.Menu").Find(AllShops).Error; err != nil {
+		log.Println("error while retrieving shops data , error :", err)
+		return nil, err
 	}
 
 	return AllShops, nil
