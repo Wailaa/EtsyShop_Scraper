@@ -2835,3 +2835,22 @@ func TestHandleGetItemsCountByShopID_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 }
+
+func TestCalculateTotalRevenue(t *testing.T) {
+	soldItems := []controllers.ResponseSoldItemInfo{
+		{OriginalPrice: 19.2, SoldQuantity: 10}, {OriginalPrice: 12.4, SoldQuantity: 9}, {OriginalPrice: 5.2, SoldQuantity: 11}, {SoldQuantity: 2}, {SoldQuantity: 19},
+	}
+	AverageItemPrice := 7.5
+
+	var expectedRevenue float64
+	for _, soldItem := range soldItems {
+		if soldItem.OriginalPrice > 0 {
+			expectedRevenue += soldItem.OriginalPrice * float64(soldItem.SoldQuantity)
+		} else {
+			expectedRevenue += AverageItemPrice * float64(soldItem.SoldQuantity)
+		}
+	}
+
+	revenue := controllers.CalculateTotalRevenue(soldItems, AverageItemPrice)
+	assert.Equal(t, expectedRevenue, revenue)
+}

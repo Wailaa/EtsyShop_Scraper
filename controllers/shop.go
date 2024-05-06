@@ -868,3 +868,19 @@ func (s *Shop) GetItemsBySoldItems(SoldItems []byte) ([]models.Item, error) {
 
 	return items, nil
 }
+
+func CalculateTotalRevenue(soldItems []ResponseSoldItemInfo, AverageItemPrice float64) float64 {
+	var revenue float64
+	var ItemPrice float64
+
+	for _, soldItem := range soldItems {
+		if soldItem.OriginalPrice > 0 {
+			ItemPrice = soldItem.OriginalPrice
+		} else {
+			ItemPrice = AverageItemPrice
+		}
+		revenue += ItemPrice * float64(soldItem.SoldQuantity)
+	}
+	revenue = RoundToTwoDecimalDigits(revenue)
+	return revenue
+}
