@@ -15,7 +15,6 @@ var ModelsGroup = []interface{}{
 	&ReviewsTopic{},
 	&Item{},
 	&SoldItems{},
-	&CreateShopTaskQueue{},
 	&ShopRequest{},
 	&DailyShopSales{},
 	&ItemHistoryChange{},
@@ -49,13 +48,6 @@ type ShopRequest struct {
 	AccountID uuid.UUID
 	ShopName  string `json:"shop_name"`
 	Status    string
-}
-
-type CreateShopTaskQueue struct {
-	gorm.Model
-	ShopName  string `json:"shop_name"`
-	ShopID    uint
-	AccountID uuid.UUID `json:"-" gorm:"type:uuid"`
 }
 
 type SoldItems struct {
