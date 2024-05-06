@@ -328,4 +328,18 @@ func (u *UpdateDB) AddNewItem(item models.Item) error {
 	return nil
 }
 
-// func (u *UpdateDB)
+func AddSoldItemsQueueList(SoldItemsQueueList []UpdateSoldItemsQueue, NewSoldItems int, Shop models.Shop) []UpdateSoldItemsQueue {
+	SoldItemsQueue := UpdateSoldItemsQueue{}
+	Task := models.TaskSchedule{
+		IsScrapeFinished:     false,
+		IsPaginationScrapped: false,
+		CurrentPage:          0,
+		LastPage:             0,
+		UpdateSoldItems:      NewSoldItems,
+	}
+	SoldItemsQueue.Shop = Shop
+	SoldItemsQueue.Task = Task
+	SoldItemsQueueList = append(SoldItemsQueueList, SoldItemsQueue)
+
+	return SoldItemsQueueList
+}

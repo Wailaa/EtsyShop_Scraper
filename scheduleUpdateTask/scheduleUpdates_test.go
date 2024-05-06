@@ -918,3 +918,15 @@ func TestAddNewItem_Fail(t *testing.T) {
 	assert.Contains(t, err.Error(), "error while handling db operation")
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestAddSoldItemsQueueList(t *testing.T) {
+	SoldItemsQueueList := []scheduleUpdates.UpdateSoldItemsQueue{}
+	NewSoldItems := 5
+	Shop := models.Shop{Name: "ExampleShop"}
+
+	SoldItemsQueueList = scheduleUpdates.AddSoldItemsQueueList(SoldItemsQueueList, NewSoldItems, Shop)
+
+	assert.Equal(t, 1, len(SoldItemsQueueList), "a new SoldItemsQueue should be added")
+	assert.Equal(t, Shop, SoldItemsQueueList[0].Shop)
+	assert.Equal(t, NewSoldItems, SoldItemsQueueList[0].Task.UpdateSoldItems)
+}
