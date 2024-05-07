@@ -2,6 +2,7 @@ package utils
 
 import (
 	"math/rand"
+	"strconv"
 	"time"
 )
 
@@ -13,3 +14,4 @@ func SetSleep(maxSeconds int) {
 	time.Sleep(randTimeSet * time.Second)
 
 }
+
