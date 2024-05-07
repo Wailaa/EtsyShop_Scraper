@@ -111,7 +111,7 @@ func TestGeneralShopRoutes(t *testing.T) {
 	}
 
 	ShopRoute := routes.NewShopRouteController(MockedShop)
-	ShopRoute.GeneralShopRoutes(router, MiddleWare(), SecondMiddleWare())
+	ShopRoute.GeneralShopRoutes(router, MiddleWare(), SecondMiddleWare(), SecondMiddleWare())
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {

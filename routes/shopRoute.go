@@ -23,7 +23,7 @@ func NewShopRouteController(process ShopRoutesInterface) *ShopRoutes {
 	return &ShopRoutes{ShopController: process}
 }
 
-func (us *ShopRoutes) GeneralShopRoutes(server *gin.Engine, authentication, authorization gin.HandlerFunc) {
+func (us *ShopRoutes) GeneralShopRoutes(server *gin.Engine, authentication, authorization, isfollowingShop gin.HandlerFunc) {
 
 	shopRoute := server.Group("/shop")
 
@@ -39,10 +39,10 @@ func (us *ShopRoutes) GeneralShopRoutes(server *gin.Engine, authentication, auth
 	shopRoute.GET("/create_shop", authentication, authorization, createNewShopRequest)
 	shopRoute.GET("/follow_shop", authentication, authorization, followShop)
 	shopRoute.GET("/unfollow_shop", authentication, authorization, unFollowShop)
-	shopRoute.GET("/:shopID", authentication, authorization, getShopByID)
-	shopRoute.GET("/:shopID/all_items", authentication, authorization, getAllItemsByShopID)
-	shopRoute.GET("/:shopID/all_sold_items", authentication, authorization, getAllSoldItemsByShopID)
-	shopRoute.GET("/:shopID/items_count", authentication, authorization, getItemsCountByShopID)
-	shopRoute.GET("/stats/:shopID/:period", authentication, authorization, getShopStats)
+	shopRoute.GET("/:shopID", authentication, authorization, isfollowingShop, getShopByID)
+	shopRoute.GET("/:shopID/all_items", authentication, authorization, isfollowingShop, getAllItemsByShopID)
+	shopRoute.GET("/:shopID/all_sold_items", authentication, authorization, isfollowingShop, getAllSoldItemsByShopID)
+	shopRoute.GET("/:shopID/items_count", authentication, authorization, isfollowingShop, getItemsCountByShopID)
+	shopRoute.GET("/stats/:shopID/:period", authentication, authorization, isfollowingShop, getShopStats)
 
 }

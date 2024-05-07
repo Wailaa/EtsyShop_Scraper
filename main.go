@@ -51,7 +51,7 @@ func main() {
 	userRoutes.GeneraluserRoutes(server, controllers.AuthMiddleWare(utils), controllers.Authorization())
 
 	shopRoutes := routes.NewShopRouteController(&implShop)
-	shopRoutes.GeneralShopRoutes(server, controllers.AuthMiddleWare(utils), controllers.Authorization())
+	shopRoutes.GeneralShopRoutes(server, controllers.AuthMiddleWare(utils), controllers.Authorization(), controllers.IsAccountFollowingShop())
 
 	templatesFilesPath := "./static/templates/*"
 	htmlRoutes := routes.NewHTMLRouter()
