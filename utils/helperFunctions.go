@@ -15,3 +15,10 @@ func SetSleep(maxSeconds int) {
 
 }
 
+func StringToUint(text string) (uint, error) {
+	ShopIDToUint, err := strconv.ParseUint(text, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return uint(ShopIDToUint), nil
+}
