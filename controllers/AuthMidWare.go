@@ -6,7 +6,6 @@ import (
 	"EtsyScraper/utils"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -99,7 +98,7 @@ func IsAccountFollowingShop() gin.HandlerFunc {
 		currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 		ShopID := ctx.Param("shopID")
 
-		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+		ShopIDToUint, err := utils.StringToUint(ShopID)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
 			return
@@ -117,7 +116,7 @@ func IsAccountFollowingShop() gin.HandlerFunc {
 
 		isFollow := false
 		for _, shop := range Account.ShopsFollowing {
-			if shop.ID == uint(ShopIDToUint) {
+			if shop.ID == ShopIDToUint {
 				isFollow = true
 				break
 			}

@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"strconv"
 	"sync"
 	"time"
 
@@ -400,12 +399,12 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 func (s *Shop) HandleGetShopByID(ctx *gin.Context) {
 
 	ShopID := ctx.Param("shopID")
-	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
 		return
 	}
-	Shop, err := s.GetShopByID(uint(ShopIDToUint))
+	Shop, err := s.GetShopByID(ShopIDToUint)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
@@ -430,12 +429,12 @@ func (ps *ShopCreators) GetItemsByShopID(ID uint) (items []models.Item, err erro
 
 func (s *Shop) HandleGetItemsByShopID(ctx *gin.Context) {
 	ShopID := ctx.Param("shopID")
-	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
 		return
 	}
-	Items, err := s.Process.GetItemsByShopID(uint(ShopIDToUint))
+	Items, err := s.Process.GetItemsByShopID(ShopIDToUint)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
@@ -463,12 +462,12 @@ func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
 
 func (s *Shop) HandleGetItemsCountByShopID(ctx *gin.Context) {
 	ShopID := ctx.Param("shopID")
-	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
 		return
 	}
-	Items, err := s.GetItemsCountByShopID(uint(ShopIDToUint))
+	Items, err := s.GetItemsCountByShopID(ShopIDToUint)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
@@ -517,13 +516,13 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 
 func (s *Shop) HandleGetSoldItemsByShopID(ctx *gin.Context) {
 	ShopID := ctx.Param("shopID")
-	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
 		return
 	}
 
-	Items, err := s.Process.ExecuteGetSoldItemsByShopID(s, uint(ShopIDToUint))
+	Items, err := s.Process.ExecuteGetSoldItemsByShopID(s, ShopIDToUint)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
 		return
@@ -588,7 +587,7 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 
 	ShopID := ctx.Param("shopID")
 	Period := ctx.Param("period")
-	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
 		return
@@ -616,7 +615,7 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 	date := time.Now().AddDate(year, month, day)
 	dateMidnight := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 
-	LastSevenDays, err := s.Process.ExecuteGetSellingStatsByPeriod(s, uint(ShopIDToUint), dateMidnight)
+	LastSevenDays, err := s.Process.ExecuteGetSellingStatsByPeriod(s, ShopIDToUint, dateMidnight)
 	if err != nil {
 		log.Println("error while retrieving shop selling stats ,error :", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "error while handling stats"})

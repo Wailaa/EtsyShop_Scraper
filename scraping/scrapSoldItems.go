@@ -3,6 +3,7 @@ package scrap
 import (
 	"EtsyScraper/collector"
 	"EtsyScraper/models"
+	"EtsyScraper/utils"
 	"strings"
 
 	"fmt"
@@ -91,7 +92,7 @@ func scrapSoldItems(c *colly.Collector) *[]models.SoldItems {
 		e.ForEach("div[data-shop-id]", func(i int, h *colly.HTMLElement) {
 
 			ListingID := h.Attr("data-listing-id")
-			ListingIDToUint64, err := strconv.ParseUint(ListingID, 10, 64)
+			ListingIDToUint64, err := utils.StringToUint(ListingID)
 			if err != nil {
 				log.Println(err.Error())
 				return

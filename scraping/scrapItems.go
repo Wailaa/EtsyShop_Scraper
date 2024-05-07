@@ -241,12 +241,12 @@ func ExtractPrices(h *colly.HTMLElement) (float64, float64) {
 func HandleItem(h *colly.HTMLElement, MenuID uint) models.Item {
 	newItem := models.Item{}
 	ListingID := h.Attr("data-listing-id")
-	ListingIDToUint64, err := strconv.ParseUint(ListingID, 10, 64)
+	ListingIDToUint64, err := utils.StringToUint(ListingID)
 	if err != nil {
 		log.Println(err.Error())
 	}
 
-	newItem.ListingID = uint(ListingIDToUint64)
+	newItem.ListingID = ListingIDToUint64
 
 	ListingIdCount[newItem.ListingID]++
 
