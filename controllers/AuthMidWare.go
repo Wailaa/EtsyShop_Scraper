@@ -4,7 +4,9 @@ import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	"EtsyScraper/utils"
+	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -90,5 +92,43 @@ func Authorization() gin.HandlerFunc {
 		}
 		ctx.Next()
 
+	}
+}
+func IsAccountFollowingShop() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
+		ShopID := ctx.Param("shopID")
+
+		ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+			return
+		}
+
+		Account := models.Account{}
+
+		if err := initializer.DB.Preload("ShopsFollowing").First(&Account, "id = ?", currentUserUUID).Error; err != nil {
+
+			log.Println("error while checking account shop relation")
+			ctx.JSON(http.StatusInternalServerError, gin.H{"status": "fail", "message": "internal error"})
+			ctx.Abort()
+			return
+		}
+
+		isFollow := false
+		for _, shop := range Account.ShopsFollowing {
+			if shop.ID == uint(ShopIDToUint) {
+				isFollow = true
+				break
+			}
+		}
+
+		if !isFollow {
+			ctx.JSON(http.StatusUnauthorized, gin.H{"status": "fail", "message": "no permission"})
+			ctx.Abort()
+			return
+		}
+
+		ctx.Next()
 	}
 }

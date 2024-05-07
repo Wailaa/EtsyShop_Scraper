@@ -376,3 +376,124 @@ func TestAuthorization_Success(t *testing.T) {
 	assert.True(t, IsNextCalled)
 	assert.Equal(t, http.StatusOK, w.Code)
 }
+
+func TestIsAccountFollowingShop_Success(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	c, router, w := SetGinTestMode()
+
+	initializer.DB = MockedDataBase
+
+	currentUserUUID := uuid.New()
+	ShopID := 1
+	IsNextCalled := false
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(currentUserUUID.String()))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1`)).
+		WithArgs(currentUserUUID.String()).WillReturnRows(sqlmock.NewRows([]string{"shop_id", "account_id"}).AddRow(ShopID, currentUserUUID.String()))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE "shops"."id" = $1 AND "shops"."deleted_at" IS NULL`)).
+		WithArgs(ShopID).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(ShopID))
+
+	router.POST("/:shopID", func(ctx *gin.Context) {
+		ctx.Set("currentUserUUID", currentUserUUID)
+
+	}, controllers.IsAccountFollowingShop(), func(ctx *gin.Context) {
+		IsNextCalled = true
+	})
+
+	c.Request, _ = http.NewRequest("POST", "/1", nil)
+
+	router.ServeHTTP(w, c.Request)
+	assert.True(t, IsNextCalled)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestIsAccountFollowingShop_NoShopID(t *testing.T) {
+
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	c, router, w := SetGinTestMode()
+
+	initializer.DB = MockedDataBase
+
+	currentUserUUID := uuid.New()
+
+	router.POST("/:shopID", func(ctx *gin.Context) {
+		ctx.Set("currentUserUUID", currentUserUUID)
+
+	}, controllers.IsAccountFollowingShop())
+
+	c.Request, _ = http.NewRequest("POST", "/", nil)
+
+	router.ServeHTTP(w, c.Request)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestIsAccountFollowingShop_DataBaseError(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	c, router, w := SetGinTestMode()
+
+	initializer.DB = MockedDataBase
+
+	currentUserUUID := uuid.New()
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WillReturnError(errors.New("internal error"))
+
+	router.POST("/:shopID", func(ctx *gin.Context) {
+		ctx.Set("currentUserUUID", currentUserUUID)
+
+	}, controllers.IsAccountFollowingShop())
+
+	c.Request, _ = http.NewRequest("POST", "/1", nil)
+
+	router.ServeHTTP(w, c.Request)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestIsAccountFollowingShop_NotFollowing(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	c, router, w := SetGinTestMode()
+
+	initializer.DB = MockedDataBase
+
+	currentUserUUID := uuid.New()
+	ShopID := 2
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(currentUserUUID.String()))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1`)).
+		WithArgs(currentUserUUID.String()).WillReturnRows(sqlmock.NewRows([]string{"shop_id", "account_id"}).AddRow(ShopID, currentUserUUID.String()))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE "shops"."id" = $1 AND "shops"."deleted_at" IS NULL`)).
+		WithArgs(ShopID).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(ShopID))
+
+	router.POST("/:shopID", func(ctx *gin.Context) {
+		ctx.Set("currentUserUUID", currentUserUUID)
+
+	}, controllers.IsAccountFollowingShop())
+
+	c.Request, _ = http.NewRequest("POST", "/1", nil)
+
+	router.ServeHTTP(w, c.Request)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
