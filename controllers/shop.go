@@ -66,8 +66,9 @@ type ResponseSoldItemInfo struct {
 }
 
 type DailySoldStats struct {
-	TotalSales int `json:"total_sales"`
-	Items      []models.Item
+	TotalSales   int     `json:"total_sales"`
+	DailyRevenue float64 `json:"daily_revenue"`
+	Items        []models.Item
 }
 type itemsCount struct {
 	Available       int
@@ -643,7 +644,8 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 
 		if len(sales.SoldItems) == 0 {
 			stats[dateCreated] = DailySoldStats{
-				TotalSales: sales.TotalSales,
+				TotalSales:   sales.TotalSales,
+				DailyRevenue: sales.DailyRevenue,
 			}
 			continue
 		}
@@ -653,8 +655,9 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 		}
 
 		stats[dateCreated] = DailySoldStats{
-			TotalSales: sales.TotalSales,
-			Items:      items,
+			TotalSales:   sales.TotalSales,
+			DailyRevenue: sales.DailyRevenue,
+			Items:        items,
 		}
 
 	}
