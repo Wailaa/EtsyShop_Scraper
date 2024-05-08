@@ -3,39 +3,10 @@ package models_test
 import (
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
 	"EtsyScraper/models"
 )
-
-func TestCreateShop_ValidInput(t *testing.T) {
-
-	inputShop := &models.Shop{
-		Name:             "TopSeller",
-		Description:      "Art is the most beautiful of all lies",
-		Location:         "Mars",
-		TotalSales:       100,
-		JoinedSince:      "2021-01-01",
-		LastUpdateTime:   "2022-01-01",
-		CreatedByUserID:  uuid.New(),
-		Admirers:         124,
-		SocialMediaLinks: []string{"@TopSeller.blabla", "TopSeller_21"},
-	}
-
-	result := models.CreateShop(inputShop)
-
-	assert.NotNil(t, result)
-	assert.Equal(t, inputShop.Name, result.Name)
-	assert.Equal(t, inputShop.Description, result.Description)
-	assert.Equal(t, inputShop.Location, result.Location)
-	assert.Equal(t, inputShop.TotalSales, result.TotalSales)
-	assert.Equal(t, inputShop.JoinedSince, result.JoinedSince)
-	assert.Equal(t, inputShop.LastUpdateTime, result.LastUpdateTime)
-	assert.Equal(t, inputShop.CreatedByUserID, result.CreatedByUserID)
-	assert.Equal(t, inputShop.Admirers, result.Admirers)
-	assert.Equal(t, inputShop.SocialMediaLinks, result.SocialMediaLinks)
-}
 
 func TestCreateShopMenu_SameShopID(t *testing.T) {
 
