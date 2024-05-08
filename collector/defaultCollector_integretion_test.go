@@ -1,7 +1,6 @@
 package collector
 
 import (
-	setupMockServer "EtsyScraper/setupTests"
 	"fmt"
 	"net/http"
 	"testing"
@@ -9,6 +8,8 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	"github.com/stretchr/testify/assert"
+
+	setupMockServer "EtsyScraper/setupTests"
 )
 
 func TestNewCollyCollector(t *testing.T) {

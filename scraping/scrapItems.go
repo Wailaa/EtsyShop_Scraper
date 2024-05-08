@@ -1,9 +1,6 @@
 package scrap
 
 import (
-	"EtsyScraper/collector"
-	"EtsyScraper/models"
-	"EtsyScraper/utils"
 	"fmt"
 	"log"
 	"strconv"
@@ -11,6 +8,10 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/queue"
+
+	"EtsyScraper/collector"
+	"EtsyScraper/models"
+	"EtsyScraper/utils"
 )
 
 var SectionIdPages = map[string]struct{}{}

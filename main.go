@@ -1,6 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+
 	"EtsyScraper/controllers"
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
@@ -8,13 +15,6 @@ import (
 	scheduleUpdates "EtsyScraper/scheduleUpdateTask"
 	scrap "EtsyScraper/scraping"
 	"EtsyScraper/utils"
-	"time"
-
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-
-	"fmt"
-	"log"
 )
 
 var server *gin.Engine

@@ -1,10 +1,6 @@
 package controllers_test
 
 import (
-	"EtsyScraper/controllers"
-	"EtsyScraper/models"
-	scrap "EtsyScraper/scraping"
-	setupMockServer "EtsyScraper/setupTests"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -20,6 +16,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
+
+	"EtsyScraper/controllers"
+	"EtsyScraper/models"
+	scrap "EtsyScraper/scraping"
+	setupMockServer "EtsyScraper/setupTests"
 )
 
 type MockedShop struct {

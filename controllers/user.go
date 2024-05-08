@@ -1,9 +1,6 @@
 package controllers
 
 import (
-	initializer "EtsyScraper/init"
-	"EtsyScraper/models"
-	"EtsyScraper/utils"
 	"errors"
 	"fmt"
 	"log"
@@ -15,6 +12,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+
+	initializer "EtsyScraper/init"
+	"EtsyScraper/models"
+	"EtsyScraper/utils"
 )
 
 type User struct {

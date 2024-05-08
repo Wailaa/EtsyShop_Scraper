@@ -1,11 +1,12 @@
 package models_test
 
 import (
-	"EtsyScraper/models"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+
+	"EtsyScraper/models"
 )
 
 func TestCreateShop_ValidInput(t *testing.T) {

@@ -1,14 +1,15 @@
 package controllers
 
 import (
-	initializer "EtsyScraper/init"
-	"EtsyScraper/models"
-	"EtsyScraper/utils"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
+	initializer "EtsyScraper/init"
+	"EtsyScraper/models"
+	"EtsyScraper/utils"
 )
 
 func AuthMiddleWare(Process utils.UtilsProcess) gin.HandlerFunc {

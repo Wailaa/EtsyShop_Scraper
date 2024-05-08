@@ -1,10 +1,11 @@
 package utils
 
 import (
-	"EtsyScraper/models"
 	"time"
 
 	"github.com/google/uuid"
+
+	"EtsyScraper/models"
 )
 
 type Utils struct {

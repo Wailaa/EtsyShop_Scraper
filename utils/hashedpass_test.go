@@ -1,8 +1,9 @@
 package utils_test
 
 import (
-	"EtsyScraper/utils"
 	"testing"
+
+	"EtsyScraper/utils"
 )
 
 func TestValidPassword(t *testing.T) {

@@ -1,12 +1,13 @@
 package utils_test
 
 import (
-	"EtsyScraper/utils"
 	"errors"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"EtsyScraper/utils"
 )
 
 func TestSetSleep(t *testing.T) {

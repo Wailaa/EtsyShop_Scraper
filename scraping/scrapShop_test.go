@@ -1,8 +1,6 @@
 package scrap
 
 import (
-	"EtsyScraper/collector"
-	"EtsyScraper/models"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -13,6 +11,9 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"EtsyScraper/collector"
+	"EtsyScraper/models"
 )
 
 func TestScrapShop_AllCallBacks(t *testing.T) {

@@ -1,17 +1,17 @@
 package scrap
 
 import (
-	"EtsyScraper/collector"
-	"EtsyScraper/models"
-	"EtsyScraper/utils"
-	"strings"
-
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/queue"
+
+	"EtsyScraper/collector"
+	"EtsyScraper/models"
+	"EtsyScraper/utils"
 )
 
 func (sc *Scraper) ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.SoldItems, *models.TaskSchedule) {

@@ -1,12 +1,13 @@
 package scrap
 
 import (
-	"EtsyScraper/collector"
-	"EtsyScraper/models"
-	"EtsyScraper/utils"
 	"log"
 
 	"github.com/gocolly/colly/v2"
+
+	"EtsyScraper/collector"
+	"EtsyScraper/models"
+	"EtsyScraper/utils"
 )
 
 type ScrapeUpdateProcess interface {

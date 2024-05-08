@@ -1,7 +1,6 @@
 package collector
 
 import (
-	"EtsyScraper/utils"
 	"crypto/tls"
 	"log"
 	"net/http"
@@ -9,6 +8,8 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	"github.com/imroc/req/v3"
+
+	"EtsyScraper/utils"
 )
 
 type DefaultCollector struct {

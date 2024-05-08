@@ -1,8 +1,6 @@
 package utils
 
 import (
-	initializer "EtsyScraper/init"
-	"EtsyScraper/models"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
@@ -14,6 +12,9 @@ import (
 	"net/url"
 
 	"github.com/jordan-wright/email"
+
+	initializer "EtsyScraper/init"
+	"EtsyScraper/models"
 )
 
 var Config = initializer.LoadProjConfig(".")

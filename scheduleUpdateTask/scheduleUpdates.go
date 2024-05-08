@@ -1,16 +1,17 @@
 package scheduleUpdates
 
 import (
-	"EtsyScraper/controllers"
-	initializer "EtsyScraper/init"
-	"EtsyScraper/models"
-	scrap "EtsyScraper/scraping"
 	"log"
 	"math"
 	"time"
 
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
+
+	"EtsyScraper/controllers"
+	initializer "EtsyScraper/init"
+	"EtsyScraper/models"
+	scrap "EtsyScraper/scraping"
 )
 
 type UpdateDB struct {

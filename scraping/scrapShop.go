@@ -1,15 +1,16 @@
 package scrap
 
 import (
-	"EtsyScraper/collector"
-	initializer "EtsyScraper/init"
-	"EtsyScraper/models"
-	"EtsyScraper/utils"
 	"log"
 	"strconv"
 	"strings"
 
 	"github.com/gocolly/colly/v2"
+
+	"EtsyScraper/collector"
+	initializer "EtsyScraper/init"
+	"EtsyScraper/models"
+	"EtsyScraper/utils"
 )
 
 var Config = initializer.LoadProjConfig(".")

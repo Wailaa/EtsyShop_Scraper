@@ -1,9 +1,6 @@
 package scheduleUpdates_test
 
 import (
-	"EtsyScraper/models"
-	scheduleUpdates "EtsyScraper/scheduleUpdateTask"
-	setupMockServer "EtsyScraper/setupTests"
 	"errors"
 	"fmt"
 	"regexp"
@@ -14,6 +11,10 @@ import (
 	"github.com/stretchr/testify/mock"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 	"gorm.io/gorm"
+
+	"EtsyScraper/models"
+	scheduleUpdates "EtsyScraper/scheduleUpdateTask"
+	setupMockServer "EtsyScraper/setupTests"
 )
 
 type MockCronJob struct {

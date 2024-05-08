@@ -1,10 +1,6 @@
 package controllers_test
 
 import (
-	"EtsyScraper/controllers"
-	initializer "EtsyScraper/init"
-	"EtsyScraper/models"
-	setupMockServer "EtsyScraper/setupTests"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +12,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
+
+	"EtsyScraper/controllers"
+	initializer "EtsyScraper/init"
+	"EtsyScraper/models"
+	setupMockServer "EtsyScraper/setupTests"
 )
 
 func TestAuthMiddleWare_noCookies(t *testing.T) {
