@@ -3,7 +3,6 @@ package collector
 import (
 	"EtsyScraper/utils"
 	"crypto/tls"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -54,7 +53,7 @@ func NewCollyCollector() *DefaultCollector {
 		r.Headers.Set("Accept", "test/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 		r.Headers.Set("Accept-Encoding", "gzip, deflate, br")
 		for key, value := range *r.Headers {
-			fmt.Printf("%s: %s\n", key, value)
+			log.Printf("%s: %s\n", key, value)
 		}
 	})
 
@@ -67,7 +66,7 @@ func NewCollyCollector() *DefaultCollector {
 
 		if r.StatusCode != 200 {
 			for key, value := range *r.Headers {
-				fmt.Printf("%s: %s\n", key, value)
+				log.Printf("%s: %s\n", key, value)
 			}
 		}
 
