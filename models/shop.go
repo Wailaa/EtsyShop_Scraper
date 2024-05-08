@@ -142,15 +142,6 @@ type ItemHistoryChange struct {
 	NewMenuItemID  uint
 }
 
-func CreateShopMenu(newShopMenu *ShopMenu) *ShopMenu {
-	NewShopMenu := &ShopMenu{
-		ShopID:           newShopMenu.ShopID,
-		TotalItemsAmount: newShopMenu.TotalItemsAmount,
-		Menu:             newShopMenu.Menu,
-	}
-	return NewShopMenu
-}
-
 func CreateMenuItem(menuItem MenuItem) MenuItem {
 	newMenuItem := MenuItem{
 		ShopMenuID: menuItem.ShopMenuID,

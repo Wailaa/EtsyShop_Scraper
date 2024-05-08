@@ -8,22 +8,6 @@ import (
 	"EtsyScraper/models"
 )
 
-func TestCreateShopMenu_SameShopID(t *testing.T) {
-
-	newShopMenu := &models.ShopMenu{
-		ShopID:           1,
-		TotalItemsAmount: 10,
-		Menu:             []models.MenuItem{{}, {}},
-	}
-
-	result := models.CreateShopMenu(newShopMenu)
-
-	assert.Equal(t, newShopMenu.ShopID, result.ShopID)
-	assert.Equal(t, newShopMenu.TotalItemsAmount, result.TotalItemsAmount)
-	assert.Equal(t, len(newShopMenu.Menu), len(result.Menu))
-
-}
-
 func TestCreateMenuItem_ValidInput(t *testing.T) {
 
 	menuItem := models.MenuItem{
