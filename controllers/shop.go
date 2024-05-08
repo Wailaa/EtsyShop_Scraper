@@ -1,23 +1,23 @@
 package controllers
 
 import (
-	"EtsyScraper/models"
-	scrap "EtsyScraper/scraping"
-	"EtsyScraper/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
+	"net/http"
 	"sync"
 	"time"
-
-	"log"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+
+	"EtsyScraper/models"
+	scrap "EtsyScraper/scraping"
+	"EtsyScraper/utils"
 )
 
 type Shop struct {
