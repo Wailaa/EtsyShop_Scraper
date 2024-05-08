@@ -32,15 +32,15 @@ func (m *MockCronJob) Start() {
 	m.StartCalled = true
 }
 
-type MockShopController struct {
+type MockShopUpdater struct {
 	mock.Mock
 }
 
-func (m *MockShopController) UpdateSellingHistory(shop *models.Shop, task *models.TaskSchedule, shopRequest *models.ShopRequest) error {
+func (m *MockShopUpdater) UpdateSellingHistory(shop *models.Shop, task *models.TaskSchedule, shopRequest *models.ShopRequest) error {
 	args := m.Called()
 	return args.Error(0)
 }
-func (m *MockShopController) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error) {
+func (m *MockShopUpdater) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error) {
 	args := m.Called()
 	return args.Get(0).([]models.SoldItems), args.Error(1)
 }
@@ -60,7 +60,7 @@ func TestScheduleScrapUpdate_SchedulesCronJob(t *testing.T) {
 
 func TestUpdateSoldItems_ShopParameterNil(t *testing.T) {
 
-	shopController := &MockShopController{}
+	shopController := &MockShopUpdater{}
 
 	queue := scheduleUpdates.UpdateSoldItemsQueue{
 		Shop: models.Shop{},
