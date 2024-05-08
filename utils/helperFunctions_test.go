@@ -70,3 +70,49 @@ func TestStringToUint(t *testing.T) {
 		})
 	}
 }
+
+func TestMarshalJSONData(t *testing.T) {
+	tests := []struct {
+		name          string
+		data          interface{}
+		expected      string
+		expectedError error
+	}{
+		{
+			name:          "normal struct with string field",
+			data:          struct{ Name string }{Name: "Example"},
+			expected:      `{"Name":"Example"}`,
+			expectedError: nil,
+		},
+
+		{
+			name:          "normal struct with uint fields",
+			data:          struct{ ID uint }{ID: 19090},
+			expected:      `{"ID":19090}`,
+			expectedError: nil,
+		},
+
+		{
+			name:          "struct with unexported field",
+			data:          struct{ name string }{name: "Example"},
+			expected:      "{}",
+			expectedError: errors.New("json: error calling MarshalJSON for type struct { name string }"),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			actual, err := utils.MarshalJSONData(tc.data)
+
+			if err != nil {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.expectedError.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, string(actual))
+			}
+
+		})
+	}
+
+}
