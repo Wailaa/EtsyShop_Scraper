@@ -48,11 +48,11 @@ func (m *MockedShop) ExecuteGetSoldItemsByShopID(dispatch controllers.ExecShopMe
 	}
 	return soldItems, args.Error(1)
 }
-func (m *MockedShop) ExecuteUpdateSellingHistory(controllers.ShopController, *models.Shop, *models.TaskSchedule, *models.ShopRequest) error {
+func (m *MockedShop) ExecuteUpdateSellingHistory(controllers.ShopUpdater, *models.Shop, *models.TaskSchedule, *models.ShopRequest) error {
 	args := m.Called()
 	return args.Error(0)
 }
-func (m *MockedShop) ExecuteUpdateDiscontinuedItems(dispatch controllers.ShopController, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error) {
+func (m *MockedShop) ExecuteUpdateDiscontinuedItems(dispatch controllers.ShopUpdater, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error) {
 	args := m.Called()
 	shopInterface := args.Get(0)
 	var soldItems []models.SoldItems
