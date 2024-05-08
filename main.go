@@ -17,8 +17,6 @@ import (
 	"EtsyScraper/utils"
 )
 
-var server *gin.Engine
-
 func init() {
 	config := initializer.LoadProjConfig(".")
 	initializer.DataBaseConnect(&config)
@@ -32,7 +30,7 @@ func main() {
 
 	config := initializer.LoadProjConfig(".")
 
-	server = gin.Default()
+	server := gin.Default()
 
 	server.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:8080"},
