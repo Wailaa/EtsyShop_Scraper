@@ -2,7 +2,6 @@ package controllers_test
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -21,6 +20,7 @@ import (
 	"EtsyScraper/models"
 	scrap "EtsyScraper/scraping"
 	setupMockServer "EtsyScraper/setupTests"
+	"EtsyScraper/utils"
 )
 
 type MockedShop struct {
@@ -2518,7 +2518,7 @@ func TestGetItemsBySoldItems_Success(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase}
 
 	exampleSoldItemIds := []uint{2000, 2001, 2002, 2003, 2004}
-	SoldItems, err := json.Marshal(exampleSoldItemIds)
+	SoldItems, err := utils.MarshalJSONData(exampleSoldItemIds)
 	if err != nil {
 		t.Fatalf("error while marshaling json")
 	}
@@ -2544,7 +2544,7 @@ func TestGetItemsBySoldItems_Fail(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase}
 
 	exampleSoldItemIds := []uint{2000, 2001, 2002, 2003, 2004}
-	SoldItems, err := json.Marshal(exampleSoldItemIds)
+	SoldItems, err := utils.MarshalJSONData(exampleSoldItemIds)
 	if err != nil {
 		t.Fatalf("error while marshaling json")
 	}

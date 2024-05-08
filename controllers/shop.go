@@ -635,7 +635,7 @@ func (s *Shop) UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uin
 		UpdatedSoldItemIDs = append(UpdatedSoldItemIDs, UpdatedSoldItem.ID)
 	}
 
-	jsonArray, err := json.Marshal(UpdatedSoldItemIDs)
+	jsonArray, err := utils.MarshalJSONData(UpdatedSoldItemIDs)
 	if err != nil {
 		log.Println("Error marshaling JSON:", err)
 		return err
