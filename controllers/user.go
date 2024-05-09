@@ -416,9 +416,8 @@ func (s *User) ResetPass(ctx *gin.Context) {
 		return
 	}
 
-	DBCheck := s.DB.Where("account_pass_reset_token = ?", reqChangePass.RCP).Find(&VerifyUser).Limit(1)
-	if DBCheck.Error != nil {
-		log.Println(DBCheck.Error)
+	if err := s.DB.Where("account_pass_reset_token = ?", reqChangePass.RCP).Find(&VerifyUser).Limit(1).Error; err != nil {
+		log.Println(err)
 		message := "something went wrong while resetting password"
 		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
 		return
