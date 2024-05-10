@@ -84,47 +84,40 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 	var account *RegisterAccount
 
 	if err := ctx.ShouldBindJSON(&account); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
 	if account.Password != account.PasswordConfirm {
-		message := "Your password and confirmation password do not match"
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": message})
+		HandleResponse(ctx, nil, http.StatusBadRequest, "Your password and confirmation password do not match", nil)
 		return
 	}
 
 	passwardHashed, err := s.utils.HashPass(account.Password)
 	if err != nil {
-		log.Println(err)
-		message := "error while hashing password"
-		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
+		HandleResponse(ctx, err, http.StatusConflict, "error while hashing password", nil)
 		return
 	}
 
 	EmailVerificationToken, err := s.utils.CreateVerificationString()
 	if err != nil {
-		log.Println(err)
-		message := "error while creating the User"
-		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
+		HandleResponse(ctx, err, http.StatusConflict, "error while creating the User", nil)
 		return
 	}
 
 	newAccount, err := s.CreateNewAccountRecord(account, passwardHashed, EmailVerificationToken)
 	if err != nil {
-		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusConflict, err.Error(), nil)
 		return
 	}
 
 	err = s.utils.SendVerificationEmail(newAccount)
 	if err != nil {
-		log.Println(err)
-		message := "internal error"
-		ctx.JSON(http.StatusInternalServerError, gin.H{"status": "registraition rejected", "message": message})
+		HandleResponse(ctx, err, http.StatusInternalServerError, "internal error", nil)
 		return
 	}
-	message := "thank you for registering, please check your email inbox"
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
+
+	HandleResponse(ctx, nil, http.StatusOK, "thank you for registering, please check your email inbox", nil)
 
 }
 
@@ -156,48 +149,41 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 	config := initializer.LoadProjConfig(".")
 
 	if err := ctx.ShouldBindJSON(&loginDetails); err != nil {
-		message := "failed to fetch login details"
-		log.Println(message)
-		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		HandleResponse(ctx, err, http.StatusNotFound, "failed to fetch login details", nil)
 		return
 	}
 
 	result := s.GetAccountByEmail(loginDetails.Email)
 
 	if reflect.DeepEqual(*result, models.Account{}) {
-		message := "user not found"
-		log.Println(message)
-		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		HandleResponse(ctx, nil, http.StatusNotFound, "user not found", nil)
 		return
 	}
 
 	if !s.utils.IsPassVerified(loginDetails.Password, result.PasswordHashed) {
-		message := "password is incorrect"
-		log.Println(message)
-		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		HandleResponse(ctx, nil, http.StatusNotFound, "password is incorrect", nil)
 		return
 	}
 
 	accessToken, err := s.utils.CreateJwtToken(config.AccTokenExp, result.ID)
 	if err != nil {
-		log.Println(err.Error())
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Failed", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
 	refreshToken, err := s.utils.CreateJwtToken(config.RefTokenExp, result.ID)
 	if err != nil {
-		log.Println(err.Error())
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "Failed", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
 	if err = s.UpdateLastTimeLoggedIn(result); err != nil {
-		log.Println(err)
+		HandleResponse(ctx, err, http.StatusInternalServerError, "internal error", nil)
+		return
 	}
 
 	if err := s.JoinShopFollowing(result); err != nil {
-		log.Println(err)
+		HandleResponse(ctx, err, http.StatusInternalServerError, "internal error", nil)
 		return
 	}
 
@@ -206,7 +192,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 	ctx.SetCookie("access_token", string(*accessToken), int(config.AccTokenExp.Seconds()), "/", "localhost", false, true)
 	ctx.SetCookie("refresh_token", string(*refreshToken), int(config.RefTokenExp.Seconds()), "/", "localhost", false, true)
 
-	ctx.JSON(http.StatusOK, loginResponse)
+	HandleResponse(ctx, nil, http.StatusOK, "", loginResponse)
 
 }
 
@@ -229,7 +215,7 @@ func (s *User) LogOutAccount(ctx *gin.Context) {
 
 	tokenList, err := GetTokens(ctx)
 	if err != nil {
-		log.Println(err.Error())
+		HandleResponse(ctx, err, http.StatusOK, "", nil)
 		return
 	}
 
@@ -237,15 +223,14 @@ func (s *User) LogOutAccount(ctx *gin.Context) {
 		if userUUID == uuid.Nil {
 			tokenClaims, err := s.utils.ValidateJWT(token)
 			if err != nil {
-				log.Println(err)
+				HandleResponse(ctx, err, http.StatusOK, "", nil)
 				return
 			}
 
 			userUUID = tokenClaims.UserUUID
 
 			if err = s.UpdateLastTimeLoggedOut(userUUID); err != nil {
-				log.Println(err)
-				ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": "failed to update logout details"})
+				HandleResponse(ctx, err, http.StatusForbidden, "failed to update logout details", nil)
 				return
 			}
 
@@ -258,7 +243,7 @@ func (s *User) LogOutAccount(ctx *gin.Context) {
 
 		ctx.SetCookie(tokenName, "", -1, "/", "localhost", false, true)
 	}
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": "user logged out successfully"})
+	HandleResponse(ctx, nil, http.StatusOK, "user logged out successfully", nil)
 
 }
 
@@ -268,35 +253,27 @@ func (s *User) VerifyAccount(ctx *gin.Context) {
 	VerifyUser := &models.Account{}
 
 	if err := s.DB.Where("email_verification_token = ?", TranID).Find(&VerifyUser).Limit(1).Error; err != nil {
-		log.Println(err)
-		message := "something went wrong while verifying email"
-		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		HandleResponse(ctx, err, http.StatusForbidden, "something went wrong while verifying email", nil)
 		return
 	}
 
 	if reflect.DeepEqual(*VerifyUser, models.Account{}) {
-		message := "Invalid verification code or account does not exists"
-		log.Println(message)
-		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		HandleResponse(ctx, nil, http.StatusForbidden, "Invalid verification code or account does not exists", nil)
 		return
 	}
 
 	if VerifyUser.EmailVerified {
-		message := "this link is not valid anymore"
-		log.Println(message)
-		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		HandleResponse(ctx, nil, http.StatusForbidden, "this link is not valid anymore", nil)
 		return
 	}
 
 	if err := s.UpdateAccountAfterVerify(VerifyUser); err != nil {
-		message := "internal error"
-		log.Println(err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"status": "fail", "message": message})
+		HandleResponse(ctx, err, http.StatusInternalServerError, "internal error", nil)
 		return
 	}
 
-	message := "Email has been verified"
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
+	HandleResponse(ctx, nil, http.StatusOK, "Email has been verified", nil)
+
 }
 
 func (s *User) ChangePass(ctx *gin.Context) {
@@ -305,95 +282,77 @@ func (s *User) ChangePass(ctx *gin.Context) {
 	currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 
 	if err := ctx.ShouldBindJSON(&reqPassChange); err != nil {
-		message := "failed to fetch change password request"
-		log.Println(message)
-		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
-		return
+		HandleResponse(ctx, err, http.StatusNotFound, "failed to fetch change password request", nil)
 	}
 
 	Account, err := s.GetAccountByID(currentUserUUID)
 	if err != nil {
-		message := "failed to fetch change password request"
-		log.Println(message)
-		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		HandleResponse(ctx, err, http.StatusNotFound, "failed to fetch change password request", nil)
 		return
 	}
 
 	if reflect.DeepEqual(Account, &models.Account{}) {
-		message := "user not found"
-		log.Println(message)
-		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		HandleResponse(ctx, nil, http.StatusNotFound, "user not found", nil)
 		return
 	}
 
 	if !s.utils.IsPassVerified(reqPassChange.CurrentPass, Account.PasswordHashed) {
-		message := "password is incorrect"
-		log.Println(message)
-		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		HandleResponse(ctx, nil, http.StatusNotFound, "password is incorrect", nil)
 		return
 	}
 
 	if reqPassChange.NewPass != reqPassChange.ConfirmPass {
-		message := "new password is not confirmed"
-		ctx.JSON(http.StatusUnauthorized, gin.H{"status": "failed", "message": message})
+		HandleResponse(ctx, nil, http.StatusUnauthorized, "new password is not confirmed", nil)
 		ctx.Abort()
 		return
 	}
 
 	passwardHashed, err := s.utils.HashPass(reqPassChange.NewPass)
 	if err != nil {
-		log.Println(err)
-		message := "error while hashing password"
-		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
+		HandleResponse(ctx, err, http.StatusConflict, "error while hashing password", nil)
 		return
 	}
 
 	if err := s.UpdateAccountNewPass(Account, passwardHashed); err != nil {
-		log.Println(err)
-		message := "internal error"
-		ctx.JSON(http.StatusInternalServerError, gin.H{"status": "registraition rejected", "message": message})
+		HandleResponse(ctx, err, http.StatusInternalServerError, "internal error", nil)
 		return
 	}
 
-	message := "password changed"
-	ctx.JSON(http.StatusOK, gin.H{"status": "registraition rejected", "message": message})
+	HandleResponse(ctx, err, http.StatusOK, "password changed", nil)
+
 	s.LogOutAccount(ctx)
 }
 
 func (s *User) ForgotPassReq(ctx *gin.Context) {
 	ForgotAccountPass := &UserReqForgotPassword{}
 	if err := ctx.ShouldBindJSON(&ForgotAccountPass); err != nil {
-		message := "failed to fetch change password request"
-		log.Println(err)
-		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		HandleResponse(ctx, err, http.StatusNotFound, "failed to fetch change password request", nil)
 		return
 	}
 
 	Account := s.GetAccountByEmail(ForgotAccountPass.Email)
 	if reflect.DeepEqual(Account, &models.Account{}) {
-		message := "reset password request denied , no account associated  "
-		log.Println(message)
-		ctx.JSON(http.StatusOK, gin.H{"status": "success"})
+		err := errors.New("reset password request denied , no account associated  ")
+		HandleResponse(ctx, err, http.StatusOK, "", nil)
 		return
 	}
 	ResetPassToken, err := s.utils.CreateVerificationString()
 	if err != nil {
-		message := "failed to create resetpassword token"
-		log.Println(message, "error :", err)
-		ctx.JSON(http.StatusOK, gin.H{"status": "success"})
+		err := errors.New("failed to create resetpassword token")
+		HandleResponse(ctx, err, http.StatusOK, "", nil)
 		return
 	}
 	Account.RequestChangePass = true
 	Account.AccountPassResetToken = ResetPassToken
 
 	if err := s.DB.Save(Account).Error; err != nil {
-		log.Println("Failed to save account:", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"status": "fail", "message": "Failed to save account"})
+		HandleResponse(ctx, err, http.StatusInternalServerError, "Failed to save account", nil)
 		return
 	}
 
 	go s.utils.SendResetPassEmail(Account)
-	ctx.JSON(http.StatusOK, gin.H{"status": "success"})
+
+	HandleResponse(ctx, err, http.StatusOK, "", nil)
 
 }
 
@@ -403,56 +362,44 @@ func (s *User) ResetPass(ctx *gin.Context) {
 	VerifyUser := &models.Account{}
 
 	if err := ctx.ShouldBindJSON(&reqChangePass); err != nil {
-		message := "failed to fetch change password request"
-		log.Println(message)
-		ctx.JSON(http.StatusNotFound, gin.H{"status": "fail", "message": message})
+		HandleResponse(ctx, err, http.StatusNotFound, "failed to fetch change password request", nil)
 		return
 	}
 
 	if reqChangePass.NewPass != reqChangePass.ConfirmPass {
-		message := "Passwords are not the same"
-		log.Println(message)
-		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		err := errors.New("passwords are not the same")
+		HandleResponse(ctx, err, http.StatusForbidden, err.Error(), nil)
 		return
 	}
 
 	if err := s.DB.Where("account_pass_reset_token = ?", reqChangePass.RCP).Find(&VerifyUser).Limit(1).Error; err != nil {
-		log.Println(err)
-		message := "something went wrong while resetting password"
-		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		HandleResponse(ctx, err, http.StatusForbidden, "something went wrong while resetting password", nil)
 		return
 	}
 
 	if reflect.DeepEqual(*VerifyUser, models.Account{}) || VerifyUser.AccountPassResetToken == "" {
-		message := "Invalid verification code or account does not exists"
-		log.Println(message)
-		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		err := errors.New("invalid verification code or account does not exists")
+		HandleResponse(ctx, err, http.StatusForbidden, "something went wrong while resetting password", nil)
 		return
 	}
 	if VerifyUser.AccountPassResetToken != reqChangePass.RCP {
-		message := "failed to change password"
-		log.Println(message, "rcp and AccountPassResetToken no match")
-		ctx.JSON(http.StatusForbidden, gin.H{"status": "fail", "message": message})
+		err := errors.New("rcp and AccountPassResetToken no match")
+		HandleResponse(ctx, err, http.StatusForbidden, "failed to change password", nil)
 		return
 	}
 
 	newPasswardHashed, err := s.utils.HashPass(reqChangePass.NewPass)
 	if err != nil {
-		log.Println(err)
-		message := "error while hashing password"
-		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
+		HandleResponse(ctx, err, http.StatusConflict, "error while hashing password", nil)
 		return
 	}
 
 	if err = s.UpdateAccountAfterResetPass(VerifyUser, newPasswardHashed); err != nil {
-		log.Println(err)
-		message := "internal error"
-		ctx.JSON(http.StatusConflict, gin.H{"status": "registraition rejected", "message": message})
+		HandleResponse(ctx, err, http.StatusConflict, "internal error", nil)
 		return
 	}
 
-	message := "Password changed successfully"
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "message": message})
+	HandleResponse(ctx, nil, http.StatusOK, "Password changed successfully", nil)
 }
 
 func (s *User) UpdateLastTimeLoggedIn(Account *models.Account) error {
