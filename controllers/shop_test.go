@@ -1,12 +1,7 @@
 package controllers_test
 
 import (
-	"EtsyScraper/controllers"
-	"EtsyScraper/models"
-	scrap "EtsyScraper/scraping"
-	setupMockServer "EtsyScraper/setupTests"
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -20,6 +15,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
+
+	"EtsyScraper/controllers"
+	"EtsyScraper/models"
+	scrap "EtsyScraper/scraping"
+	setupMockServer "EtsyScraper/setupTests"
+	"EtsyScraper/utils"
 )
 
 type MockedShop struct {
@@ -47,11 +48,11 @@ func (m *MockedShop) ExecuteGetSoldItemsByShopID(dispatch controllers.ExecShopMe
 	}
 	return soldItems, args.Error(1)
 }
-func (m *MockedShop) ExecuteUpdateSellingHistory(controllers.ShopController, *models.Shop, *models.TaskSchedule, *models.ShopRequest) error {
+func (m *MockedShop) ExecuteUpdateSellingHistory(controllers.ShopUpdater, *models.Shop, *models.TaskSchedule, *models.ShopRequest) error {
 	args := m.Called()
 	return args.Error(0)
 }
-func (m *MockedShop) ExecuteUpdateDiscontinuedItems(dispatch controllers.ShopController, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error) {
+func (m *MockedShop) ExecuteUpdateDiscontinuedItems(dispatch controllers.ShopUpdater, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error) {
 	args := m.Called()
 	shopInterface := args.Get(0)
 	var soldItems []models.SoldItems
@@ -2517,7 +2518,7 @@ func TestGetItemsBySoldItems_Success(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase}
 
 	exampleSoldItemIds := []uint{2000, 2001, 2002, 2003, 2004}
-	SoldItems, err := json.Marshal(exampleSoldItemIds)
+	SoldItems, err := utils.MarshalJSONData(exampleSoldItemIds)
 	if err != nil {
 		t.Fatalf("error while marshaling json")
 	}
@@ -2543,7 +2544,7 @@ func TestGetItemsBySoldItems_Fail(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase}
 
 	exampleSoldItemIds := []uint{2000, 2001, 2002, 2003, 2004}
-	SoldItems, err := json.Marshal(exampleSoldItemIds)
+	SoldItems, err := utils.MarshalJSONData(exampleSoldItemIds)
 	if err != nil {
 		t.Fatalf("error while marshaling json")
 	}

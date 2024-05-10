@@ -1,10 +1,7 @@
 package scrap
 
 import (
-	"EtsyScraper/collector"
-	"EtsyScraper/models"
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,6 +10,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"EtsyScraper/collector"
+	"EtsyScraper/models"
+	"EtsyScraper/utils"
 )
 
 func TestScrapShop_AllCallBacks(t *testing.T) {
@@ -52,19 +53,19 @@ func TestScrapShop_AllCallBacks(t *testing.T) {
 
 	c.Wait()
 
-	ShopMenuJSON, err := json.Marshal(shop.ShopMenu.Menu)
+	ShopMenuJSON, err := utils.MarshalJSONData(shop.ShopMenu.Menu)
 	if err != nil {
 		fmt.Println("Error marshaling JSON:", err)
 		return
 	}
 	ShopMenuAsString := string(ShopMenuJSON)
 
-	ShopReviewJSON, err := json.Marshal(shop.Reviews)
+	ShopReviewJSON, err := utils.MarshalJSONData(shop.Reviews)
 	if err != nil {
 		fmt.Println("Error marshaling JSON:", err)
 		return
 	}
-	ShopMembersJson, err := json.Marshal(shop.Member)
+	ShopMembersJson, err := utils.MarshalJSONData(shop.Member)
 	if err != nil {
 		fmt.Println("Error marshaling JSON:", err)
 		return

@@ -1,16 +1,17 @@
 package scrap
 
 import (
-	"EtsyScraper/collector"
-	initializer "EtsyScraper/init"
-	"EtsyScraper/models"
-	setupMockServer "EtsyScraper/setupTests"
 	"testing"
 	"time"
 
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/queue"
 	"github.com/stretchr/testify/assert"
+
+	"EtsyScraper/collector"
+	initializer "EtsyScraper/init"
+	"EtsyScraper/models"
+	setupMockServer "EtsyScraper/setupTests"
 )
 
 func TestScrapesSoldItems_Success(t *testing.T) {

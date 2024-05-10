@@ -1,11 +1,12 @@
 package utils_test
 
 import (
-	"EtsyScraper/utils"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"EtsyScraper/utils"
 )
 
 func TestValidUserAgent(t *testing.T) {

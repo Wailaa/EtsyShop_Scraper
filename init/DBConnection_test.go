@@ -2,6 +2,7 @@ package initializer_test
 
 import (
 	initializer "EtsyScraper/init"
+
 	"testing"
 )
 

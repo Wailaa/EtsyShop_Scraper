@@ -1,33 +1,29 @@
 package controllers
 
 import (
-	"EtsyScraper/models"
-	scrap "EtsyScraper/scraping"
-	"EtsyScraper/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
-	"strconv"
+	"net/http"
 	"sync"
 	"time"
-
-	"log"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+
+	"EtsyScraper/models"
+	scrap "EtsyScraper/scraping"
+	"EtsyScraper/utils"
 )
 
 type Shop struct {
 	DB      *gorm.DB
-	Process ShopCreatorGetters
+	Process ShopProcess
 	Scraper scrap.ScrapeUpdateProcess
-}
-type ShopCreators struct {
-	DB *gorm.DB
 }
 
 func NewShopController(implementSHOP Shop) *Shop {
@@ -37,9 +33,6 @@ func NewShopController(implementSHOP Shop) *Shop {
 		Process: implementSHOP.Process,
 		Scraper: implementSHOP.Scraper,
 	}
-}
-func NewShopCreators(DB *gorm.DB) *ShopCreators {
-	return &ShopCreators{DB}
 }
 
 type NewShopRequest struct {
@@ -89,18 +82,18 @@ func CreateSoldItemInfo(Item *models.Item) *ResponseSoldItemInfo {
 	return newSoldItem
 }
 
-type ShopController interface {
+type ShopUpdater interface {
 	UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
 	UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
 }
-type ShopCreatorGetters interface {
+type ShopProcess interface {
 	GetShopByName(ShopName string) (shop *models.Shop, err error)
 	GetItemsByShopID(ID uint) (items []models.Item, err error)
 	GetAverageItemPrice(ShopID uint) (float64, error)
 	CreateShopRequest(ShopRequest *models.ShopRequest) error
 	ExecuteCreateShop(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest)
-	ExecuteUpdateSellingHistory(dispatch ShopController, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
-	ExecuteUpdateDiscontinuedItems(dispatch ShopController, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
+	ExecuteUpdateSellingHistory(dispatch ShopUpdater, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
+	ExecuteUpdateDiscontinuedItems(dispatch ShopUpdater, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
 	ExecuteGetTotalRevenue(dispatch ExecShopMethodProcess, ShopID uint, AverageItemPrice float64) (float64, error)
 	ExecuteGetSoldItemsByShopID(dispatch ExecShopMethodProcess, ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error)
 	ExecuteGetSellingStatsByPeriod(dispatch ExecShopMethodProcess, ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error)
@@ -122,8 +115,7 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 	var shop NewShopRequest
 
 	if err := ctx.ShouldBindJSON(&shop); err != nil {
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get the Shop's name"})
+		HandleResponse(ctx, err, http.StatusBadRequest, "failed to get the Shop's name", nil)
 		return
 	}
 
@@ -132,49 +124,27 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 
 	existedShop, err := s.Process.GetShopByName(shop.ShopName)
 	if err != nil && err.Error() != "record not found" {
-		log.Println(err)
+		HandleResponse(ctx, err, http.StatusBadRequest, "internal error", nil)
+
 		ShopRequest.Status = "failed"
 		s.Process.CreateShopRequest(ShopRequest)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "internal error"})
 		return
+
 	} else if existedShop != nil {
+		HandleResponse(ctx, nil, http.StatusBadRequest, "Shop already exists", nil)
+
 		ShopRequest.Status = "denied"
 		s.Process.CreateShopRequest(ShopRequest)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "Shop already exists"})
 		return
 	}
 
 	ShopRequest.Status = "Pending"
 	s.Process.CreateShopRequest(ShopRequest)
 
-	message := "shop request received successfully"
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": message})
+	HandleResponse(ctx, nil, http.StatusOK, "shop request received successfully", nil)
+
 	go s.Process.ExecuteCreateShop(s, ShopRequest)
 
-}
-func (ps *ShopCreators) ExecuteCreateShop(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest) {
-	dispatch.CreateNewShop(ShopRequest)
-}
-func (ps *ShopCreators) ExecuteUpdateSellingHistory(dispatch ShopController, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
-	err := dispatch.UpdateSellingHistory(Shop, Task, ShopRequest)
-	return err
-}
-func (ps *ShopCreators) ExecuteUpdateDiscontinuedItems(dispatch ShopController, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error) {
-	ScrappedSoldItems, err := dispatch.UpdateDiscontinuedItems(Shop, Task, ShopRequest)
-	return ScrappedSoldItems, err
-}
-
-func (ps *ShopCreators) ExecuteGetTotalRevenue(dispatch ExecShopMethodProcess, ShopID uint, AverageItemPrice float64) (float64, error) {
-	Average, err := dispatch.GetTotalRevenue(ShopID, AverageItemPrice)
-	return Average, err
-}
-func (ps *ShopCreators) ExecuteGetSoldItemsByShopID(dispatch ExecShopMethodProcess, ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error) {
-	SoldItems, err := dispatch.GetSoldItemsByShopID(ID)
-	return SoldItems, err
-}
-func (ps *ShopCreators) ExecuteGetSellingStatsByPeriod(dispatch ExecShopMethodProcess, ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error) {
-	SoldItems, err := dispatch.GetSellingStatsByPeriod(ShopID, timePeriod)
-	return SoldItems, err
 }
 
 func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
@@ -305,7 +275,7 @@ func (s *Shop) FollowShop(ctx *gin.Context) {
 
 	var shopToFollow *FollowShopRequest
 	if err := ctx.ShouldBindJSON(&shopToFollow); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
@@ -314,19 +284,17 @@ func (s *Shop) FollowShop(ctx *gin.Context) {
 	requestedShop, err := s.Process.GetShopByName(shopToFollow.FollowShopName)
 	if err != nil {
 		if err.Error() == "record not found" {
-			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "shop not found"})
+			HandleResponse(ctx, err, http.StatusBadRequest, "shop not found", nil)
 			return
 		}
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "error while processing the request"})
+		HandleResponse(ctx, err, http.StatusBadRequest, "error while processing the request", nil)
 		return
 	}
 	if err := s.EstablishAccountShopRelation(requestedShop, currentUserUUID); err != nil {
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": "following shop"})
+	HandleResponse(ctx, err, http.StatusOK, "following shop", nil)
 
 }
 
@@ -334,7 +302,7 @@ func (s *Shop) UnFollowShop(ctx *gin.Context) {
 
 	var unFollowShop *UnFollowShopRequest
 	if err := ctx.ShouldBindJSON(&unFollowShop); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
@@ -343,30 +311,19 @@ func (s *Shop) UnFollowShop(ctx *gin.Context) {
 	requestedShop, err := s.Process.GetShopByName(unFollowShop.UnFollowShopName)
 	if err != nil {
 		if err.Error() == "record not found" {
-			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "shop not found"})
+			HandleResponse(ctx, err, http.StatusBadRequest, "shop not found", nil)
 			return
 		}
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 	if err := s.UpdateAccountShopRelation(requestedShop, currentUserUUID); err != nil {
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": "Unfollowed shop"})
+	HandleResponse(ctx, nil, http.StatusOK, "Unfollowed shop", nil)
 
-}
-
-func (pr *ShopCreators) GetShopByName(ShopName string) (shop *models.Shop, err error) {
-
-	if err = pr.DB.Preload("Member").Preload("ShopMenu.Menu.Items").Preload("Reviews.ReviewsTopic").Where("name = ?", ShopName).First(&shop).Error; err != nil {
-		log.Println("no Shop was Found ,error :", err)
-		return nil, err
-	}
-	return
 }
 
 func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
@@ -400,47 +357,34 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 func (s *Shop) HandleGetShopByID(ctx *gin.Context) {
 
 	ShopID := ctx.Param("shopID")
-	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		HandleResponse(ctx, err, http.StatusBadRequest, "failed to get Shop id", nil)
 		return
 	}
-	Shop, err := s.GetShopByID(uint(ShopIDToUint))
+	Shop, err := s.GetShopByID(ShopIDToUint)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
+	HandleResponse(ctx, nil, http.StatusOK, "", Shop)
 
-	ctx.JSON(http.StatusOK, Shop)
-
-}
-
-func (ps *ShopCreators) GetItemsByShopID(ID uint) (items []models.Item, err error) {
-	shop := &models.Shop{}
-	if err := ps.DB.Preload("ShopMenu.Menu.Items").Where("id = ?", ID).First(shop).Error; err != nil {
-		log.Println("no Shop was Found")
-		return nil, err
-	}
-
-	for _, menu := range shop.ShopMenu.Menu {
-		items = append(items, menu.Items...)
-	}
-	return
 }
 
 func (s *Shop) HandleGetItemsByShopID(ctx *gin.Context) {
 	ShopID := ctx.Param("shopID")
-	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		HandleResponse(ctx, err, http.StatusBadRequest, "failed to get Shop id", nil)
 		return
 	}
-	Items, err := s.Process.GetItemsByShopID(uint(ShopIDToUint))
+	Items, err := s.Process.GetItemsByShopID(ShopIDToUint)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	ctx.JSON(http.StatusOK, Items)
+
+	HandleResponse(ctx, nil, http.StatusOK, "", Items)
 }
 
 func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
@@ -463,17 +407,18 @@ func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
 
 func (s *Shop) HandleGetItemsCountByShopID(ctx *gin.Context) {
 	ShopID := ctx.Param("shopID")
-	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		HandleResponse(ctx, err, http.StatusBadRequest, "failed to get Shop id", nil)
 		return
 	}
-	Items, err := s.GetItemsCountByShopID(uint(ShopIDToUint))
+	Items, err := s.GetItemsCountByShopID(ShopIDToUint)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	ctx.JSON(http.StatusOK, Items)
+
+	HandleResponse(ctx, nil, http.StatusOK, "", Items)
 }
 
 func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error) {
@@ -517,36 +462,19 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 
 func (s *Shop) HandleGetSoldItemsByShopID(ctx *gin.Context) {
 	ShopID := ctx.Param("shopID")
-	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		HandleResponse(ctx, err, http.StatusBadRequest, "failed to get Shop id", nil)
 		return
 	}
 
-	Items, err := s.Process.ExecuteGetSoldItemsByShopID(s, uint(ShopIDToUint))
+	Items, err := s.Process.ExecuteGetSoldItemsByShopID(s, ShopIDToUint)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	ctx.JSON(http.StatusOK, Items)
-}
+	HandleResponse(ctx, nil, http.StatusOK, "", Items)
 
-func (s *ShopCreators) GetAverageItemPrice(ShopID uint) (float64, error) {
-	var averagePrice float64
-
-	if err := s.DB.Table("items").
-		Joins("JOIN menu_items ON items.menu_item_id = menu_items.id").
-		Joins("JOIN shop_menus ON menu_items.shop_menu_id = shop_menus.id").
-		Joins("JOIN shops ON shop_menus.shop_id = shops.id").
-		Where("shops.id = ? AND items.original_price > 0 ", ShopID).
-		Select("AVG(items.original_price) as average_price").
-		Row().Scan(&averagePrice); err != nil {
-
-		return 0, err
-	}
-	averagePrice = RoundToTwoDecimalDigits(averagePrice)
-
-	return averagePrice, nil
 }
 
 func (s *Shop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error) {
@@ -571,26 +499,13 @@ func (s *Shop) SoldItemsTask(Shop *models.Shop, Task *models.TaskSchedule, ShopR
 	return nil
 }
 
-func (pr *ShopCreators) CreateShopRequest(ShopRequest *models.ShopRequest) error {
-	if ShopRequest.AccountID == uuid.Nil {
-		return errors.New("no AccountID was passed")
-	}
-
-	if err := pr.DB.Save(ShopRequest).Error; err != nil {
-		log.Println(err)
-		return err
-	}
-
-	return nil
-}
-
 func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 
 	ShopID := ctx.Param("shopID")
 	Period := ctx.Param("period")
-	ShopIDToUint, err := strconv.ParseUint(ShopID, 10, 64)
+	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		HandleResponse(ctx, err, http.StatusBadRequest, "failed to get Shop id", nil)
 		return
 	}
 
@@ -608,7 +523,8 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 	case "lastYear":
 		year = -1
 	default:
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "invalid period provided"})
+		err := errors.New("invalid period provided")
+		HandleResponse(ctx, err, http.StatusInternalServerError, err.Error(), nil)
 		return
 
 	}
@@ -616,14 +532,13 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 	date := time.Now().AddDate(year, month, day)
 	dateMidnight := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
 
-	LastSevenDays, err := s.Process.ExecuteGetSellingStatsByPeriod(s, uint(ShopIDToUint), dateMidnight)
+	LastSevenDays, err := s.Process.ExecuteGetSellingStatsByPeriod(s, ShopIDToUint, dateMidnight)
 	if err != nil {
-		log.Println("error while retrieving shop selling stats ,error :", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "error while handling stats"})
+		HandleResponse(ctx, err, http.StatusInternalServerError, "error while handling stats", nil)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "stats": LastSevenDays})
+	HandleResponse(ctx, nil, http.StatusOK, "", gin.H{"stats": LastSevenDays})
 
 }
 
@@ -719,7 +634,7 @@ func (s *Shop) UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uin
 		UpdatedSoldItemIDs = append(UpdatedSoldItemIDs, UpdatedSoldItem.ID)
 	}
 
-	jsonArray, err := json.Marshal(UpdatedSoldItemIDs)
+	jsonArray, err := utils.MarshalJSONData(UpdatedSoldItemIDs)
 	if err != nil {
 		log.Println("Error marshaling JSON:", err)
 		return err
@@ -881,4 +796,90 @@ func CalculateTotalRevenue(soldItems []ResponseSoldItemInfo, AverageItemPrice fl
 	}
 	revenue = RoundToTwoDecimalDigits(revenue)
 	return revenue
+}
+
+type ShopCreators struct {
+	DB *gorm.DB
+}
+
+func NewShopCreators(DB *gorm.DB) *ShopCreators {
+	return &ShopCreators{DB}
+}
+
+func (ps *ShopCreators) ExecuteCreateShop(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest) {
+	dispatch.CreateNewShop(ShopRequest)
+}
+func (ps *ShopCreators) ExecuteUpdateSellingHistory(dispatch ShopUpdater, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
+	err := dispatch.UpdateSellingHistory(Shop, Task, ShopRequest)
+	return err
+}
+func (ps *ShopCreators) ExecuteUpdateDiscontinuedItems(dispatch ShopUpdater, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error) {
+	ScrappedSoldItems, err := dispatch.UpdateDiscontinuedItems(Shop, Task, ShopRequest)
+	return ScrappedSoldItems, err
+}
+
+func (ps *ShopCreators) ExecuteGetTotalRevenue(dispatch ExecShopMethodProcess, ShopID uint, AverageItemPrice float64) (float64, error) {
+	Average, err := dispatch.GetTotalRevenue(ShopID, AverageItemPrice)
+	return Average, err
+}
+func (ps *ShopCreators) ExecuteGetSoldItemsByShopID(dispatch ExecShopMethodProcess, ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error) {
+	SoldItems, err := dispatch.GetSoldItemsByShopID(ID)
+	return SoldItems, err
+}
+func (ps *ShopCreators) ExecuteGetSellingStatsByPeriod(dispatch ExecShopMethodProcess, ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error) {
+	SoldItems, err := dispatch.GetSellingStatsByPeriod(ShopID, timePeriod)
+	return SoldItems, err
+}
+
+func (pr *ShopCreators) CreateShopRequest(ShopRequest *models.ShopRequest) error {
+	if ShopRequest.AccountID == uuid.Nil {
+		return errors.New("no AccountID was passed")
+	}
+
+	if err := pr.DB.Save(ShopRequest).Error; err != nil {
+		log.Println(err)
+		return err
+	}
+
+	return nil
+}
+
+func (pr *ShopCreators) GetShopByName(ShopName string) (shop *models.Shop, err error) {
+
+	if err = pr.DB.Preload("Member").Preload("ShopMenu.Menu.Items").Preload("Reviews.ReviewsTopic").Where("name = ?", ShopName).First(&shop).Error; err != nil {
+		log.Println("no Shop was Found ,error :", err)
+		return nil, err
+	}
+	return
+}
+
+func (ps *ShopCreators) GetItemsByShopID(ID uint) (items []models.Item, err error) {
+	shop := &models.Shop{}
+	if err := ps.DB.Preload("ShopMenu.Menu.Items").Where("id = ?", ID).First(shop).Error; err != nil {
+		log.Println("no Shop was Found")
+		return nil, err
+	}
+
+	for _, menu := range shop.ShopMenu.Menu {
+		items = append(items, menu.Items...)
+	}
+	return
+}
+
+func (s *ShopCreators) GetAverageItemPrice(ShopID uint) (float64, error) {
+	var averagePrice float64
+
+	if err := s.DB.Table("items").
+		Joins("JOIN menu_items ON items.menu_item_id = menu_items.id").
+		Joins("JOIN shop_menus ON menu_items.shop_menu_id = shop_menus.id").
+		Joins("JOIN shops ON shop_menus.shop_id = shops.id").
+		Where("shops.id = ? AND items.original_price > 0 ", ShopID).
+		Select("AVG(items.original_price) as average_price").
+		Row().Scan(&averagePrice); err != nil {
+
+		return 0, err
+	}
+	averagePrice = RoundToTwoDecimalDigits(averagePrice)
+
+	return averagePrice, nil
 }

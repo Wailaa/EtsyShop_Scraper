@@ -1,14 +1,14 @@
 package scrap
 
 import (
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+
 	"EtsyScraper/collector"
 	initializer "EtsyScraper/init"
 	setupMockServer "EtsyScraper/setupTests"
-	"time"
-
-	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCheckForUpdates_Success(t *testing.T) {

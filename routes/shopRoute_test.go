@@ -1,13 +1,14 @@
 package routes_test
 
 import (
-	"EtsyScraper/routes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+
+	"EtsyScraper/routes"
 )
 
 type MockShopRoute struct {

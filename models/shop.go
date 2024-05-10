@@ -128,6 +128,7 @@ type DailyShopSales struct {
 	Admirers     int
 	DailyRevenue float64
 	SoldItems    []byte `gorm:"type:jsonb"`
+	Shop         Shop   `gorm:"foreignKey:ShopID;constraint:OnDelete:CASCADE;"`
 }
 
 type ItemHistoryChange struct {
@@ -140,30 +141,6 @@ type ItemHistoryChange struct {
 	NewAvailable   bool
 	OldMenuItemID  uint
 	NewMenuItemID  uint
-}
-
-func CreateShop(newShop *Shop) *Shop {
-	Shop := &Shop{
-		Name:             newShop.Name,
-		Description:      newShop.Description,
-		Location:         newShop.Location,
-		TotalSales:       newShop.TotalSales,
-		JoinedSince:      newShop.JoinedSince,
-		LastUpdateTime:   newShop.LastUpdateTime,
-		CreatedByUserID:  newShop.CreatedByUserID,
-		Admirers:         newShop.Admirers,
-		SocialMediaLinks: newShop.SocialMediaLinks,
-	}
-	return Shop
-}
-
-func CreateShopMenu(newShopMenu *ShopMenu) *ShopMenu {
-	NewShopMenu := &ShopMenu{
-		ShopID:           newShopMenu.ShopID,
-		TotalItemsAmount: newShopMenu.TotalItemsAmount,
-		Menu:             newShopMenu.Menu,
-	}
-	return NewShopMenu
 }
 
 func CreateMenuItem(menuItem MenuItem) MenuItem {

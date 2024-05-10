@@ -1,14 +1,15 @@
 package utils_test
 
 import (
-	initializer "EtsyScraper/init"
-	"EtsyScraper/models"
-	"EtsyScraper/utils"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+
+	initializer "EtsyScraper/init"
+	"EtsyScraper/models"
+	"EtsyScraper/utils"
 )
 
 func InitiateUtilTest() (jwt *utils.Utils, exp time.Duration, userUUID uuid.UUID) {

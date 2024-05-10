@@ -1,11 +1,12 @@
 package initializer_test
 
 import (
-	initializer "EtsyScraper/init"
 	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	initializer "EtsyScraper/init"
 )
 
 func TestValidRedisDBConnect(t *testing.T) {

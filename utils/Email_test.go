@@ -1,14 +1,15 @@
 package utils_test
 
 import (
-	initializer "EtsyScraper/init"
-	"EtsyScraper/models"
-	setupMockServer "EtsyScraper/setupTests"
-	"EtsyScraper/utils"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	initializer "EtsyScraper/init"
+	"EtsyScraper/models"
+	setupMockServer "EtsyScraper/setupTests"
+	"EtsyScraper/utils"
 )
 
 func TestGenerateRandomInt(t *testing.T) {

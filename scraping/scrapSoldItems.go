@@ -1,16 +1,17 @@
 package scrap
 
 import (
-	"EtsyScraper/collector"
-	"EtsyScraper/models"
-	"strings"
-
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/queue"
+
+	"EtsyScraper/collector"
+	"EtsyScraper/models"
+	"EtsyScraper/utils"
 )
 
 func (sc *Scraper) ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.SoldItems, *models.TaskSchedule) {
@@ -91,7 +92,7 @@ func scrapSoldItems(c *colly.Collector) *[]models.SoldItems {
 		e.ForEach("div[data-shop-id]", func(i int, h *colly.HTMLElement) {
 
 			ListingID := h.Attr("data-listing-id")
-			ListingIDToUint64, err := strconv.ParseUint(ListingID, 10, 64)
+			ListingIDToUint64, err := utils.StringToUint(ListingID)
 			if err != nil {
 				log.Println(err.Error())
 				return

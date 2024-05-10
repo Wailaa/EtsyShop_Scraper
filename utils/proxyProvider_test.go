@@ -1,10 +1,11 @@
 package utils_test
 
 import (
-	"EtsyScraper/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"EtsyScraper/utils"
 )
 
 func TestPickProxyProviderReturnsProxySettingObject(t *testing.T) {

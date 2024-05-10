@@ -1,8 +1,6 @@
 package utils
 
 import (
-	initializer "EtsyScraper/init"
-	"EtsyScraper/models"
 	"context"
 	"fmt"
 	"log"
@@ -11,6 +9,9 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
+
+	initializer "EtsyScraper/init"
+	"EtsyScraper/models"
 )
 
 var TokenBlacklistPrefix = "token:blacklist:"
