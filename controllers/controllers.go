@@ -16,10 +16,10 @@ func HandleResponse(ctx *gin.Context, err error, status int, message string, dat
 		ctx.JSON(status, data)
 		return
 	}
+
+	response = gin.H{"status": "fail"}
 	if status == 200 {
 		response = gin.H{"status": "success"}
-	} else {
-		response = gin.H{"status": "fail"}
 	}
 
 	if message != "" {
@@ -27,5 +27,9 @@ func HandleResponse(ctx *gin.Context, err error, status int, message string, dat
 	}
 
 	ctx.JSON(status, response)
+
+	if status != 200 {
+		ctx.Abort()
+	}
 
 }
