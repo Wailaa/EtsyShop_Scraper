@@ -115,8 +115,7 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 	var shop NewShopRequest
 
 	if err := ctx.ShouldBindJSON(&shop); err != nil {
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get the Shop's name"})
+		HandleResponse(ctx, err, http.StatusBadRequest, "failed to get the Shop's name", nil)
 		return
 	}
 
@@ -125,23 +124,25 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 
 	existedShop, err := s.Process.GetShopByName(shop.ShopName)
 	if err != nil && err.Error() != "record not found" {
-		log.Println(err)
+		HandleResponse(ctx, err, http.StatusBadRequest, "internal error", nil)
+
 		ShopRequest.Status = "failed"
 		s.Process.CreateShopRequest(ShopRequest)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "internal error"})
 		return
+
 	} else if existedShop != nil {
+		HandleResponse(ctx, nil, http.StatusBadRequest, "Shop already exists", nil)
+
 		ShopRequest.Status = "denied"
 		s.Process.CreateShopRequest(ShopRequest)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "Shop already exists"})
 		return
 	}
 
 	ShopRequest.Status = "Pending"
 	s.Process.CreateShopRequest(ShopRequest)
 
-	message := "shop request received successfully"
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": message})
+	HandleResponse(ctx, nil, http.StatusOK, "shop request received successfully", nil)
+
 	go s.Process.ExecuteCreateShop(s, ShopRequest)
 
 }
@@ -274,7 +275,7 @@ func (s *Shop) FollowShop(ctx *gin.Context) {
 
 	var shopToFollow *FollowShopRequest
 	if err := ctx.ShouldBindJSON(&shopToFollow); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
@@ -283,19 +284,17 @@ func (s *Shop) FollowShop(ctx *gin.Context) {
 	requestedShop, err := s.Process.GetShopByName(shopToFollow.FollowShopName)
 	if err != nil {
 		if err.Error() == "record not found" {
-			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "shop not found"})
+			HandleResponse(ctx, err, http.StatusBadRequest, "shop not found", nil)
 			return
 		}
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "error while processing the request"})
+		HandleResponse(ctx, err, http.StatusBadRequest, "error while processing the request", nil)
 		return
 	}
 	if err := s.EstablishAccountShopRelation(requestedShop, currentUserUUID); err != nil {
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": "following shop"})
+	HandleResponse(ctx, err, http.StatusOK, "following shop", nil)
 
 }
 
@@ -303,7 +302,7 @@ func (s *Shop) UnFollowShop(ctx *gin.Context) {
 
 	var unFollowShop *UnFollowShopRequest
 	if err := ctx.ShouldBindJSON(&unFollowShop); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
@@ -312,20 +311,18 @@ func (s *Shop) UnFollowShop(ctx *gin.Context) {
 	requestedShop, err := s.Process.GetShopByName(unFollowShop.UnFollowShopName)
 	if err != nil {
 		if err.Error() == "record not found" {
-			ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "shop not found"})
+			HandleResponse(ctx, err, http.StatusBadRequest, "shop not found", nil)
 			return
 		}
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 	if err := s.UpdateAccountShopRelation(requestedShop, currentUserUUID); err != nil {
-		log.Println(err)
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"status": "success", "result": "Unfollowed shop"})
+	HandleResponse(ctx, nil, http.StatusOK, "Unfollowed shop", nil)
 
 }
 
@@ -362,16 +359,15 @@ func (s *Shop) HandleGetShopByID(ctx *gin.Context) {
 	ShopID := ctx.Param("shopID")
 	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		HandleResponse(ctx, err, http.StatusBadRequest, "failed to get Shop id", nil)
 		return
 	}
 	Shop, err := s.GetShopByID(ShopIDToUint)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-
-	ctx.JSON(http.StatusOK, Shop)
+	HandleResponse(ctx, nil, http.StatusOK, "", Shop)
 
 }
 
@@ -379,15 +375,16 @@ func (s *Shop) HandleGetItemsByShopID(ctx *gin.Context) {
 	ShopID := ctx.Param("shopID")
 	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		HandleResponse(ctx, err, http.StatusBadRequest, "failed to get Shop id", nil)
 		return
 	}
 	Items, err := s.Process.GetItemsByShopID(ShopIDToUint)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	ctx.JSON(http.StatusOK, Items)
+
+	HandleResponse(ctx, nil, http.StatusOK, "", Items)
 }
 
 func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
@@ -412,15 +409,16 @@ func (s *Shop) HandleGetItemsCountByShopID(ctx *gin.Context) {
 	ShopID := ctx.Param("shopID")
 	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		HandleResponse(ctx, err, http.StatusBadRequest, "failed to get Shop id", nil)
 		return
 	}
 	Items, err := s.GetItemsCountByShopID(ShopIDToUint)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	ctx.JSON(http.StatusOK, Items)
+
+	HandleResponse(ctx, nil, http.StatusOK, "", Items)
 }
 
 func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error) {
@@ -466,16 +464,17 @@ func (s *Shop) HandleGetSoldItemsByShopID(ctx *gin.Context) {
 	ShopID := ctx.Param("shopID")
 	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		HandleResponse(ctx, err, http.StatusBadRequest, "failed to get Shop id", nil)
 		return
 	}
 
 	Items, err := s.Process.ExecuteGetSoldItemsByShopID(s, ShopIDToUint)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": err.Error()})
+		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	ctx.JSON(http.StatusOK, Items)
+	HandleResponse(ctx, nil, http.StatusOK, "", Items)
+
 }
 
 func (s *Shop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error) {
@@ -506,7 +505,7 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 	Period := ctx.Param("period")
 	ShopIDToUint, err := utils.StringToUint(ShopID)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"status": "fail", "message": "failed to get Shop id"})
+		HandleResponse(ctx, err, http.StatusBadRequest, "failed to get Shop id", nil)
 		return
 	}
 
@@ -524,7 +523,8 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 	case "lastYear":
 		year = -1
 	default:
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "invalid period provided"})
+		err := errors.New("invalid period provided")
+		HandleResponse(ctx, err, http.StatusInternalServerError, err.Error(), nil)
 		return
 
 	}
@@ -534,12 +534,11 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 
 	LastSevenDays, err := s.Process.ExecuteGetSellingStatsByPeriod(s, ShopIDToUint, dateMidnight)
 	if err != nil {
-		log.Println("error while retrieving shop selling stats ,error :", err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"message": "error while handling stats"})
+		HandleResponse(ctx, err, http.StatusInternalServerError, "error while handling stats", nil)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"status": http.StatusOK, "stats": LastSevenDays})
+	HandleResponse(ctx, nil, http.StatusOK, "", gin.H{"stats": LastSevenDays})
 
 }
 
