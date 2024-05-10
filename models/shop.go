@@ -128,6 +128,7 @@ type DailyShopSales struct {
 	Admirers     int
 	DailyRevenue float64
 	SoldItems    []byte `gorm:"type:jsonb"`
+	Shop         Shop   `gorm:"foreignKey:ShopID;constraint:OnDelete:CASCADE;"`
 }
 
 type ItemHistoryChange struct {
