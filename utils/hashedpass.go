@@ -7,7 +7,7 @@ import (
 func (pw *Utils) HashPass(pass string) (string, error) {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {
-		return "", err
+		return "", HandleError(err)
 	}
 	return string(hashed), nil
 }
