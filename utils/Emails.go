@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 	"net/smtp"
 	"net/textproto"
@@ -50,14 +49,14 @@ func init() {
 func (em *Utils) CreateVerificationString() (string, error) {
 	GenerateRandomInt, err := rand.Int(rand.Reader, big.NewInt(20))
 	if err != nil {
-		return "", err
+		return "", HandleError(err)
 	}
 
 	byteLength := GenerateRandomInt.Int64() + 10
 	CreateBytes := make([]byte, byteLength)
 
 	if _, err := rand.Read(CreateBytes); err != nil {
-		return "", err
+		return "", HandleError(err)
 	}
 
 	EncodedString := base64.StdEncoding.EncodeToString(CreateBytes)
@@ -73,7 +72,7 @@ func (em *Utils) SendVerificationEmail(account *models.Account) error {
 	}
 	verificationLink, err := GenerateVerificationURL(urlDetails)
 	if err != nil {
-		return err
+		return HandleError(err)
 	}
 	PlainText := "This is an email sent upon your registration at EtsyScraper."
 
@@ -91,7 +90,7 @@ func (em *Utils) SendVerificationEmail(account *models.Account) error {
 
 	err = ComposeEmail(details)
 	if err != nil {
-		return fmt.Errorf("failed to send verification mail: no address or missig details error: %w", err)
+		return HandleError(err, "failed to send verification mail: no address or missig details")
 	}
 	return nil
 }
@@ -127,7 +126,7 @@ func (em *Utils) SendResetPassEmail(account *models.Account) error {
 	err = ComposeEmail(details)
 
 	if err != nil {
-		return fmt.Errorf("failed to send verification email,error: %w", err)
+		return HandleError(err, "failed to send verification email")
 	}
 	return nil
 }
@@ -135,12 +134,13 @@ func (em *Utils) SendResetPassEmail(account *models.Account) error {
 func GenerateVerificationURL(urlDetails URLConfig) (string, error) {
 
 	if urlDetails.Path == "" || urlDetails.ParamName == "" || urlDetails.Token == "" {
-		return "", errors.New("invalid URL details provided")
+		err := errors.New("invalid URL details provided")
+		return "", HandleError(err)
 	}
 
 	verificationLink, err := url.Parse(Config.ClientOrigin)
 	if err != nil {
-		return "", err
+		return "", HandleError(err)
 	}
 
 	verificationLink.Path += urlDetails.Path
@@ -154,7 +154,8 @@ func GenerateVerificationURL(urlDetails URLConfig) (string, error) {
 func ComposeEmail(details EmailDetails) error {
 
 	if details.To == "" || details.Subject == "" || details.HTMLbody == "" || details.ButtonName == "" || details.UserName == "" {
-		return errors.New("could no compose email , details are missing")
+		err := errors.New("could no compose email , details are missing")
+		return HandleError(err)
 	}
 
 	e := &email.Email{
@@ -178,8 +179,7 @@ func ComposeEmail(details EmailDetails) error {
 	}
 	err := e.Send(SMTPDetails.SMTPHost, SMTPDetails.SMTPAuth)
 	if err != nil {
-		log.Println("error while composing email", err)
-		return err
+		return HandleError(err, "error while composing email")
 	}
 	return nil
 }
