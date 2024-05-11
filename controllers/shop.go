@@ -334,8 +334,7 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 
 	shop.AverageItemsPrice, err = s.Process.GetAverageItemPrice(shop.ID)
 	if err != nil {
-		log.Println("error while calculating item avearage price")
-		return nil, err
+		return nil, utils.HandleError(err, "error while calculating item avearage price")
 	}
 
 	if !shop.HasSoldHistory {
@@ -345,8 +344,7 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 
 	shop.Revenue, err = s.Process.ExecuteGetTotalRevenue(s, shop.ID, shop.AverageItemsPrice)
 	if err != nil {
-		log.Println("error while calculating shop's revenue")
-		return nil, err
+		return nil, utils.HandleError(err, "error while calculating shop's revenue")
 	}
 
 	return
@@ -739,7 +737,6 @@ func (s *Shop) EstablishAccountShopRelation(requestedShop *models.Shop, userID u
 	currentAccount.ShopsFollowing = append(currentAccount.ShopsFollowing, *requestedShop)
 	if err := s.DB.Save(&currentAccount).Error; err != nil {
 		return utils.HandleError(err)
-
 	}
 
 	return nil
