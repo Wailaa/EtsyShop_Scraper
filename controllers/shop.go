@@ -435,10 +435,9 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 		listingIDs = append(listingIDs, item.ListingID)
 	}
 
-	result := s.DB.Where("listing_id IN ?", listingIDs).Find(&Solditems)
-	if result.Error != nil {
+	if err := s.DB.Where("listing_id IN ?", listingIDs).Find(&Solditems).Error; err != nil {
 		log.Println("items where not found ")
-		return nil, result.Error
+		return nil, err
 	}
 
 	soldQuantity := map[uint]int{}
