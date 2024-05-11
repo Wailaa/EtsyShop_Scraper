@@ -213,13 +213,13 @@ func ExtractPrices(h *colly.HTMLElement) (float64, float64) {
 
 	SalesPriceToFloat, err := utils.StringToFloat(SalesPrice)
 	if err != nil {
-		log.Println(err.Error())
+		utils.HandleError(nil, err.Error())
 		return float64(0), float64(0)
 	}
 
 	OriginalPricetoFloat, err := utils.StringToFloat(OriginalPrice)
 	if err != nil {
-		log.Println(err.Error())
+		utils.HandleError(nil, err.Error())
 		return float64(0), float64(0)
 	}
 
@@ -231,7 +231,7 @@ func HandleItem(h *colly.HTMLElement, MenuID uint) models.Item {
 	ListingID := h.Attr("data-listing-id")
 	ListingIDToUint64, err := utils.StringToUint(ListingID)
 	if err != nil {
-		log.Println(err.Error())
+		utils.HandleError(nil, err.Error())
 	}
 
 	newItem.ListingID = ListingIDToUint64
