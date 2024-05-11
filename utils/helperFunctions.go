@@ -22,7 +22,7 @@ func SetSleep(maxSeconds int) {
 func StringToUint(text string) (uint, error) {
 	ShopIDToUint, err := strconv.ParseUint(text, 10, 64)
 	if err != nil {
-		return 0, err
+		return 0, HandleError(err)
 	}
 	return uint(ShopIDToUint), nil
 }
@@ -30,7 +30,7 @@ func StringToUint(text string) (uint, error) {
 func MarshalJSONData(data interface{}) ([]byte, error) {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return nil, err
+		return nil, HandleError(err)
 	}
 
 	return jsonData, nil
@@ -50,7 +50,7 @@ func HandleError(err error, message ...string) error {
 func StringToFloat(price string) (float64, error) {
 	result, err := strconv.ParseFloat(price, 64)
 	if err != nil {
-		return float64(0), err
+		return float64(0), HandleError(err)
 	}
 	return result, nil
 }
