@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -52,4 +53,9 @@ func StringToFloat(price string) (float64, error) {
 		return float64(0), err
 	}
 	return result, nil
+}
+
+func ReplaceSign(sentence, oldSign, newSign string) string {
+	result := strings.Replace(sentence, oldSign, newSign, -1)
+	return result
 }

@@ -440,43 +440,6 @@ func TestGetMenuIndex(t *testing.T) {
 
 }
 
-func TestReplaceSign(t *testing.T) {
-	tests := []struct {
-		Price    string
-		oldSign  string
-		newSign  string
-		expected string
-	}{
-		{
-			Price:    "1,232$",
-			oldSign:  ",",
-			newSign:  "",
-			expected: "1232$",
-		},
-		{
-			Price:    "1,232$",
-			oldSign:  ",",
-			newSign:  "",
-			expected: "1232$",
-		},
-		{
-			Price:    "1232$",
-			oldSign:  ".",
-			newSign:  "",
-			expected: "1232$",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.Price, func(t *testing.T) {
-			actual := ReplaceSign(tc.Price, tc.oldSign, tc.newSign)
-			if actual != tc.expected {
-				t.Errorf("Expected StringToFloat to be %v, but got %v", tc.expected, actual)
-			}
-		})
-	}
-}
-
 func TestExtractPrices(t *testing.T) {
 
 	mockConfig := initializer.Config{
