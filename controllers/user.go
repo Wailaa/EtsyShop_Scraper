@@ -133,11 +133,8 @@ func (s *User) GetAccountByID(ID uuid.UUID) (account *models.Account, err error)
 func (s *User) GetAccountByEmail(email string) *models.Account {
 	account := &models.Account{}
 
-	result := s.DB.Where("email = ?", email).First(&account)
-	if result.Error != nil {
-
+	if err := s.DB.Where("email = ?", email).First(&account).Error; err != nil {
 		return account
-
 	}
 
 	return account
