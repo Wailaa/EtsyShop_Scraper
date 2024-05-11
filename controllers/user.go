@@ -124,8 +124,7 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 func (s *User) GetAccountByID(ID uuid.UUID) (account *models.Account, err error) {
 
 	if err := s.DB.Where("ID = ?", ID).First(&account).Error; err != nil {
-		log.Println("no account was Found ,error :", err)
-		return nil, err
+		return nil, utils.HandleError(err, "no account was Found ")
 	}
 	return
 }
@@ -202,7 +201,8 @@ func GetTokens(ctx *gin.Context) (map[string]*models.Token, error) {
 		tokens["refresh_token"] = models.NewToken(refreshToken)
 	}
 	if len(tokens) == 0 {
-		return nil, fmt.Errorf("failed to retrieve both tokens ")
+		err := fmt.Errorf("failed to retrieve both tokens ")
+		return nil, utils.HandleError(err)
 	}
 	return tokens, nil
 }
@@ -402,8 +402,7 @@ func (s *User) ResetPass(ctx *gin.Context) {
 func (s *User) UpdateLastTimeLoggedIn(Account *models.Account) error {
 	now := time.Now()
 	if err := s.DB.Model(Account).Where("id = ?", Account.ID).Update("last_time_logged_in", now).Error; err != nil {
-		log.Println(err)
-		return err
+		return utils.HandleError(err)
 	}
 	return nil
 }
@@ -411,14 +410,12 @@ func (s *User) UpdateLastTimeLoggedIn(Account *models.Account) error {
 func (s *User) JoinShopFollowing(Account *models.Account) error {
 
 	if err := s.DB.Preload("ShopsFollowing").First(Account, Account.ID).Error; err != nil {
-		log.Println(err)
-		return err
+		return utils.HandleError(err)
 	}
 
 	for i := range Account.ShopsFollowing {
 		if err := s.DB.Preload("ShopMenu").Preload("Reviews").Preload("Member").First(&Account.ShopsFollowing[i]).Error; err != nil {
-			log.Println(err)
-			return err
+			return utils.HandleError(err)
 		}
 	}
 
@@ -447,8 +444,7 @@ func (s *User) GenerateLoginResponse(Account *models.Account, AccessToken, Refre
 func (s *User) UpdateLastTimeLoggedOut(UserID uuid.UUID) error {
 	now := time.Now()
 	if err := s.DB.Model(&models.Account{}).Where("id = ?", UserID).Update("last_time_logged_out", now).Error; err != nil {
-		log.Println(err)
-		return err
+		return utils.HandleError(err)
 	}
 	return nil
 }
@@ -457,7 +453,7 @@ func (s *User) UpdateAccountAfterVerify(Account *models.Account) error {
 
 	err := s.DB.Model(Account).Updates(map[string]interface{}{"email_verified": true, "email_verification_token": ""}).Error
 	if err != nil {
-		return err
+		return utils.HandleError(err)
 	}
 	return nil
 }
@@ -466,7 +462,7 @@ func (s *User) UpdateAccountNewPass(Account *models.Account, passwardHashed stri
 
 	err := s.DB.Model(Account).Update("password_hashed", passwardHashed).Error
 	if err != nil {
-		return err
+		return utils.HandleError(err)
 	}
 	return nil
 }
@@ -475,7 +471,7 @@ func (s *User) UpdateAccountAfterResetPass(Account *models.Account, newPasswardH
 
 	err := s.DB.Model(Account).Updates(map[string]interface{}{"request_change_pass": false, "account_pass_reset_token": "", "password_hashed": newPasswardHashed}).Error
 	if err != nil {
-		return err
+		return utils.HandleError(err)
 	}
 	return nil
 }
@@ -497,12 +493,11 @@ func (s *User) CreateNewAccountRecord(account *RegisterAccount, passwardHashed, 
 
 	if err != nil {
 		if strings.Contains(err.Error(), "email") {
-			log.Println(err)
-			message := "this email is already in use"
-			return newAccount, errors.New(message)
+			message := errors.New("this email is already in use")
+			return newAccount, utils.HandleError(message)
 		}
 
-		return newAccount, err
+		return newAccount, utils.HandleError(err)
 	}
 	return newAccount, nil
 }
