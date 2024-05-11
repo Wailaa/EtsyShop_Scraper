@@ -43,19 +43,22 @@ func (sc *Scraper) CheckForUpdates(Shop string, needUpdateItems bool) (*models.S
 	UpdatedShop.Name = Shop
 
 	if err := scrapShopTotalSales(c, UpdatedShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
+
 	}
 
 	if err := scrapShopAdmirers(c, UpdatedShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
+
 	}
 
 	if err := scrapShopvacation(c, UpdatedShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
+
 	}
 	if needUpdateItems {
 		if err := scrapShopMenu(c, UpdatedShop); err != nil {
-			return nil, err
+			return nil, utils.HandleError(err)
 		}
 	}
 
