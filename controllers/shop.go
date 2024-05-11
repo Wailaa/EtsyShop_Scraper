@@ -482,7 +482,7 @@ func (s *Shop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, 
 
 func (s *Shop) SoldItemsTask(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
 
-	randTimeSet := time.Duration(rand.Intn(89-10) + 10)
+	randTimeSet := time.Duration(rand.Intn(79) + 10)
 	durationUntilNextTask := time.Until(time.Now().Add(randTimeSet * time.Second))
 
 	time.AfterFunc(durationUntilNextTask, func() {
