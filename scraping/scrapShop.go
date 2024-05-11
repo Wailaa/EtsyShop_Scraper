@@ -41,40 +41,40 @@ func (sc *Scraper) ScrapShop(shopName string) (*models.Shop, error) {
 	})
 
 	if err := scrapShopDetails(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	if err := scrapShopvacation(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 	if err := scrapShopTotalSales(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	if err := scrapShopMenu(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	if err := scrapShopAdmirers(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	if err := scrapShopReviews(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	if err := scrapShopLastUpdate(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	if err := scrapShopJoinedSince(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 	if err := scrapShopMembers(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 	if err := scrapShopSocialMediaAcc(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	NewShopCollector.Visit(Shoplink + shopName)
