@@ -197,14 +197,6 @@ func GetMenuIndex(shop *models.Shop, SectionID string) int {
 	return MenuIndex
 }
 
-func StringToFloat(price string) (float64, error) {
-	result, err := strconv.ParseFloat(price, 64)
-	if err != nil {
-		return float64(0), err
-	}
-	return result, nil
-}
-
 func ReplaceSign(sentence, oldSign, newSign string) string {
 	result := strings.Replace(sentence, oldSign, newSign, -1)
 	return result
@@ -224,13 +216,13 @@ func ExtractPrices(h *colly.HTMLElement) (float64, float64) {
 		return false
 	})
 
-	SalesPriceToFloat, err := StringToFloat(SalesPrice)
+	SalesPriceToFloat, err := utils.StringToFloat(SalesPrice)
 	if err != nil {
 		log.Println(err.Error())
 		return float64(0), float64(0)
 	}
 
-	OriginalPricetoFloat, err := StringToFloat(OriginalPrice)
+	OriginalPricetoFloat, err := utils.StringToFloat(OriginalPrice)
 	if err != nil {
 		log.Println(err.Error())
 		return float64(0), float64(0)

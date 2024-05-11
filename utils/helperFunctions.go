@@ -45,3 +45,11 @@ func HandleError(err error, message ...string) error {
 	}
 	return nil
 }
+
+func StringToFloat(price string) (float64, error) {
+	result, err := strconv.ParseFloat(price, 64)
+	if err != nil {
+		return float64(0), err
+	}
+	return result, nil
+}
