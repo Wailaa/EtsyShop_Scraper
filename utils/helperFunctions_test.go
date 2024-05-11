@@ -116,3 +116,49 @@ func TestMarshalJSONData(t *testing.T) {
 	}
 
 }
+
+func TestHandleError(t *testing.T) {
+
+	tests := []struct {
+		name          string
+		message       string
+		errorCase     error
+		expectedError error
+	}{
+		{
+			name: "Error should be nil",
+
+			errorCase:     nil,
+			expectedError: nil,
+		},
+		{
+			name: "error with no additional message",
+
+			errorCase:     errors.New("just anotehr error"),
+			expectedError: errors.New("error: just anotehr error"),
+		},
+		{
+			name:          "error with  additional message",
+			message:       "another additional message",
+			errorCase:     errors.New("just anotehr error"),
+			expectedError: errors.New("another additional message: just anotehr error"),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var err error
+			if len(tc.message) > 0 {
+				err = utils.HandleError(tc.errorCase, tc.message)
+
+			} else {
+				err = utils.HandleError(tc.errorCase)
+			}
+			if tc.errorCase == nil {
+				assert.NoError(t, err, "Error should be nil")
+			} else {
+				assert.EqualError(t, err, tc.expectedError.Error(), "Error message should match")
+			}
+		})
+	}
+}

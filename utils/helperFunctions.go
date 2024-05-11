@@ -2,6 +2,8 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"math/rand"
 	"strconv"
 	"time"
@@ -31,4 +33,15 @@ func MarshalJSONData(data interface{}) ([]byte, error) {
 	}
 
 	return jsonData, nil
+}
+
+func HandleError(err error, message ...string) error {
+	if err != nil {
+		log.Println(err)
+		if len(message) > 0 {
+			return fmt.Errorf("%s: %w", message[0], err)
+		}
+		return fmt.Errorf("error: %w", err)
+	}
+	return nil
 }
