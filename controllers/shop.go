@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -546,9 +545,11 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 
 	for _, sales := range dailyShopSales {
 
-		dateCreated := sales.CreatedAt.Format("2006-01-02")
+		day := sales.CreatedAt.UTC().Truncate(24 * time.Hour)
+		soldItems, _ := s.GetSoldItemsInRange(day, ShopID)
 
-		if len(sales.SoldItems) == 0 {
+		dateCreated := sales.CreatedAt.Format("2006-01-02")
+		if len(soldItems) == 0 {
 			stats[dateCreated] = DailySoldStats{
 				TotalSales:   sales.TotalSales,
 				DailyRevenue: sales.DailyRevenue,
