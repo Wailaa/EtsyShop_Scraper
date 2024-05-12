@@ -637,19 +637,9 @@ func (s *Shop) UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uin
 
 	now := time.Now().UTC().Truncate(24 * time.Hour)
 
-	UpdatedSoldItemIDs := []uint{}
-	for _, UpdatedSoldItem := range ScrappedSoldItems {
-		UpdatedSoldItemIDs = append(UpdatedSoldItemIDs, UpdatedSoldItem.ID)
-	}
-
-	jsonArray, err := utils.MarshalJSONData(UpdatedSoldItemIDs)
-	if err != nil {
-		return utils.HandleError(err, "error marshaling JSON")
-	}
-
 	dailyRevenue = RoundToTwoDecimalDigits(dailyRevenue)
 
-	if err = s.DB.Model(&models.DailyShopSales{}).Where("created_at > ?", now).Where("shop_id = ?", ShopID).Updates(&models.DailyShopSales{SoldItems: jsonArray, DailyRevenue: dailyRevenue}).Error; err != nil {
+	if err := s.DB.Model(&models.DailyShopSales{}).Where("created_at > ?", now).Where("shop_id = ?", ShopID).Updates(&models.DailyShopSales{DailyRevenue: dailyRevenue}).Error; err != nil {
 		return utils.HandleError(err)
 	}
 

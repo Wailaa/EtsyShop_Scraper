@@ -208,8 +208,8 @@ func TestStartShopUpdate_UpdatesSuccess(t *testing.T) {
 
 	for i := 1; i < 3; i++ {
 		sqlMock.ExpectBegin()
-		sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "daily_shop_sales" ("created_at","updated_at","deleted_at","shop_id","total_sales","admirers","daily_revenue","sold_items") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "id"`)).
-			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), i, 101, 10, float64(0), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"1", "2"}))
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "daily_shop_sales" ("created_at","updated_at","deleted_at","shop_id","total_sales","admirers","daily_revenue") VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING "id"`)).
+			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), i, 101, 10, float64(0)).WillReturnRows(sqlmock.NewRows([]string{"1", "2"}))
 		sqlMock.ExpectCommit()
 
 		sqlMock.ExpectBegin()
@@ -266,8 +266,8 @@ func TestStartShopUpdate_OneUpdate(t *testing.T) {
 		WillReturnRows(menuRows)
 	for i := 1; i < 3; i++ {
 		sqlMock.ExpectBegin()
-		sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "daily_shop_sales" ("created_at","updated_at","deleted_at","shop_id","total_sales","admirers","daily_revenue","sold_items") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "id"`)).
-			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), i, 100, 2, float64(0), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"1", "2"}))
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "daily_shop_sales" ("created_at","updated_at","deleted_at","shop_id","total_sales","admirers","daily_revenue") VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING "id"`)).
+			WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), i, 100, 2, float64(0)).WillReturnRows(sqlmock.NewRows([]string{"1", "2"}))
 		sqlMock.ExpectCommit()
 	}
 	err := updateDB.StartShopUpdate(false, MockedScrapper)
@@ -725,6 +725,7 @@ func TestApplyUpdated_Fail(t *testing.T) {
 		OriginalPrice: 40,
 		Available:     true,
 	}
+	NewItem.ID = uint(2)
 
 	ExistingItem := models.Item{}
 	ExistingItem.ID = 0
@@ -737,7 +738,7 @@ func TestApplyUpdated_Fail(t *testing.T) {
 	sqlMock.ExpectBegin()
 
 	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "updated_at"=$1,"original_price"=$2,"available"=$3,"menu_item_id"=$4 WHERE "items"."deleted_at" IS NULL AND "id" = $5`)).
-		WithArgs(sqlmock.AnyArg(), NewItem.OriginalPrice, NewItem.Available, ExistingItem.MenuItemID, 0).WillReturnError(errors.New("no item id"))
+		WithArgs(sqlmock.AnyArg(), NewItem.OriginalPrice, NewItem.Available, ExistingItem.MenuItemID, NewItem.ID).WillReturnError(errors.New("no item id"))
 	sqlMock.ExpectRollback()
 
 	scheduleUpdates.ApplyUpdated(MockedDataBase, ExistingItem, NewItem, ExistingItem.MenuItemID)
@@ -945,8 +946,8 @@ func TestCreateDailySales(t *testing.T) {
 	Admirers := 90
 
 	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "daily_shop_sales" ("created_at","updated_at","deleted_at","shop_id","total_sales","admirers","daily_revenue","sold_items") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), ShopID, TotalSales, Admirers, float64(0), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"1", "2"}))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "daily_shop_sales" ("created_at","updated_at","deleted_at","shop_id","total_sales","admirers","daily_revenue") VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING "id"`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), ShopID, TotalSales, Admirers, float64(0)).WillReturnRows(sqlmock.NewRows([]string{"1", "2"}))
 	sqlMock.ExpectCommit()
 
 	updateDB.CreateDailySales(ShopID, TotalSales, Admirers)
@@ -967,7 +968,7 @@ func TestCreateDailySales_Fail(t *testing.T) {
 	Admirers := 90
 
 	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "daily_shop_sales" ("created_at","updated_at","deleted_at","shop_id","total_sales","admirers","daily_revenue","sold_items") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "id"`)).
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "daily_shop_sales" ("created_at","updated_at","deleted_at","shop_id","total_sales","admirers","daily_revenue") VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING "id"`)).
 		WillReturnError(errors.New("error while handling database operation"))
 	sqlMock.ExpectRollback()
 

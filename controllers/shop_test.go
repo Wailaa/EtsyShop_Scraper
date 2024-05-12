@@ -20,7 +20,6 @@ import (
 	"EtsyScraper/models"
 	scrap "EtsyScraper/scraping"
 	setupMockServer "EtsyScraper/setupTests"
-	"EtsyScraper/utils"
 )
 
 type MockedShop struct {
@@ -707,8 +706,8 @@ func TestUpdateSellingHistory_TaskSoldItem(t *testing.T) {
 	sqlMock.ExpectCommit()
 
 	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "daily_shop_sales" SET "updated_at"=$1,"sold_items"=$2 WHERE created_at > $3 AND shop_id = $4 AND "daily_shop_sales"."deleted_at" IS NULL`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(1, 14))
+	sqlMock.ExpectExec(regexp.QuoteMeta(`updated_at"=$1 WHERE created_at > $2 AND shop_id = $3 AND "daily_shop_sales"."deleted_at" IS NULL`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(1, 14))
 	sqlMock.ExpectCommit()
 
 	err := Shop.UpdateSellingHistory(ShopExample, Task, ShopRequest)
@@ -1903,20 +1902,24 @@ func TestGetSellingStatsByPeriod_Success(t *testing.T) {
 	now := time.Now()
 	Period := now.AddDate(0, 0, -6)
 
-	DailySales := sqlmock.NewRows([]string{"id", "created_at", "ShopID", "TotalSales", "SoldItems"}).AddRow(1, now.AddDate(0, 0, -3), ShopID, 90, []byte{}).AddRow(2, now.AddDate(0, 0, -4), ShopID, 95, []byte(`[29669, 29670, 29671 ,29672 ,29673]`))
+	DailySales := sqlmock.NewRows([]string{"id", "created_at", "ShopID", "TotalSales"}).AddRow(1, now.AddDate(0, 0, -3), ShopID, 90)
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "daily_shop_sales" WHERE (shop_id = $1 AND created_at > $2) AND "daily_shop_sales"."deleted_at" IS NULL`)).WithArgs(ShopID, Period).WillReturnRows(DailySales)
-	for i := 1; i <= 5; i++ {
-		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = ($1)`)).WillReturnRows(sqlmock.NewRows([]string{"ID", "ListingID"}).AddRow(i, 1234+i))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT sold_items.* FROM "shops" JOIN shop_menus ON shops.id = shop_menus.shop_id JOIN menu_items ON shop_menus.id = menu_items.shop_menu_id JOIN items ON menu_items.id = items.menu_item_id JOIN sold_items ON items.id = sold_items.item_id WHERE (shops.id = $1 AND sold_items.created_at BETWEEN $2 AND $3) AND "shops"."deleted_at" IS NULL`)).
+		WithArgs(ShopID, sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"id", "item_id"}).AddRow(1, 1).AddRow(2, 2))
+	for i := 1; i <= 2; i++ {
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = ($1)`)).WillReturnRows(sqlmock.NewRows([]string{"ID", "ListingID"}).AddRow(i, 12).AddRow(i, 13))
+
 	}
+
 	itemsCount := 0
 	stats, _ := Shop.GetSellingStatsByPeriod(ShopID, Period)
 	for _, value := range stats {
 		itemsCount += len(value.Items)
 	}
 
-	assert.Equal(t, 2, len(stats))
-	assert.Equal(t, 5, itemsCount)
+	assert.Equal(t, 1, len(stats))
+	assert.Equal(t, 2, itemsCount)
 	assert.IsTypef(t, map[string]controllers.DailySoldStats{}, stats, "GetSellingStatsByPeriod return map[string]controllers.DailySoldStats type")
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
@@ -2145,8 +2148,8 @@ func TestUpdateDailySales_Success(t *testing.T) {
 	SoldItems := []models.SoldItems{{Name: "Example", ItemID: 1, ListingID: 12, DataShopID: "1122"}, {Name: "Example2", ItemID: 2, ListingID: 13, DataShopID: "1122"}}
 
 	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "daily_shop_sales" SET "updated_at"=$1,"daily_revenue"=$2,"sold_items"=$3 WHERE created_at > $4 AND shop_id = $5 AND "daily_shop_sales"."deleted_at" IS NULL`)).
-		WithArgs(sqlmock.AnyArg(), dailyRevenue, sqlmock.AnyArg(), sqlmock.AnyArg(), ExampleShopID).WillReturnResult(sqlmock.NewResult(1, 3))
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "daily_shop_sales" SET "updated_at"=$1,"daily_revenue"=$2 WHERE created_at > $3 AND shop_id = $4 AND "daily_shop_sales"."deleted_at" IS NULL`)).
+		WithArgs(sqlmock.AnyArg(), dailyRevenue, sqlmock.AnyArg(), ExampleShopID).WillReturnResult(sqlmock.NewResult(1, 3))
 	sqlMock.ExpectCommit()
 
 	err := Shop.UpdateDailySales(SoldItems, ExampleShopID, dailyRevenue)
@@ -2171,7 +2174,7 @@ func TestUpdateDailySales_Failed(t *testing.T) {
 	SoldItems := []models.SoldItems{{Name: "Example", ItemID: 1, ListingID: 12, DataShopID: "1122"}, {Name: "Example2", ItemID: 2, ListingID: 13, DataShopID: "1122"}}
 
 	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "daily_shop_sales" SET "updated_at"=$1,"daily_revenue"=$2,"sold_items"=$3 WHERE created_at > $4 AND shop_id = $5 AND "daily_shop_sales"."deleted_at" IS NULL`)).
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "daily_shop_sales" SET "updated_at"=$1,"daily_revenue"=$2 WHERE created_at > $3 AND shop_id = $4 AND "daily_shop_sales"."deleted_at" IS NULL`)).
 		WillReturnError(errors.New("error while saving data to dailyShopSales"))
 	sqlMock.ExpectRollback()
 
