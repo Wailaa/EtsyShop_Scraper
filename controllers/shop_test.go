@@ -2855,3 +2855,39 @@ func TestCalculateTotalRevenue(t *testing.T) {
 	revenue := controllers.CalculateTotalRevenue(soldItems, AverageItemPrice)
 	assert.Equal(t, expectedRevenue, revenue)
 }
+
+func TestGetSoldItemsInRange_success(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	implShop := controllers.Shop{DB: MockedDataBase}
+
+	ShopId := uint(2)
+	fromDate := time.Now().UTC().Truncate(24 * time.Hour)
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT sold_items.* FROM "shops" JOIN shop_menus ON shops.id = shop_menus.shop_id JOIN menu_items ON shop_menus.id = menu_items.shop_menu_id JOIN items ON menu_items.id = items.menu_item_id JOIN sold_items ON items.id = sold_items.item_id WHERE (shops.id = $1 AND sold_items.created_at BETWEEN $2 AND $3) AND "shops"."deleted_at" IS NULL`)).
+		WithArgs(ShopId, sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+	_, err := implShop.GetSoldItemsInRange(fromDate, ShopId)
+	assert.NoError(t, err)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestGetSoldItemsInRange_Fail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	implShop := controllers.Shop{DB: MockedDataBase}
+
+	ShopId := uint(2)
+	fromDate := time.Now().UTC().Truncate(24 * time.Hour)
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT sold_items.* FROM "shops" JOIN shop_menus ON shops.id = shop_menus.shop_id JOIN menu_items ON shop_menus.id = menu_items.shop_menu_id JOIN items ON menu_items.id = items.menu_item_id JOIN sold_items ON items.id = sold_items.item_id WHERE (shops.id = $1 AND sold_items.created_at BETWEEN $2 AND $3) AND "shops"."deleted_at" IS NULL`)).
+		WithArgs(ShopId, sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnError(errors.New("internal error"))
+
+	_, err := implShop.GetSoldItemsInRange(fromDate, ShopId)
+	assert.Error(t, err)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
