@@ -2518,9 +2518,11 @@ func TestGetItemsBySoldItems_Success(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase}
 
 	exampleSoldItemIds := []uint{2000, 2001, 2002, 2003, 2004}
-	SoldItems, err := utils.MarshalJSONData(exampleSoldItemIds)
-	if err != nil {
-		t.Fatalf("error while marshaling json")
+	SoldItems := make([]models.SoldItems, 5)
+
+	for index := range exampleSoldItemIds {
+		SoldItems[index].ID = exampleSoldItemIds[index]
+		SoldItems[index].ItemID = uint(index + 1)
 	}
 
 	for i, itemID := range exampleSoldItemIds {
@@ -2544,15 +2546,16 @@ func TestGetItemsBySoldItems_Fail(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase}
 
 	exampleSoldItemIds := []uint{2000, 2001, 2002, 2003, 2004}
-	SoldItems, err := utils.MarshalJSONData(exampleSoldItemIds)
-	if err != nil {
-		t.Fatalf("error while marshaling json")
-	}
+	SoldItems := make([]models.SoldItems, 5)
 
+	for index := range exampleSoldItemIds {
+		SoldItems[index].ID = exampleSoldItemIds[index]
+		SoldItems[index].ItemID = uint(index + 1)
+	}
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = ($1)`)).
 		WithArgs(exampleSoldItemIds[0]).WillReturnError(errors.New("error while processing database operations"))
 
-	_, err = implShop.GetItemsBySoldItems(SoldItems)
+	_, err := implShop.GetItemsBySoldItems(SoldItems)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "error while processing database operations")

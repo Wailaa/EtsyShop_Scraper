@@ -555,7 +555,7 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 			}
 			continue
 		}
-		items, err := s.GetItemsBySoldItems(sales.SoldItems)
+		items, err := s.GetItemsBySoldItems(soldItems)
 		if err != nil {
 			return nil, utils.HandleError(err)
 		}
@@ -764,19 +764,14 @@ func RoundToTwoDecimalDigits(value float64) float64 {
 	return math.Round(value*100) / 100
 }
 
-func (s *Shop) GetItemsBySoldItems(SoldItems []byte) ([]models.Item, error) {
+func (s *Shop) GetItemsBySoldItems(SoldItems []models.SoldItems) ([]models.Item, error) {
 
-	itemIDs := []uint{}
 	item := models.Item{}
 
 	items := []models.Item{}
 
-	if err := json.Unmarshal(SoldItems, &itemIDs); err != nil {
-		return nil, utils.HandleError(err, "error parsing sold items")
-	}
-
-	for _, itemID := range itemIDs {
-		if err := s.DB.Raw("SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = (?)", itemID).Scan(&item).Error; err != nil {
+	for _, soldItem := range SoldItems {
+		if err := s.DB.Raw("SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = (?)", soldItem.ID).Scan(&item).Error; err != nil {
 			return nil, utils.HandleError(err, "error parsing sold items")
 		}
 		items = append(items, item)
