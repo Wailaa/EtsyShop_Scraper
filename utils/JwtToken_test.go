@@ -151,7 +151,7 @@ func TestBlacklistJWT_TokenIsBlackListed(t *testing.T) {
 	_ = jwt.BlacklistJWT(mockToken)
 	err := jwt.BlacklistJWT(mockToken)
 
-	expectedErrorMessage := "token is alraedy Blacklisted"
+	expectedErrorMessage := "error: token is alraedy Blacklisted"
 
 	assert.EqualError(t, err, expectedErrorMessage)
 
@@ -168,7 +168,7 @@ func TestBlacklistJWT_TokenNotValid(t *testing.T) {
 
 	err := jwt.BlacklistJWT(&newToken)
 
-	expectedErrorMessage := "invalidate token: token contains an invalid number of segments"
+	expectedErrorMessage := "error while blacklisting token: error: invalidate token: token contains an invalid number of segments"
 	assert.EqualError(t, err, expectedErrorMessage)
 	assert.Error(t, err)
 

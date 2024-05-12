@@ -3,7 +3,6 @@ package utils
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -22,7 +21,8 @@ func (ut *Utils) CreateJwtToken(exp time.Duration, userUUID uuid.UUID) (*models.
 
 	JWTSecret := Config.JwtSecret
 	if JWTSecret == "" {
-		return nil, fmt.Errorf("failed to generate JWT Token with the current short key")
+		err := fmt.Errorf("failed to generate JWT Token with the current short key")
+		return nil, HandleError(err)
 	}
 
 	claims := jwt.MapClaims{
@@ -35,7 +35,7 @@ func (ut *Utils) CreateJwtToken(exp time.Duration, userUUID uuid.UUID) (*models.
 
 	jwtTokenString, err := jwtToken.SignedString([]byte(JWTSecret))
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate JWT Token with the following code %w", err)
+		return nil, HandleError(err, "failed to generate JWT Token with the following code")
 	}
 
 	token := models.NewToken(jwtTokenString)
@@ -48,19 +48,22 @@ func (ut *Utils) ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, erro
 	token := fmt.Sprint(*JWTToken)
 	parcedtoken, err := jwt.Parse(token, func(Token *jwt.Token) (interface{}, error) {
 		if _, ok := Token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected method: %s", Token.Header["alg"])
+			err := fmt.Errorf("unexpected method: %s", Token.Header["alg"])
+			return nil, HandleError(err)
 		}
 		return []byte(Config.JwtSecret), nil
 	})
 	if err != nil {
 		if !strings.Contains(err.Error(), "used before issued") {
-			return nil, fmt.Errorf("invalidate token: %w", err)
+			err := fmt.Errorf("invalidate token: %w", err)
+			return nil, HandleError(err)
 		}
 	}
 
 	ClaimsData, ok := parcedtoken.Claims.(jwt.MapClaims)
 	if err := ClaimsData.Valid(); err != nil || !ok {
-		return nil, fmt.Errorf("invalid claims %v", ok)
+		message := fmt.Sprintf("invalid claims %v", ok)
+		return nil, HandleError(err, message)
 	}
 
 	Claims := models.CreateClaims(ClaimsData)
@@ -72,12 +75,12 @@ func (ut *Utils) RefreshAccToken(token *models.Token) (*models.Token, error) {
 
 	refreshTokenClaims, err := ut.ValidateJWT(token)
 	if err != nil {
-		return nil, err
+		return nil, HandleError(err)
 	}
 
 	newAccessToken, err := ut.CreateJwtToken(Config.AccTokenExp, refreshTokenClaims.UserUUID)
 	if err != nil {
-		return nil, err
+		return nil, HandleError(err)
 	}
 
 	return newAccessToken, nil
@@ -86,23 +89,24 @@ func (ut *Utils) RefreshAccToken(token *models.Token) (*models.Token, error) {
 func (ut *Utils) BlacklistJWT(token *models.Token) error {
 
 	if token == models.NewToken("") {
-		return fmt.Errorf("token is missing")
+		err := fmt.Errorf("token is missing")
+		return HandleError(err)
 	}
 
 	context := context.TODO()
 
 	isBlackListed, err := ut.IsJWTBlackListed(token)
 	if isBlackListed {
-		return fmt.Errorf("token is alraedy Blacklisted")
+		err := fmt.Errorf("token is alraedy Blacklisted")
+		return HandleError(err)
 	}
 	if err != nil {
-		return err
+		return HandleError(err)
 	}
 
 	Claims, err := ut.ValidateJWT(token)
 	if err != nil {
-		log.Println("error while blacklisting token", err)
-		return err
+		return HandleError(err, "error while blacklisting token")
 	}
 
 	expiredToken := TokenBlacklistPrefix + fmt.Sprint(*token)
@@ -113,7 +117,7 @@ func (ut *Utils) BlacklistJWT(token *models.Token) error {
 
 	errToken := initializer.RedisClient.Set(context, expiredToken, "revokedToken", tokenExpire).Err()
 	if errToken != nil {
-		return fmt.Errorf(errToken.Error())
+		return HandleError(errToken)
 	}
 
 	return nil
@@ -125,7 +129,8 @@ func (ut *Utils) IsJWTBlackListed(token *models.Token) (bool, error) {
 
 	checkInBlackList := initializer.RedisClient.Exists(context, blacklistedToken)
 	if checkInBlackList.Err() != nil {
-		return false, fmt.Errorf("error while checking blacklist: %v", checkInBlackList.Err())
+		err := fmt.Errorf("error while checking blacklist: %v", checkInBlackList.Err())
+		return false, HandleError(err)
 	}
 
 	if checkInBlackList.Val() > 0 {

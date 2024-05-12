@@ -12,6 +12,7 @@ import (
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
 	scrap "EtsyScraper/scraping"
+	"EtsyScraper/utils"
 )
 
 type UpdateDB struct {
@@ -72,7 +73,7 @@ func ScheduleScrapUpdate(c CronJob) error {
 		}
 	})
 	if FuncError != nil {
-		return FuncError
+		return utils.HandleError(FuncError)
 	}
 	c.Start()
 	return nil
@@ -84,16 +85,14 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 
 	Shops, err := u.GetAllShops()
 	if err != nil {
-		log.Println("error while retrieving Shops rows. error :", err)
-		return err
+		return utils.HandleError(err, "error while retrieving Shops rows.")
 	}
 
 	for _, Shop := range *Shops {
 
 		updatedShop, err := scraper.CheckForUpdates(Shop.Name, needUpdateItems)
 		if err != nil {
-			log.Println("error while scraping Shop. error :", err)
-			return err
+			return utils.HandleError(err, "error while scraping Shop. error")
 		}
 
 		NewSoldItems := updatedShop.TotalSales - Shop.TotalSales
@@ -114,8 +113,7 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 		}
 
 		if err := u.CreateDailySales(Shop.ID, updatedShop.TotalSales, updatedShop.Admirers); err != nil {
-
-			return err
+			return utils.HandleError(err)
 		}
 
 		if NewAdmirers > 0 || NewSoldItems > 0 {
@@ -151,8 +149,7 @@ func (u *UpdateDB) GetAllShops() (*[]models.Shop, error) {
 	AllShops := &[]models.Shop{}
 
 	if err := u.DB.Preload("ShopMenu.Menu").Find(AllShops).Error; err != nil {
-		log.Println("error while retrieving shops data , error :", err)
-		return nil, err
+		return nil, utils.HandleError(err, "error while retrieving shops data")
 	}
 
 	return AllShops, nil
@@ -292,7 +289,7 @@ func (u *UpdateDB) HandleOutOfProductionItems(dataShopID string, OutOfProduction
 func (u *UpdateDB) AddNewItem(item models.Item) error {
 
 	if err := u.DB.Create(&item).Error; err != nil {
-		return err
+		return utils.HandleError(err)
 	}
 
 	log.Println("new item created : ", item)
@@ -309,7 +306,7 @@ func (u *UpdateDB) AddNewItem(item models.Item) error {
 	}
 
 	if err := u.DB.Create(changeRecords).Error; err != nil {
-		return err
+		return utils.HandleError(err)
 	}
 
 	return nil
@@ -339,7 +336,7 @@ func (u *UpdateDB) CreateDailySales(ShopID uint, TotalSales, Admirers int) error
 	}
 
 	if err := u.DB.Create(&dailySales).Error; err != nil {
-		return err
+		return utils.HandleError(err)
 	}
 	return nil
 }

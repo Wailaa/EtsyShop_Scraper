@@ -152,15 +152,15 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 	defer queueMutex.Unlock()
 	scrappedShop, err := s.Scraper.ScrapShop(ShopRequest.ShopName)
 	if err != nil {
-		log.Println("failed to initiate Shop while handling ShopRequest.ID: ", ShopRequest.ID)
-		return err
+		message := fmt.Sprintf("failed to initiate Shop while handling ShopRequest.ID: %v", ShopRequest.ID)
+		return utils.HandleError(err, message)
 	}
 
 	scrappedShop.CreatedByUserID = ShopRequest.AccountID
 
 	err = s.SaveShopToDB(scrappedShop, ShopRequest)
 	if err != nil {
-		return err
+		return utils.HandleError(err)
 	}
 
 	log.Println("starting Shop's menu scraping for ShopRequest.ID: ", ShopRequest.ID)
@@ -169,7 +169,8 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 
 	err = s.UpdateShopMenuToDB(scrapeMenu, ShopRequest)
 	if err != nil {
-		return err
+		return utils.HandleError(err)
+
 	}
 
 	Task := new(models.TaskSchedule)
@@ -180,9 +181,8 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 		if err := s.Process.ExecuteUpdateSellingHistory(s, scrapeMenu, Task, ShopRequest); err != nil {
 			ShopRequest.Status = "failed"
 			s.Process.CreateShopRequest(ShopRequest)
-			log.Println("Shop's selling history failed for ShopRequest.ID: ", ShopRequest.ID)
-
-			return err
+			message := fmt.Sprintf("Shop's selling history failed for ShopRequest.ID: %v", ShopRequest.ID)
+			return utils.HandleError(err, message)
 
 		}
 	} else {
@@ -198,18 +198,19 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 	if err != nil {
 		ShopRequest.Status = "failed"
 		s.Process.CreateShopRequest(ShopRequest)
-		log.Println("Shop's selling history failed while initiating UpdateDiscontinuedItems for ShopRequest.ID: ", ShopRequest.ID)
 
-		return err
+		message := fmt.Sprintf("Shop's selling history failed while initiating UpdateDiscontinuedItems for ShopRequest.ID: %v", ShopRequest.ID)
+		return utils.HandleError(err, message)
 	}
 
 	if len(ScrappedSoldItems) == 0 {
-		return fmt.Errorf("empty scrapped Sold data")
+		err := fmt.Errorf("empty scrapped Sold data")
+		return utils.HandleError(err)
 	}
 
 	AllItems, err := s.Process.GetItemsByShopID(Shop.ID)
 	if err != nil {
-		return err
+		return utils.HandleError(err)
 	}
 
 	ScrappedSoldItems, dailyRevenue := PopulateItemIDsFromListings(ScrappedSoldItems, AllItems)
@@ -217,13 +218,13 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 	ScrappedSoldItems = ReverseSoldItems(ScrappedSoldItems)
 
 	if err = s.SaveSoldItemsToDB(ScrappedSoldItems); err != nil {
-		return err
+		return utils.HandleError(err)
 	}
 
 	if Task.UpdateSoldItems > 0 {
 
 		if err = s.UpdateDailySales(ScrappedSoldItems, Shop.ID, dailyRevenue); err != nil {
-			return err
+			return utils.HandleError(err)
 		}
 	}
 
@@ -249,21 +250,19 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 
 	getAllItems, err := s.Process.GetItemsByShopID(Shop.ID)
 	if err != nil {
-		log.Println(err)
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 	SoldOutItems := FilterSoldOutItems(scrapSoldItems, getAllItems, FilterSoldItems)
 
 	isOutOfProduction, err := s.CheckAndUpdateOutOfProdMenu(Shop.ShopMenu.Menu, SoldOutItems, ShopRequest)
 	if err != nil {
-		log.Println(err)
-		return nil, err
+		return nil, utils.HandleError(err)
+
 	}
 
 	if len(SoldOutItems) != 0 && !isOutOfProduction {
 		if err := s.CreateOutOfProdMenu(Shop, SoldOutItems, ShopRequest); err != nil {
-			log.Println(err)
-			return nil, err
+			return nil, utils.HandleError(err)
 		}
 
 	}
@@ -329,15 +328,13 @@ func (s *Shop) UnFollowShop(ctx *gin.Context) {
 func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 
 	if err := s.DB.Preload("Member").Preload("ShopMenu.Menu").Preload("Reviews.ReviewsTopic").Where("id = ?", ID).First(&shop).Error; err != nil {
-		log.Println("no Shop was Found ")
+		return nil, utils.HandleError(err, "no Shop was Found ")
 
-		return nil, err
 	}
 
 	shop.AverageItemsPrice, err = s.Process.GetAverageItemPrice(shop.ID)
 	if err != nil {
-		log.Println("error while calculating item avearage price")
-		return nil, err
+		return nil, utils.HandleError(err, "error while calculating item avearage price")
 	}
 
 	if !shop.HasSoldHistory {
@@ -347,8 +344,7 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 
 	shop.Revenue, err = s.Process.ExecuteGetTotalRevenue(s, shop.ID, shop.AverageItemsPrice)
 	if err != nil {
-		log.Println("error while calculating shop's revenue")
-		return nil, err
+		return nil, utils.HandleError(err, "error while calculating shop's revenue")
 	}
 
 	return
@@ -389,10 +385,10 @@ func (s *Shop) HandleGetItemsByShopID(ctx *gin.Context) {
 
 func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
 	itemCount := itemsCount{}
+
 	items, err := s.Process.GetItemsByShopID(ID)
 	if err != nil {
-		log.Println("error while calculating item average price")
-		return itemCount, err
+		return itemCount, utils.HandleError(err, "error while calculating item average price")
 	}
 	for _, item := range items {
 		if item.Available {
@@ -427,18 +423,15 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 
 	AllItems, err := s.Process.GetItemsByShopID(ID)
 	if err != nil {
-		log.Println("items where not found ")
-		return nil, err
+		return nil, utils.HandleError(err, "items here not found ")
 	}
 
 	for _, item := range AllItems {
 		listingIDs = append(listingIDs, item.ListingID)
 	}
 
-	result := s.DB.Where("listing_id IN ?", listingIDs).Find(&Solditems)
-	if result.Error != nil {
-		log.Println("items where not found ")
-		return nil, result.Error
+	if err := s.DB.Where("listing_id IN ?", listingIDs).Find(&Solditems).Error; err != nil {
+		return nil, utils.HandleError(err, "items were not found ")
 	}
 
 	soldQuantity := map[uint]int{}
@@ -481,8 +474,7 @@ func (s *Shop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, 
 
 	soldItems, err := s.Process.ExecuteGetSoldItemsByShopID(s, ShopID)
 	if err != nil {
-		log.Println("error while calculating revenue", err)
-		return 0, err
+		return 0, utils.HandleError(err, "error while calculating revenue")
 	}
 	revenue := CalculateTotalRevenue(soldItems, AverageItemPrice)
 	return revenue, nil
@@ -490,7 +482,7 @@ func (s *Shop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, 
 
 func (s *Shop) SoldItemsTask(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
 
-	randTimeSet := time.Duration(rand.Intn(89-10) + 10)
+	randTimeSet := time.Duration(rand.Intn(79) + 10)
 	durationUntilNextTask := time.Until(time.Now().Add(randTimeSet * time.Second))
 
 	time.AfterFunc(durationUntilNextTask, func() {
@@ -549,8 +541,7 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 	stats := make(map[string]DailySoldStats)
 
 	if err := s.DB.Where("shop_id = ? AND created_at > ?", ShopID, timePeriod).Find(&dailyShopSales).Error; err != nil {
-		log.Println(err)
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	for _, sales := range dailyShopSales {
@@ -566,7 +557,7 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 		}
 		items, err := s.GetItemsBySoldItems(sales.SoldItems)
 		if err != nil {
-			return nil, err
+			return nil, utils.HandleError(err)
 		}
 
 		stats[dateCreated] = DailySoldStats{
@@ -583,10 +574,10 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 func (s *Shop) SaveShopToDB(scrappedShop *models.Shop, ShopRequest *models.ShopRequest) error {
 
 	if err := s.DB.Create(scrappedShop).Error; err != nil {
-		log.Println("failed to save Shop's data while handling ShopRequest.ID: ", ShopRequest.ID)
 		ShopRequest.Status = "failed"
 		s.Process.CreateShopRequest(ShopRequest)
-		return err
+		message := fmt.Sprintf("failed to save Shop's data while handling ShopRequest.ID: %v", ShopRequest.ID)
+		return utils.HandleError(err, message)
 	}
 
 	log.Println("Shop's data saved successfully while handling ShopRequest.ID: ", ShopRequest.ID)
@@ -597,9 +588,9 @@ func (s *Shop) UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopReq
 
 	if err := s.DB.Save(Shop).Error; err != nil {
 		ShopRequest.Status = "failed"
-		log.Println("failed to save Shop's menu into database for ShopRequest.ID: ", ShopRequest.ID)
 		s.Process.CreateShopRequest(ShopRequest)
-		return err
+		message := fmt.Sprintf("failed to save Shop's menu into database for ShopRequest.ID: %v", ShopRequest.ID)
+		return utils.HandleError(err, message)
 	}
 
 	ShopRequest.Status = "done"
@@ -619,8 +610,7 @@ func (s *Shop) SaveSoldItemsToDB(ScrappedSoldItems []models.SoldItems) error {
 	err := s.DB.Create(&ScrappedSoldItems).Error
 
 	if err != nil {
-		log.Println("Shop's selling history failed while saving to database")
-		return err
+		return utils.HandleError(err, "Shop's selling history failed while saving to database")
 	}
 	return nil
 }
@@ -636,13 +626,13 @@ func (s *Shop) UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uin
 
 	jsonArray, err := utils.MarshalJSONData(UpdatedSoldItemIDs)
 	if err != nil {
-		log.Println("Error marshaling JSON:", err)
-		return err
+		return utils.HandleError(err, "error marshaling JSON")
 	}
+
 	dailyRevenue = RoundToTwoDecimalDigits(dailyRevenue)
 
 	if err = s.DB.Model(&models.DailyShopSales{}).Where("created_at > ?", now).Where("shop_id = ?", ShopID).Updates(&models.DailyShopSales{SoldItems: jsonArray, DailyRevenue: dailyRevenue}).Error; err != nil {
-		return err
+		return utils.HandleError(err)
 	}
 
 	return nil
@@ -680,7 +670,7 @@ func (s *Shop) CheckAndUpdateOutOfProdMenu(AllMenus []models.MenuItem, SoldOutIt
 			AllMenus[index].Items = append(menu.Items, SoldOutItems...)
 
 			if err := s.DB.Save(&AllMenus[index]).Error; err != nil {
-				return false, err
+				return false, utils.HandleError(err)
 			}
 			ShopRequest.Status = "OutOfProduction Successfully updated"
 			s.Process.CreateShopRequest(ShopRequest)
@@ -702,7 +692,7 @@ func (s *Shop) CreateOutOfProdMenu(Shop *models.Shop, SoldOutItems []models.Item
 
 	Shop.ShopMenu.Menu = append(Shop.ShopMenu.Menu, Menu)
 	if err := s.DB.Save(Shop).Error; err != nil {
-		return err
+		return utils.HandleError(err)
 	}
 
 	log.Println("Out Of Production successfully created for ShopRequest.ID: ", ShopRequest.ID)
@@ -728,31 +718,27 @@ func (s *Shop) UpdateAccountShopRelation(requestedShop *models.Shop, UserID uuid
 	account := &models.Account{}
 
 	if err := s.DB.Preload("ShopsFollowing").Where("id = ?", UserID).First(&account).Error; err != nil {
-		log.Println(err)
-		return err
+		return utils.HandleError(err)
 	}
 
 	if err := s.DB.Model(&account).Association("ShopsFollowing").Delete(requestedShop); err != nil {
-		log.Println(err)
-		return err
+		return utils.HandleError(err)
 	}
 	return nil
 }
 
 func (s *Shop) EstablishAccountShopRelation(requestedShop *models.Shop, userID uuid.UUID) error {
-	utils := &utils.Utils{}
-	currentAccount, err := NewUserController(s.DB, utils).GetAccountByID(userID)
+	Utils := &utils.Utils{}
+	currentAccount, err := NewUserController(s.DB, Utils).GetAccountByID(userID)
 	if err != nil {
-		log.Println(err)
-		return err
+		return utils.HandleError(err)
 	}
 
 	currentAccount.ShopsFollowing = append(currentAccount.ShopsFollowing, *requestedShop)
 	if err := s.DB.Save(&currentAccount).Error; err != nil {
-		log.Println(err)
-		return err
-
+		return utils.HandleError(err)
 	}
+
 	return nil
 }
 
@@ -768,13 +754,12 @@ func (s *Shop) GetItemsBySoldItems(SoldItems []byte) ([]models.Item, error) {
 	items := []models.Item{}
 
 	if err := json.Unmarshal(SoldItems, &itemIDs); err != nil {
-		log.Println("Error parsing sold items:", err)
-		return nil, err
+		return nil, utils.HandleError(err, "error parsing sold items")
 	}
 
 	for _, itemID := range itemIDs {
 		if err := s.DB.Raw("SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = (?)", itemID).Scan(&item).Error; err != nil {
-			return nil, err
+			return nil, utils.HandleError(err, "error parsing sold items")
 		}
 		items = append(items, item)
 	}
@@ -833,12 +818,12 @@ func (ps *ShopCreators) ExecuteGetSellingStatsByPeriod(dispatch ExecShopMethodPr
 
 func (pr *ShopCreators) CreateShopRequest(ShopRequest *models.ShopRequest) error {
 	if ShopRequest.AccountID == uuid.Nil {
-		return errors.New("no AccountID was passed")
+		err := errors.New("no AccountID was passed")
+		return utils.HandleError(err)
 	}
 
 	if err := pr.DB.Save(ShopRequest).Error; err != nil {
-		log.Println(err)
-		return err
+		return utils.HandleError(err)
 	}
 
 	return nil
@@ -847,8 +832,7 @@ func (pr *ShopCreators) CreateShopRequest(ShopRequest *models.ShopRequest) error
 func (pr *ShopCreators) GetShopByName(ShopName string) (shop *models.Shop, err error) {
 
 	if err = pr.DB.Preload("Member").Preload("ShopMenu.Menu.Items").Preload("Reviews.ReviewsTopic").Where("name = ?", ShopName).First(&shop).Error; err != nil {
-		log.Println("no Shop was Found ,error :", err)
-		return nil, err
+		return nil, utils.HandleError(err, "no Shop was Found ,error")
 	}
 	return
 }
@@ -856,8 +840,7 @@ func (pr *ShopCreators) GetShopByName(ShopName string) (shop *models.Shop, err e
 func (ps *ShopCreators) GetItemsByShopID(ID uint) (items []models.Item, err error) {
 	shop := &models.Shop{}
 	if err := ps.DB.Preload("ShopMenu.Menu.Items").Where("id = ?", ID).First(shop).Error; err != nil {
-		log.Println("no Shop was Found")
-		return nil, err
+		return nil, utils.HandleError(err, "no Shop was Found")
 	}
 
 	for _, menu := range shop.ShopMenu.Menu {
@@ -877,7 +860,7 @@ func (s *ShopCreators) GetAverageItemPrice(ShopID uint) (float64, error) {
 		Select("AVG(items.original_price) as average_price").
 		Row().Scan(&averagePrice); err != nil {
 
-		return 0, err
+		return 0, utils.HandleError(err)
 	}
 	averagePrice = RoundToTwoDecimalDigits(averagePrice)
 

@@ -440,69 +440,6 @@ func TestGetMenuIndex(t *testing.T) {
 
 }
 
-func TestStringToFloat(t *testing.T) {
-	tests := []struct {
-		Price  string
-		result float64
-		err    error
-	}{
-		{
-			Price:  "19.7",
-			result: 19.7,
-		},
-		{
-			Price:  "1.8",
-			result: 1.8,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.Price, func(t *testing.T) {
-			actual, _ := StringToFloat(tc.Price)
-			if actual != tc.result {
-				t.Errorf("Expected StringToFloat to be %v, but got %v", tc.result, actual)
-			}
-		})
-	}
-}
-
-func TestReplaceSign(t *testing.T) {
-	tests := []struct {
-		Price    string
-		oldSign  string
-		newSign  string
-		expected string
-	}{
-		{
-			Price:    "1,232$",
-			oldSign:  ",",
-			newSign:  "",
-			expected: "1232$",
-		},
-		{
-			Price:    "1,232$",
-			oldSign:  ",",
-			newSign:  "",
-			expected: "1232$",
-		},
-		{
-			Price:    "1232$",
-			oldSign:  ".",
-			newSign:  "",
-			expected: "1232$",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.Price, func(t *testing.T) {
-			actual := ReplaceSign(tc.Price, tc.oldSign, tc.newSign)
-			if actual != tc.expected {
-				t.Errorf("Expected StringToFloat to be %v, but got %v", tc.expected, actual)
-			}
-		})
-	}
-}
-
 func TestExtractPrices(t *testing.T) {
 
 	mockConfig := initializer.Config{

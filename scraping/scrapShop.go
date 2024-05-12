@@ -41,40 +41,40 @@ func (sc *Scraper) ScrapShop(shopName string) (*models.Shop, error) {
 	})
 
 	if err := scrapShopDetails(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	if err := scrapShopvacation(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 	if err := scrapShopTotalSales(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	if err := scrapShopMenu(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	if err := scrapShopAdmirers(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	if err := scrapShopReviews(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	if err := scrapShopLastUpdate(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	if err := scrapShopJoinedSince(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 	if err := scrapShopMembers(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 	if err := scrapShopSocialMediaAcc(NewShopCollector, NewShop); err != nil {
-		return nil, err
+		return nil, utils.HandleError(err)
 	}
 
 	NewShopCollector.Visit(Shoplink + shopName)
@@ -118,7 +118,7 @@ func scrapShopTotalSales(c *colly.Collector, shop *models.Shop) error {
 
 		TotalSales := e.ChildText("div.wt-mt-lg-5 div:first-child")
 		TotalSales = strings.Split(TotalSales, " ")[0]
-		TotalSales = ReplaceSign(TotalSales, ",", "")
+		TotalSales = utils.ReplaceSign(TotalSales, ",", "")
 		TotalSalesToInt, _ := strconv.Atoi(TotalSales)
 
 		shop.TotalSales = TotalSalesToInt
@@ -195,7 +195,7 @@ func scrapShopReviews(c *colly.Collector, shop *models.Shop) error {
 	c.OnHTML("div.reviews-total", func(e *colly.HTMLElement) {
 
 		ratings := e.ChildAttr("input", "value")
-		ratingsToFloat, _ := StringToFloat(ratings)
+		ratingsToFloat, _ := utils.StringToFloat(ratings)
 
 		totalReviews := e.ChildText("div:last-child")
 		totalReviews = totalReviews[1 : len(totalReviews)-1]

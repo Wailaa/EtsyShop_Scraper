@@ -116,3 +116,112 @@ func TestMarshalJSONData(t *testing.T) {
 	}
 
 }
+
+func TestHandleError(t *testing.T) {
+
+	tests := []struct {
+		name          string
+		message       string
+		errorCase     error
+		expectedError error
+	}{
+		{
+			name: "Error should be nil",
+
+			errorCase:     nil,
+			expectedError: nil,
+		},
+		{
+			name: "error with no additional message",
+
+			errorCase:     errors.New("just anotehr error"),
+			expectedError: errors.New("error: just anotehr error"),
+		},
+		{
+			name:          "error with  additional message",
+			message:       "another additional message",
+			errorCase:     errors.New("just anotehr error"),
+			expectedError: errors.New("another additional message: just anotehr error"),
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var err error
+			if len(tc.message) > 0 {
+				err = utils.HandleError(tc.errorCase, tc.message)
+
+			} else {
+				err = utils.HandleError(tc.errorCase)
+			}
+			if tc.errorCase == nil {
+				assert.NoError(t, err, "Error should be nil")
+			} else {
+				assert.EqualError(t, err, tc.expectedError.Error(), "Error message should match")
+			}
+		})
+	}
+}
+
+func TestStringToFloat(t *testing.T) {
+	tests := []struct {
+		Price  string
+		result float64
+		err    error
+	}{
+		{
+			Price:  "19.7",
+			result: 19.7,
+		},
+		{
+			Price:  "1.8",
+			result: 1.8,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.Price, func(t *testing.T) {
+			actual, _ := utils.StringToFloat(tc.Price)
+			if actual != tc.result {
+				t.Errorf("Expected StringToFloat to be %v, but got %v", tc.result, actual)
+			}
+		})
+	}
+}
+
+func TestReplaceSign(t *testing.T) {
+	tests := []struct {
+		Price    string
+		oldSign  string
+		newSign  string
+		expected string
+	}{
+		{
+			Price:    "1,232$",
+			oldSign:  ",",
+			newSign:  "",
+			expected: "1232$",
+		},
+		{
+			Price:    "1,232$",
+			oldSign:  ",",
+			newSign:  "",
+			expected: "1232$",
+		},
+		{
+			Price:    "1232$",
+			oldSign:  ".",
+			newSign:  "",
+			expected: "1232$",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.Price, func(t *testing.T) {
+			actual := utils.ReplaceSign(tc.Price, tc.oldSign, tc.newSign)
+			if actual != tc.expected {
+				t.Errorf("Expected StringToFloat to be %v, but got %v", tc.expected, actual)
+			}
+		})
+	}
+}

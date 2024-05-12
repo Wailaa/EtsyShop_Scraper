@@ -197,42 +197,29 @@ func GetMenuIndex(shop *models.Shop, SectionID string) int {
 	return MenuIndex
 }
 
-func StringToFloat(price string) (float64, error) {
-	result, err := strconv.ParseFloat(price, 64)
-	if err != nil {
-		return float64(0), err
-	}
-	return result, nil
-}
-
-func ReplaceSign(sentence, oldSign, newSign string) string {
-	result := strings.Replace(sentence, oldSign, newSign, -1)
-	return result
-}
-
 func ExtractPrices(h *colly.HTMLElement) (float64, float64) {
 	OriginalPrice := h.ChildText("span.currency-value")
-	OriginalPrice = ReplaceSign(OriginalPrice, ",", "")
+	OriginalPrice = utils.ReplaceSign(OriginalPrice, ",", "")
 	SalesPrice := "-1"
 	h.ForEachWithBreak("p.search-collage-promotion-price", func(i int, g *colly.HTMLElement) bool {
 		SalesPrice = h.DOM.Find("span.currency-value").Eq(0).Text()
-		SalesPrice = ReplaceSign(SalesPrice, ",", "")
+		SalesPrice = utils.ReplaceSign(SalesPrice, ",", "")
 
 		OriginalPrice = g.ChildText("span.currency-value")
-		OriginalPrice = ReplaceSign(OriginalPrice, ",", "")
+		OriginalPrice = utils.ReplaceSign(OriginalPrice, ",", "")
 
 		return false
 	})
 
-	SalesPriceToFloat, err := StringToFloat(SalesPrice)
+	SalesPriceToFloat, err := utils.StringToFloat(SalesPrice)
 	if err != nil {
-		log.Println(err.Error())
+		utils.HandleError(nil, err.Error())
 		return float64(0), float64(0)
 	}
 
-	OriginalPricetoFloat, err := StringToFloat(OriginalPrice)
+	OriginalPricetoFloat, err := utils.StringToFloat(OriginalPrice)
 	if err != nil {
-		log.Println(err.Error())
+		utils.HandleError(nil, err.Error())
 		return float64(0), float64(0)
 	}
 
@@ -244,7 +231,7 @@ func HandleItem(h *colly.HTMLElement, MenuID uint) models.Item {
 	ListingID := h.Attr("data-listing-id")
 	ListingIDToUint64, err := utils.StringToUint(ListingID)
 	if err != nil {
-		log.Println(err.Error())
+		utils.HandleError(nil, err.Error())
 	}
 
 	newItem.ListingID = ListingIDToUint64

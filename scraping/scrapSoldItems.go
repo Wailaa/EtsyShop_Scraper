@@ -94,7 +94,7 @@ func scrapSoldItems(c *colly.Collector) *[]models.SoldItems {
 			ListingID := h.Attr("data-listing-id")
 			ListingIDToUint64, err := utils.StringToUint(ListingID)
 			if err != nil {
-				log.Println(err.Error())
+				utils.HandleError(nil, err.Error())
 				return
 			}
 			ListingIDToUint := uint(ListingIDToUint64)
@@ -182,7 +182,7 @@ func ExtractPageNumber(url string, Task *models.TaskSchedule) *models.TaskSchedu
 	}
 	page, err := strconv.Atoi(splitURL[1])
 	if err != nil {
-		log.Println("error while extracting page number", err)
+		utils.HandleError(nil, "error while extracting page number")
 		return nil
 	}
 	Task.CurrentPage = page
