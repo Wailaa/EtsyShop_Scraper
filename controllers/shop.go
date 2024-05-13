@@ -575,7 +575,7 @@ func (s *Shop) CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[stri
 
 	for _, sales := range dailyShopSales {
 
-		day := sales.CreatedAt.UTC().Truncate(24 * time.Hour)
+		day := utils.TruncateDate(sales.CreatedAt)
 
 		soldItems, err := s.GetSoldItemsInRange(day, sales.ShopID)
 		if err != nil {
@@ -671,7 +671,7 @@ func (s *Shop) SaveSoldItemsToDB(ScrappedSoldItems []models.SoldItems) error {
 
 func (s *Shop) UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uint, dailyRevenue float64) error {
 
-	now := time.Now().UTC().Truncate(24 * time.Hour)
+	now := utils.TruncateDate(time.Now())
 
 	dailyRevenue = RoundToTwoDecimalDigits(dailyRevenue)
 

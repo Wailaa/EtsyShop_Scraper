@@ -20,6 +20,7 @@ import (
 	"EtsyScraper/models"
 	scrap "EtsyScraper/scraping"
 	setupMockServer "EtsyScraper/setupTests"
+	"EtsyScraper/utils"
 )
 
 type MockedShop struct {
@@ -2870,7 +2871,7 @@ func TestGetSoldItemsInRange_success(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase}
 
 	ShopId := uint(2)
-	fromDate := time.Now().UTC().Truncate(24 * time.Hour)
+	fromDate := utils.TruncateDate(time.Now())
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT sold_items.* FROM "shops" JOIN shop_menus ON shops.id = shop_menus.shop_id JOIN menu_items ON shop_menus.id = menu_items.shop_menu_id JOIN items ON menu_items.id = items.menu_item_id JOIN sold_items ON items.id = sold_items.item_id WHERE (shops.id = $1 AND sold_items.created_at BETWEEN $2 AND $3) AND "shops"."deleted_at" IS NULL`)).
 		WithArgs(ShopId, sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
@@ -2888,7 +2889,7 @@ func TestGetSoldItemsInRange_Fail(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase}
 
 	ShopId := uint(2)
-	fromDate := time.Now().UTC().Truncate(24 * time.Hour)
+	fromDate := utils.TruncateDate(time.Now())
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT sold_items.* FROM "shops" JOIN shop_menus ON shops.id = shop_menus.shop_id JOIN menu_items ON shop_menus.id = menu_items.shop_menu_id JOIN items ON menu_items.id = items.menu_item_id JOIN sold_items ON items.id = sold_items.item_id WHERE (shops.id = $1 AND sold_items.created_at BETWEEN $2 AND $3) AND "shops"."deleted_at" IS NULL`)).
 		WithArgs(ShopId, sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnError(errors.New("internal error"))
