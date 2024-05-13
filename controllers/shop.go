@@ -157,8 +157,7 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 
 	scrappedShop.CreatedByUserID = ShopRequest.AccountID
 
-	err = s.SaveShopToDB(scrappedShop, ShopRequest)
-	if err != nil {
+	if err = s.SaveShopToDB(scrappedShop, ShopRequest); err != nil {
 		return utils.HandleError(err)
 	}
 
@@ -166,8 +165,7 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 
 	scrapeMenu := s.Scraper.ScrapAllMenuItems(scrappedShop)
 
-	err = s.UpdateShopMenuToDB(scrapeMenu, ShopRequest)
-	if err != nil {
+	if err = s.UpdateShopMenuToDB(scrapeMenu, ShopRequest); err != nil {
 		return utils.HandleError(err)
 
 	}
