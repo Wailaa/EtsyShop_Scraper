@@ -535,38 +535,14 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 
 	dailyShopSales := []models.DailyShopSales{}
 
-	stats := make(map[string]DailySoldStats)
-
 	if err := s.DB.Where("shop_id = ? AND created_at > ?", ShopID, timePeriod).Find(&dailyShopSales).Error; err != nil {
 		return nil, utils.HandleError(err)
 	}
 
-	for _, sales := range dailyShopSales {
-
-		day := sales.CreatedAt.UTC().Truncate(24 * time.Hour)
-		soldItems, _ := s.GetSoldItemsInRange(day, ShopID)
-
-		dateCreated := sales.CreatedAt.Format("2006-01-02")
-		if len(soldItems) == 0 {
-			stats[dateCreated] = DailySoldStats{
-				TotalSales:   sales.TotalSales,
-				DailyRevenue: sales.DailyRevenue,
-			}
-			continue
-		}
-		items, err := s.GetItemsBySoldItems(soldItems)
-		if err != nil {
-			return nil, utils.HandleError(err)
-		}
-
-		stats[dateCreated] = DailySoldStats{
-			TotalSales:   sales.TotalSales,
-			DailyRevenue: sales.DailyRevenue,
-			Items:        items,
-		}
-
+	stats, err := s.CreateSoldStats(dailyShopSales)
+	if err != nil {
+		return nil, utils.HandleError(err)
 	}
-
 	return stats, nil
 }
 
