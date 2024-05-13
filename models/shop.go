@@ -22,25 +22,24 @@ var ModelsGroup = []interface{}{
 
 type Shop struct {
 	gorm.Model
-	Name              string   `json:"shop_name" gorm:"type:varchar(100);not null"`
-	Description       string   `json:"shop_description" gorm:"type:varchar(255);not null"`
-	Location          string   `json:"location" gorm:"type:varchar(50);not null"`
-	TotalSales        int      `json:"shop_total_sales" gorm:"not null"`
-	JoinedSince       string   `json:"joined_since" gorm:"type:varchar(100);not null"`
-	LastUpdateTime    string   `json:"last_update_time" gorm:"type:varchar(155);not null"`
-	Admirers          int      `json:"admirers" gorm:"not null"`
-	SocialMediaLinks  []string `json:"social_media_links" gorm:"serializer:json"`
-	HasSoldHistory    bool     `json:"-" `
-	OnVacation        bool     `json:"-" `
-	Revenue           float64  `json:"revenue" gorm:"-"`
-	AverageItemsPrice float64  `json:"average_item_price" gorm:"-"`
+	Name              string    `json:"shop_name" gorm:"type:varchar(100);not null"`
+	Description       string    `json:"shop_description" gorm:"type:varchar(255);not null"`
+	Location          string    `json:"location" gorm:"type:varchar(50);not null"`
+	TotalSales        int       `json:"shop_total_sales" gorm:"not null"`
+	JoinedSince       string    `json:"joined_since" gorm:"type:varchar(100);not null"`
+	LastUpdateTime    string    `json:"last_update_time" gorm:"type:varchar(155);not null"`
+	Admirers          int       `json:"admirers" gorm:"not null"`
+	SocialMediaLinks  []string  `json:"social_media_links" gorm:"serializer:json"`
+	HasSoldHistory    bool      `json:"-" `
+	OnVacation        bool      `json:"-" `
+	Revenue           float64   `json:"revenue" gorm:"-"`
+	AverageItemsPrice float64   `json:"average_item_price" gorm:"-"`
+	CreatedByUserID   uuid.UUID `json:"-" gorm:"type:uuid"`
 
-	Member   []ShopMember `json:"shop_member" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
-	ShopMenu ShopMenu     `json:"shop_menu" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
-	Reviews  Reviews      `json:"shop_reviews" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
-
-	CreatedByUserID uuid.UUID `json:"-" gorm:"type:uuid"`
-	Followers       []Account `json:"-" gorm:"many2many:account_shop_following;constraint:OnDelete:CASCADE;"`
+	Member    []ShopMember `json:"shop_member" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
+	ShopMenu  ShopMenu     `json:"shop_menu" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
+	Reviews   Reviews      `json:"shop_reviews" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
+	Followers []Account    `json:"-" gorm:"many2many:account_shop_following;constraint:OnDelete:CASCADE;"`
 }
 
 type ShopRequest struct {
