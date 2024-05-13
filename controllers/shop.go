@@ -519,7 +519,7 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 	}
 
 	date := time.Now().AddDate(year, month, day)
-	dateMidnight := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+	dateMidnight := utils.TruncateDate(date)
 
 	LastSevenDays, err := s.Process.ExecuteGetSellingStatsByPeriod(s, ShopIDToUint, dateMidnight)
 	if err != nil {
