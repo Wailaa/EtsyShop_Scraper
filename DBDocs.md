@@ -34,6 +34,6 @@ Conclusion:
 In conclusion, the experience of building a Postgres database using Golang, Gorm, and Gin was both challenging and rewarding. It provided an opportunity to expand my technical skills, overcome obstacles, and deliver a functional solution. the code provide in my opinion more insights of  the journey while developing the app, and the challenges encountered alomg the way.
 
 this is the ER model showing the relation between keys.
-![Scraper_ERM_model](https://github.com/Wailaa/EtsyShop_Scraper/assets/45070102/8cec5705-bd8d-433b-95d6-1bd0e9349680)
+![Scraper_ERM_model](https://github.com/Wailaa/EtsyShop_Scraper/assets/45070102/34419713-335d-4265-afe3-f9373024a5dd)
 
 ![Scraper_ERM_model](https://github.com/Wailaa/EtsyShop_Scraper/assets/45070102/81b15f8c-5ea7-4274-bbed-b56f6dad4f21)
