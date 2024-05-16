@@ -2,8 +2,10 @@ package utils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -23,6 +25,9 @@ func StringToUint(text string) (uint, error) {
 	ShopIDToUint, err := strconv.ParseUint(text, 10, 64)
 	if err != nil {
 		return 0, HandleError(err)
+	}
+	if ShopIDToUint > math.MaxUint {
+		return 0, HandleError(errors.New("value out of range for uint"))
 	}
 	return uint(ShopIDToUint), nil
 }
