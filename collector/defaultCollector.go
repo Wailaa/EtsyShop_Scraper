@@ -1,7 +1,6 @@
 package collector
 
 import (
-	"crypto/tls"
 	"log"
 	"net/http"
 	"time"
@@ -32,7 +31,6 @@ func NewCollyCollector() *DefaultCollector {
 	if getProxy.Url != "" {
 		c.WithTransport(&http.Transport{
 			DisableKeepAlives: true,
-			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 		})
 
 		c.SetProxy(getProxy.Url)
