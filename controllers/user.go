@@ -185,8 +185,8 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 
 	loginResponse := s.GenerateLoginResponse(result, accessToken, refreshToken)
 
-	ctx.SetCookie("access_token", string(*accessToken), int(config.AccTokenExp.Seconds()), "/", "localhost", false, true)
-	ctx.SetCookie("refresh_token", string(*refreshToken), int(config.RefTokenExp.Seconds()), "/", "localhost", false, true)
+	ctx.SetCookie("access_token", string(*accessToken), int(config.AccTokenExp.Seconds()), "/", config.ClientOrigin, false, true)
+	ctx.SetCookie("refresh_token", string(*refreshToken), int(config.RefTokenExp.Seconds()), "/", config.ClientOrigin, false, true)
 
 	HandleResponse(ctx, nil, http.StatusOK, "", loginResponse)
 
