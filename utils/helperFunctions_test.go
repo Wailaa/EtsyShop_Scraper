@@ -225,3 +225,27 @@ func TestReplaceSign(t *testing.T) {
 		})
 	}
 }
+
+func TestTruncateDate(t *testing.T) {
+	tests := []struct {
+		input    time.Time
+		expected time.Time
+	}{
+		{
+			input:    time.Date(2024, 5, 13, 10, 30, 0, 0, time.UTC),
+			expected: time.Date(2024, 5, 13, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			input:    time.Date(2021, 12, 31, 23, 59, 59, 999, time.UTC),
+			expected: time.Date(2021, 12, 31, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	for _, test := range tests {
+		result := utils.TruncateDate(test.input)
+		if result != test.expected {
+			t.Errorf("TruncateDate(%v) = %v; want %v", test.input, result, test.expected)
+		}
+	}
+
+}

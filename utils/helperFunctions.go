@@ -64,3 +64,8 @@ func ReplaceSign(sentence, oldSign, newSign string) string {
 	result := strings.Replace(sentence, oldSign, newSign, -1)
 	return result
 }
+
+func TruncateDate(date time.Time) time.Time {
+	result := date.UTC().Truncate(24 * time.Hour)
+	return result
+}

@@ -80,7 +80,7 @@ func ScheduleScrapUpdate(c CronJob) error {
 }
 
 func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpdateProcess) error {
-	// SoldItemsQueue := UpdateSoldItemsQueue{}
+
 	SoldItemsQueueList := []UpdateSoldItemsQueue{}
 
 	Shops, err := u.GetAllShops()

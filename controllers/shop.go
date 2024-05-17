@@ -157,8 +157,7 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 
 	scrappedShop.CreatedByUserID = ShopRequest.AccountID
 
-	err = s.SaveShopToDB(scrappedShop, ShopRequest)
-	if err != nil {
+	if err = s.SaveShopToDB(scrappedShop, ShopRequest); err != nil {
 		return utils.HandleError(err)
 	}
 
@@ -166,8 +165,7 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 
 	scrapeMenu := s.Scraper.ScrapAllMenuItems(scrappedShop)
 
-	err = s.UpdateShopMenuToDB(scrapeMenu, ShopRequest)
-	if err != nil {
+	if err = s.UpdateShopMenuToDB(scrapeMenu, ShopRequest); err != nil {
 		return utils.HandleError(err)
 
 	}
@@ -521,7 +519,7 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 	}
 
 	date := time.Now().AddDate(year, month, day)
-	dateMidnight := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+	dateMidnight := utils.TruncateDate(date)
 
 	LastSevenDays, err := s.Process.ExecuteGetSellingStatsByPeriod(s, ShopIDToUint, dateMidnight)
 	if err != nil {
@@ -537,16 +535,29 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 
 	dailyShopSales := []models.DailyShopSales{}
 
-	stats := make(map[string]DailySoldStats)
-
 	if err := s.DB.Where("shop_id = ? AND created_at > ?", ShopID, timePeriod).Find(&dailyShopSales).Error; err != nil {
 		return nil, utils.HandleError(err)
 	}
 
+	stats, err := s.CreateSoldStats(dailyShopSales)
+	if err != nil {
+		return nil, utils.HandleError(err)
+	}
+	return stats, nil
+}
+
+func (s *Shop) CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[string]DailySoldStats, error) {
+	stats := make(map[string]DailySoldStats)
+
 	for _, sales := range dailyShopSales {
 
-		day := sales.CreatedAt.UTC().Truncate(24 * time.Hour)
-		soldItems, _ := s.GetSoldItemsInRange(day, ShopID)
+		day := utils.TruncateDate(sales.CreatedAt)
+
+		soldItems, err := s.GetSoldItemsInRange(day, sales.ShopID)
+		if err != nil {
+			log.Println(err)
+			return nil, utils.HandleError(err)
+		}
 
 		dateCreated := sales.CreatedAt.Format("2006-01-02")
 		if len(soldItems) == 0 {
@@ -636,7 +647,7 @@ func (s *Shop) SaveSoldItemsToDB(ScrappedSoldItems []models.SoldItems) error {
 
 func (s *Shop) UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uint, dailyRevenue float64) error {
 
-	now := time.Now().UTC().Truncate(24 * time.Hour)
+	now := utils.TruncateDate(time.Now())
 
 	dailyRevenue = RoundToTwoDecimalDigits(dailyRevenue)
 
