@@ -448,7 +448,7 @@ when requesting to create a shop.
 
 **URL** : `/shop/create_shop`
 
-**Method** : `GET`
+**Method** : `POST`
 
 **Auth required** : YES
 
@@ -511,7 +511,7 @@ when the user request to follow a shop.
 
 **URL** : `/shop/follow_shop`
 
-**Method** : `GET`
+**Method** : `POST`
 
 **Auth required** : YES
 
@@ -572,7 +572,7 @@ when the user applies password change.
 
 **URL** : `/shop/unfollow_shop`
 
-**Method** : `GET`
+**Method** : `POST`
 
 **Auth required** : YES
 
