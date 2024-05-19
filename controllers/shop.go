@@ -211,41 +211,6 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 	return scrapSoldItems, nil
 }
 
-func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
-
-	if err := s.DB.Preload("Member").Preload("ShopMenu.Menu").Preload("Reviews.ReviewsTopic").Where("id = ?", ID).First(&shop).Error; err != nil {
-		return nil, utils.HandleError(err, "no Shop was Found ")
-
-	}
-
-	shop.AverageItemsPrice, err = s.Process.GetAverageItemPrice(shop.ID)
-	if err != nil {
-		return nil, utils.HandleError(err, "error while calculating item avearage price")
-	}
-
-	if !shop.HasSoldHistory {
-		shop.Revenue = shop.AverageItemsPrice * float64(shop.TotalSales)
-		return
-	}
-
-	shop.Revenue, err = s.Process.ExecuteGetTotalRevenue(s, shop.ID, shop.AverageItemsPrice)
-	if err != nil {
-		return nil, utils.HandleError(err, "error while calculating shop's revenue")
-	}
-
-	return
-}
-
-func (s *Shop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error) {
-
-	soldItems, err := s.Process.ExecuteGetSoldItemsByShopID(s, ShopID)
-	if err != nil {
-		return 0, utils.HandleError(err, "error while calculating revenue")
-	}
-	revenue := CalculateTotalRevenue(soldItems, AverageItemPrice)
-	return revenue, nil
-}
-
 func (s *Shop) SoldItemsTask(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
 
 	randTimeSet := time.Duration(rand.Intn(79) + 10)
@@ -254,49 +219,6 @@ func (s *Shop) SoldItemsTask(Shop *models.Shop, Task *models.TaskSchedule, ShopR
 	time.AfterFunc(durationUntilNextTask, func() {
 		s.Process.ExecuteUpdateSellingHistory(s, Shop, Task, ShopRequest)
 	})
-	return nil
-}
-
-func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error) {
-
-	dailyShopSales := []models.DailyShopSales{}
-
-	if err := s.DB.Where("shop_id = ? AND created_at > ?", ShopID, timePeriod).Find(&dailyShopSales).Error; err != nil {
-		return nil, utils.HandleError(err)
-	}
-
-	stats, err := s.CreateSoldStats(dailyShopSales)
-	if err != nil {
-		return nil, utils.HandleError(err)
-	}
-	return stats, nil
-}
-
-func (s *Shop) UpdateAccountShopRelation(requestedShop *models.Shop, UserID uuid.UUID) error {
-	account := &models.Account{}
-
-	if err := s.DB.Preload("ShopsFollowing").Where("id = ?", UserID).First(&account).Error; err != nil {
-		return utils.HandleError(err)
-	}
-
-	if err := s.DB.Model(&account).Association("ShopsFollowing").Delete(requestedShop); err != nil {
-		return utils.HandleError(err)
-	}
-	return nil
-}
-
-func (s *Shop) EstablishAccountShopRelation(requestedShop *models.Shop, userID uuid.UUID) error {
-	Utils := &utils.Utils{}
-	currentAccount, err := NewUserController(s.DB, Utils).GetAccountByID(userID)
-	if err != nil {
-		return utils.HandleError(err)
-	}
-
-	currentAccount.ShopsFollowing = append(currentAccount.ShopsFollowing, *requestedShop)
-	if err := s.DB.Save(&currentAccount).Error; err != nil {
-		return utils.HandleError(err)
-	}
-
 	return nil
 }
 
