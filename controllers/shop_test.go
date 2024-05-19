@@ -3002,3 +3002,44 @@ func TestCreateSoldStats_Success_with_No_Items(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestGetAverageItemPrice_Shop_Success(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	implShop := controllers.Shop{DB: MockedDataBase}
+
+	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample.ID = uint(2)
+
+	rows := sqlmock.NewRows([]string{"average_price"}).AddRow(10.5)
+	sqlMock.ExpectQuery("SELECT AVG\\(items.original_price\\) as average_price").
+		WithArgs(2).WillReturnRows(rows)
+
+	Average, err := implShop.GetAverageItemPrice(ShopExample.ID)
+
+	assert.Equal(t, 10.5, Average)
+	assert.NoError(t, err)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
+}
+func TestGetAverageItemPrice_Shop_Fail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	implShop := controllers.Shop{DB: MockedDataBase}
+
+	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample.ID = uint(2)
+
+	sqlMock.ExpectQuery("SELECT AVG\\(items.original_price\\) as average_price").
+		WithArgs(2).WillReturnError(errors.New("Error generateing average price"))
+
+	_, err := implShop.GetAverageItemPrice(ShopExample.ID)
+
+	assert.Contains(t, err.Error(), "Error generateing average price")
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
+}
