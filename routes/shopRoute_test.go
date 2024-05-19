@@ -62,19 +62,19 @@ func TestGeneralShopRoutes(t *testing.T) {
 	}{
 		{
 			name:     "Check if CreateNewShopRequest was called",
-			method:   "GET",
+			method:   "POST",
 			path:     "/shop/create_shop",
 			isCalled: func() bool { return MockedShop.isCreateNewShopRequest },
 		},
 		{
 			name:     "Check if FollowShop was called",
-			method:   "GET",
+			method:   "POST",
 			path:     "/shop/follow_shop",
 			isCalled: func() bool { return MockedShop.isFollowShop },
 		},
 		{
 			name:     "Check if unFollowShop was called",
-			method:   "GET",
+			method:   "POST",
 			path:     "/shop/unfollow_shop",
 			isCalled: func() bool { return MockedShop.isUnFollowShop },
 		},

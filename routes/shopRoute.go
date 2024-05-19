@@ -36,9 +36,9 @@ func (us *ShopRoutes) GeneralShopRoutes(server *gin.Engine, authentication, auth
 	getShopStats := us.ShopController.ProcessStatsRequest
 	getItemsCountByShopID := us.ShopController.HandleGetItemsCountByShopID
 
-	shopRoute.GET("/create_shop", authentication, authorization, createNewShopRequest)
-	shopRoute.GET("/follow_shop", authentication, authorization, followShop)
-	shopRoute.GET("/unfollow_shop", authentication, authorization, unFollowShop)
+	shopRoute.POST("/create_shop", authentication, authorization, createNewShopRequest)
+	shopRoute.POST("/follow_shop", authentication, authorization, followShop)
+	shopRoute.POST("/unfollow_shop", authentication, authorization, unFollowShop)
 	shopRoute.GET("/:shopID", authentication, authorization, isfollowingShop, getShopByID)
 	shopRoute.GET("/:shopID/all_items", authentication, authorization, isfollowingShop, getAllItemsByShopID)
 	shopRoute.GET("/:shopID/all_sold_items", authentication, authorization, isfollowingShop, getAllSoldItemsByShopID)
