@@ -277,13 +277,13 @@ func scrapShopMembers(c *colly.Collector, shop *models.Shop) error {
 }
 
 func scrapShopSocialMediaAcc(c *colly.Collector, shop *models.Shop) error {
-	IsElementFound := false
+
 	c.OnHTML("#about div.wt-mb-xs-6", func(e *colly.HTMLElement) {
-		IsElementFound = true
-		shop.SocialMediaLinks = e.ChildAttrs("a", "href")
+		links := e.ChildAttrs("a", "href")
+		for _, link := range links {
+			shop.SocialMediaLinks = append(shop.SocialMediaLinks, models.SocialMediaLinks{Link: link})
+		}
 	})
-	if !IsElementFound {
-		shop.SocialMediaLinks = []string{MissingInfo}
-	}
+
 	return nil
 }

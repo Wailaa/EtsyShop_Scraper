@@ -29,17 +29,23 @@ type Shop struct {
 	JoinedSince       string    `json:"joined_since" gorm:"type:varchar(100);not null"`
 	LastUpdateTime    string    `json:"last_update_time" gorm:"type:varchar(155);not null"`
 	Admirers          int       `json:"admirers" gorm:"not null"`
-	SocialMediaLinks  []string  `json:"social_media_links" gorm:"serializer:json"`
 	HasSoldHistory    bool      `json:"-" `
 	OnVacation        bool      `json:"-" `
 	Revenue           float64   `json:"revenue" gorm:"-"`
 	AverageItemsPrice float64   `json:"average_item_price" gorm:"-"`
 	CreatedByUserID   uuid.UUID `json:"-" gorm:"type:uuid"`
 
-	Member    []ShopMember `json:"shop_member" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
-	ShopMenu  ShopMenu     `json:"shop_menu" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
-	Reviews   Reviews      `json:"shop_reviews" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
-	Followers []Account    `json:"-" gorm:"many2many:account_shop_following;constraint:OnDelete:CASCADE;"`
+	SocialMediaLinks []SocialMediaLinks `json:"social_media_links" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
+	Member           []ShopMember       `json:"shop_member" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
+	ShopMenu         ShopMenu           `json:"shop_menu" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
+	Reviews          Reviews            `json:"shop_reviews" gorm:"foreignKey:ShopID;references:ID;constraint:OnDelete:CASCADE;"`
+	Followers        []Account          `json:"-" gorm:"many2many:account_shop_following;constraint:OnDelete:CASCADE;"`
+}
+
+type SocialMediaLinks struct {
+	gorm.Model `json:"-"`
+	ShopID     uint   `json:"-"`
+	Link       string `json:"link"`
 }
 
 type ShopRequest struct {

@@ -122,7 +122,7 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 	ShopRequest.ShopName = shop.ShopName
 
 	existedShop, err := s.Process.GetShopByName(shop.ShopName)
-	if err != nil && err.Error() != "record not found" {
+	if err != nil && err.Error() != "no Shop was Found ,error: record not found" {
 		HandleResponse(ctx, err, http.StatusBadRequest, "internal error", nil)
 
 		ShopRequest.Status = "failed"
