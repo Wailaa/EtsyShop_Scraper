@@ -22,6 +22,7 @@ func TestScrapShop_AllCallBacks(t *testing.T) {
 	ShopMenuItems := `[{"category_name":"All","link":"MissArtisanShop?\u0026section_id=0","item_amount":15}]`
 	ShopReviews := `{"shop_rate":4.9286,"reviews_count":217,"reviews_mentions":[{"keyword":"quality","keyword_count":47},{"keyword":"shipping","keyword_count":29},{"keyword":"customer_service","keyword_count":42}]}`
 	ShopMembers := `[{"name":"example","role":"Shopkeeper, Владелец"},{"name":"example","role":"Maker, Shipper"}]`
+	scrapShopSocialLink := `[{"link":"https://www.facebook.com/MissArtisan/"},{"link":"https://www.miss-artisan.com"}]`
 
 	collector.RateLimiting = 0 * time.Second
 	c := collector.NewCollyCollector().C
@@ -58,7 +59,6 @@ func TestScrapShop_AllCallBacks(t *testing.T) {
 		fmt.Println("Error marshaling JSON:", err)
 		return
 	}
-	ShopMenuAsString := string(ShopMenuJSON)
 
 	ShopReviewJSON, err := utils.MarshalJSONData(shop.Reviews)
 	if err != nil {
@@ -70,6 +70,16 @@ func TestScrapShop_AllCallBacks(t *testing.T) {
 		fmt.Println("Error marshaling JSON:", err)
 		return
 	}
+	ShopSocialMediaLinkJson, err := utils.MarshalJSONData(shop.SocialMediaLinks)
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		return
+	}
+
+	ShopSocialMediaLinkAsString := string(ShopSocialMediaLinkJson)
+
+	ShopMenuAsString := string(ShopMenuJSON)
+
 	ShopMembersString := string(ShopMembersJson)
 
 	ShopReviewAsString := string(ShopReviewJSON)
@@ -85,6 +95,6 @@ func TestScrapShop_AllCallBacks(t *testing.T) {
 	assert.Equal(t, "Nov 7, 2023", shop.LastUpdateTime)
 	assert.Equal(t, "2018", shop.JoinedSince)
 	assert.Equal(t, ShopMembers, ShopMembersString)
-	assert.Equal(t, []string{"https://www.facebook.com/MissArtisan/", "https://www.miss-artisan.com"}, shop.SocialMediaLinks)
+	assert.Equal(t, scrapShopSocialLink, ShopSocialMediaLinkAsString)
 
 }
