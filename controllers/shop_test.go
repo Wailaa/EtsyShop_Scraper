@@ -587,14 +587,14 @@ func TestUpdateSellingHistory_GetItemsFail(t *testing.T) {
 	}
 
 	TestShop.On("ExecuteUpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}, {}}, nil)
-	TestShop.On("GetItemsByShopID").Return(nil, errors.New("error getting Items"))
+	TestShop.On("ExecuteGetItemsByShopID").Return(nil, errors.New("error getting Items"))
 
 	err := Shop.UpdateSellingHistory(ShopExample, Task, ShopRequest)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "error getting Items")
 	TestShop.AssertNumberOfCalls(t, "ExecuteUpdateDiscontinuedItems", 1)
-	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteGetItemsByShopID", 1)
 
 }
 func TestUpdateSellingHistory_InsertIntoDBFail(t *testing.T) {
@@ -627,7 +627,7 @@ func TestUpdateSellingHistory_InsertIntoDBFail(t *testing.T) {
 	}
 
 	TestShop.On("ExecuteUpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}}, nil)
-	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}, {}}, nil)
+	TestShop.On("ExecuteGetItemsByShopID").Return([]models.Item{{}, {}, {}}, nil)
 
 	sqlMock.ExpectBegin()
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "sold_items" ("created_at","updated_at","deleted_at","item_id","listing_id","data_shop_id") VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12) RETURNING "id"`)).
@@ -671,7 +671,7 @@ func TestUpdateSellingHistory_InsertIntoDB(t *testing.T) {
 	}
 
 	TestShop.On("ExecuteUpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}}, nil)
-	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}, {}}, nil)
+	TestShop.On("ExecuteGetItemsByShopID").Return([]models.Item{{}, {}, {}}, nil)
 	TestShop.On("ExecuteCreateShopRequest").Return(nil)
 
 	sqlMock.ExpectBegin()
@@ -716,7 +716,7 @@ func TestUpdateSellingHistory_TaskSoldItem(t *testing.T) {
 	}
 
 	TestShop.On("ExecuteUpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}}, nil)
-	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}, {}}, nil)
+	TestShop.On("ExecuteGetItemsByShopID").Return([]models.Item{{}, {}, {}}, nil)
 	TestShop.On("ExecuteCreateShopRequest").Return(nil)
 
 	sqlMock.ExpectBegin()
