@@ -28,7 +28,7 @@ func (s *Shop) UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopReq
 
 	if err := s.DB.Save(Shop).Error; err != nil {
 		ShopRequest.Status = "failed"
-		s.Process.ExecuteCreateShopRequest(s, ShopRequest)
+		s.Operations.CreateShopRequest(ShopRequest)
 		message := fmt.Sprintf("failed to save Shop's menu into database for ShopRequest.ID: %v", ShopRequest.ID)
 		return utils.HandleError(err, message)
 	}
