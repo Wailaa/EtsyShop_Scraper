@@ -503,12 +503,12 @@ func TestUpdateSellingHistory_DisContintuesSoldItemsFail(t *testing.T) {
 	}
 
 	TestShop.On("ExecuteUpdateDiscontinuedItems").Return(nil, errors.New("failed to get SoldItems"))
-	TestShop.On("CreateShopRequest").Return(nil)
+	TestShop.On("ExecuteCreateShopRequest").Return(nil)
 
 	err := Shop.UpdateSellingHistory(ShopExample, Task, ShopRequest)
 
 	assert.Error(t, err)
-	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteCreateShopRequest", 1)
 	TestShop.AssertNumberOfCalls(t, "ExecuteUpdateDiscontinuedItems", 1)
 
 }
@@ -665,7 +665,7 @@ func TestUpdateSellingHistory_InsertIntoDB(t *testing.T) {
 
 	TestShop.On("ExecuteUpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}}, nil)
 	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}, {}}, nil)
-	TestShop.On("CreateShopRequest").Return(nil)
+	TestShop.On("ExecuteCreateShopRequest").Return(nil)
 
 	sqlMock.ExpectBegin()
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "sold_items" ("created_at","updated_at","deleted_at","item_id","listing_id","data_shop_id") VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12) RETURNING "id"`)).
@@ -676,7 +676,7 @@ func TestUpdateSellingHistory_InsertIntoDB(t *testing.T) {
 
 	assert.NoError(t, err)
 	TestShop.AssertNumberOfCalls(t, "ExecuteUpdateDiscontinuedItems", 1)
-	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteCreateShopRequest", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 func TestUpdateSellingHistory_TaskSoldItem(t *testing.T) {
@@ -710,7 +710,7 @@ func TestUpdateSellingHistory_TaskSoldItem(t *testing.T) {
 
 	TestShop.On("ExecuteUpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}}, nil)
 	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}, {}}, nil)
-	TestShop.On("CreateShopRequest").Return(nil)
+	TestShop.On("ExecuteCreateShopRequest").Return(nil)
 
 	sqlMock.ExpectBegin()
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "sold_items" ("created_at","updated_at","deleted_at","item_id","listing_id","data_shop_id") VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12) RETURNING "id"`)).
@@ -726,7 +726,7 @@ func TestUpdateSellingHistory_TaskSoldItem(t *testing.T) {
 
 	assert.NoError(t, err)
 	TestShop.AssertNumberOfCalls(t, "ExecuteUpdateDiscontinuedItems", 1)
-	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteCreateShopRequest", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 

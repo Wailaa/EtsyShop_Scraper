@@ -57,7 +57,7 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 	ScrappedSoldItems, err := s.Process.ExecuteUpdateDiscontinuedItems(s, Shop, Task, ShopRequest)
 	if err != nil {
 		ShopRequest.Status = "failed"
-		s.Process.CreateShopRequest(ShopRequest)
+		s.Process.ExecuteCreateShopRequest(s, ShopRequest)
 
 		message := fmt.Sprintf("Shop's selling history failed while initiating UpdateDiscontinuedItems for ShopRequest.ID: %v", ShopRequest.ID)
 		return utils.HandleError(err, message)
@@ -90,7 +90,7 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 
 	ShopRequest.Status = "done"
 	log.Printf("Shop's selling history successfully saved %v items for ShopRequest.ID: %v \n", len(ScrappedSoldItems), ShopRequest.ID)
-	s.Process.CreateShopRequest(ShopRequest)
+	s.Process.ExecuteCreateShopRequest(s, ShopRequest)
 
 	return nil
 }
