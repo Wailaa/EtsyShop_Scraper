@@ -73,7 +73,7 @@ func (s *Shop) CheckAndUpdateOutOfProdMenu(AllMenus []models.MenuItem, SoldOutIt
 				return false, utils.HandleError(err)
 			}
 			ShopRequest.Status = "OutOfProduction Successfully updated"
-			s.Process.CreateShopRequest(ShopRequest)
+			s.Process.ExecuteCreateShopRequest(s, ShopRequest)
 			log.Println("Out Of Production successfully updated for ShopRequest.ID: ", ShopRequest.ID)
 			break
 		}
