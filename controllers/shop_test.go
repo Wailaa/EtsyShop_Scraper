@@ -88,6 +88,20 @@ func (m *MockedShop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) 
 	return Stats, args.Error(1)
 }
 
+func (m *MockedShop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
+	args := m.Called()
+	return args.Error(0)
+}
+func (m *MockedShop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error) {
+	args := m.Called()
+	shopInterface := args.Get(0)
+	var soldItems []models.SoldItems
+	if shopInterface != nil {
+		soldItems = shopInterface.([]models.SoldItems)
+	}
+	return soldItems, args.Error(1)
+}
+
 func (m *MockedShop) ExecuteCreateShop(dispatch controllers.ShopOperations, ShopRequest *models.ShopRequest) {
 
 }
