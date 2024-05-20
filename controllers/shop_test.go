@@ -564,14 +564,14 @@ func TestUpdateSellingHistory_DisContintuesSoldItemsFail(t *testing.T) {
 		HasSoldHistory: true,
 	}
 
-	TestShop.On("ExecuteUpdateDiscontinuedItems").Return(nil, errors.New("failed to get SoldItems"))
+	TestShop.On("UpdateDiscontinuedItems").Return(nil, errors.New("failed to get SoldItems"))
 	TestShop.On("CreateShopRequest").Return(nil)
 
 	err := implShop.UpdateSellingHistory(ShopExample, Task, ShopRequest)
 
 	assert.Error(t, err)
 	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
-	TestShop.AssertNumberOfCalls(t, "ExecuteUpdateDiscontinuedItems", 1)
+	TestShop.AssertNumberOfCalls(t, "UpdateDiscontinuedItems", 1)
 
 }
 func TestUpdateSellingHistory_DisContintuesSoldItemsEmpty(t *testing.T) {
@@ -581,8 +581,7 @@ func TestUpdateSellingHistory_DisContintuesSoldItemsEmpty(t *testing.T) {
 
 	TestShop := &MockedShop{}
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Process: TestShop}
-	Shop := controllers.NewShopController(implShop)
+	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Process: TestShop, Operations: TestShop}
 
 	userID := uuid.New()
 	Task := &models.TaskSchedule{
@@ -603,13 +602,13 @@ func TestUpdateSellingHistory_DisContintuesSoldItemsEmpty(t *testing.T) {
 		HasSoldHistory: true,
 	}
 
-	TestShop.On("ExecuteUpdateDiscontinuedItems").Return([]models.SoldItems{}, nil)
+	TestShop.On("UpdateDiscontinuedItems").Return([]models.SoldItems{}, nil)
 
-	err := Shop.UpdateSellingHistory(ShopExample, Task, ShopRequest)
+	err := implShop.UpdateSellingHistory(ShopExample, Task, ShopRequest)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "empty scrapped Sold data")
-	TestShop.AssertNumberOfCalls(t, "ExecuteUpdateDiscontinuedItems", 1)
+	TestShop.AssertNumberOfCalls(t, "UpdateDiscontinuedItems", 1)
 
 }
 func TestUpdateSellingHistory_GetItemsFail(t *testing.T) {
@@ -640,14 +639,14 @@ func TestUpdateSellingHistory_GetItemsFail(t *testing.T) {
 		HasSoldHistory: true,
 	}
 
-	TestShop.On("ExecuteUpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}, {}}, nil)
+	TestShop.On("UpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}, {}}, nil)
 	TestShop.On("GetItemsByShopID").Return(nil, errors.New("error getting Items"))
 
 	err := implShop.UpdateSellingHistory(ShopExample, Task, ShopRequest)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "error getting Items")
-	TestShop.AssertNumberOfCalls(t, "ExecuteUpdateDiscontinuedItems", 1)
+	TestShop.AssertNumberOfCalls(t, "UpdateDiscontinuedItems", 1)
 	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
 
 }
@@ -679,7 +678,7 @@ func TestUpdateSellingHistory_InsertIntoDBFail(t *testing.T) {
 		HasSoldHistory: true,
 	}
 
-	TestShop.On("ExecuteUpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}}, nil)
+	TestShop.On("UpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}}, nil)
 	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}, {}}, nil)
 
 	sqlMock.ExpectBegin()
@@ -691,7 +690,7 @@ func TestUpdateSellingHistory_InsertIntoDBFail(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to insert data to DB")
-	TestShop.AssertNumberOfCalls(t, "ExecuteUpdateDiscontinuedItems", 1)
+	TestShop.AssertNumberOfCalls(t, "UpdateDiscontinuedItems", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 func TestUpdateSellingHistory_InsertIntoDB(t *testing.T) {
@@ -722,7 +721,7 @@ func TestUpdateSellingHistory_InsertIntoDB(t *testing.T) {
 		HasSoldHistory: true,
 	}
 
-	TestShop.On("ExecuteUpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}}, nil)
+	TestShop.On("UpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}}, nil)
 	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}, {}}, nil)
 	TestShop.On("CreateShopRequest").Return(nil)
 
@@ -734,7 +733,7 @@ func TestUpdateSellingHistory_InsertIntoDB(t *testing.T) {
 	err := implShop.UpdateSellingHistory(ShopExample, Task, ShopRequest)
 
 	assert.NoError(t, err)
-	TestShop.AssertNumberOfCalls(t, "ExecuteUpdateDiscontinuedItems", 1)
+	TestShop.AssertNumberOfCalls(t, "UpdateDiscontinuedItems", 1)
 	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
@@ -766,7 +765,7 @@ func TestUpdateSellingHistory_TaskSoldItem(t *testing.T) {
 		HasSoldHistory: true,
 	}
 
-	TestShop.On("ExecuteUpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}}, nil)
+	TestShop.On("UpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}}, nil)
 	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}, {}}, nil)
 	TestShop.On("CreateShopRequest").Return(nil)
 
@@ -783,7 +782,7 @@ func TestUpdateSellingHistory_TaskSoldItem(t *testing.T) {
 	err := implShop.UpdateSellingHistory(ShopExample, Task, ShopRequest)
 
 	assert.NoError(t, err)
-	TestShop.AssertNumberOfCalls(t, "ExecuteUpdateDiscontinuedItems", 1)
+	TestShop.AssertNumberOfCalls(t, "UpdateDiscontinuedItems", 1)
 	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }

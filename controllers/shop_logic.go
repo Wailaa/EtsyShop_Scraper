@@ -54,7 +54,7 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 
 func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
 
-	ScrappedSoldItems, err := s.Process.ExecuteUpdateDiscontinuedItems(s, Shop, Task, ShopRequest)
+	ScrappedSoldItems, err := s.Operations.UpdateDiscontinuedItems(Shop, Task, ShopRequest)
 	if err != nil {
 		ShopRequest.Status = "failed"
 		s.Operations.CreateShopRequest(ShopRequest)
