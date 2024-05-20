@@ -1526,17 +1526,16 @@ func TestGetTotalRevenue_Fail(t *testing.T) {
 	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
-	Shop := controllers.NewShopController(implShop)
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Operations: TestShop}
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
 	AverageItemPrice := 19.2
-	TestShop.On("ExecuteGetSoldItemsByShopID").Return(nil, errors.New("Sold items where not found"))
+	TestShop.On("GetSoldItemsByShopID").Return(nil, errors.New("Sold items where not found"))
 
-	_, err := Shop.GetTotalRevenue(ShopExample.ID, AverageItemPrice)
+	_, err := implShop.GetTotalRevenue(ShopExample.ID, AverageItemPrice)
 
-	TestShop.AssertNumberOfCalls(t, "ExecuteGetSoldItemsByShopID", 1)
+	TestShop.AssertNumberOfCalls(t, "GetSoldItemsByShopID", 1)
 
 	assert.Contains(t, err.Error(), "Sold items where not found")
 
@@ -1547,19 +1546,18 @@ func TestGetTotalRevenue_Success(t *testing.T) {
 	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
-	Shop := controllers.NewShopController(implShop)
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Operations: TestShop}
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
 	AverageItemPrice := 19.2
 	revenueExpected := 485.68
 
-	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQuantity: 3}, {Available: true, OriginalPrice: 19.12, SoldQuantity: 10}, {Available: true, OriginalPrice: 124.44, SoldQuantity: 2}}, nil)
+	TestShop.On("GetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQuantity: 3}, {Available: true, OriginalPrice: 19.12, SoldQuantity: 10}, {Available: true, OriginalPrice: 124.44, SoldQuantity: 2}}, nil)
 
-	Revenue, err := Shop.GetTotalRevenue(ShopExample.ID, AverageItemPrice)
+	Revenue, err := implShop.GetTotalRevenue(ShopExample.ID, AverageItemPrice)
 
-	TestShop.AssertNumberOfCalls(t, "ExecuteGetSoldItemsByShopID", 1)
+	TestShop.AssertNumberOfCalls(t, "GetSoldItemsByShopID", 1)
 	assert.NoError(t, err)
 	assert.Equal(t, revenueExpected, Revenue)
 
@@ -1571,19 +1569,18 @@ func TestSoldItemsTask(t *testing.T) {
 	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
-	Shop := controllers.NewShopController(implShop)
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Operations: TestShop}
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
 	AverageItemPrice := 19.2
 	revenueExpected := 485.68
 
-	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQuantity: 3}, {Available: true, OriginalPrice: 19.12, SoldQuantity: 10}, {Available: true, OriginalPrice: 124.44, SoldQuantity: 2}}, nil)
+	TestShop.On("GetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQuantity: 3}, {Available: true, OriginalPrice: 19.12, SoldQuantity: 10}, {Available: true, OriginalPrice: 124.44, SoldQuantity: 2}}, nil)
 
-	Revenue, err := Shop.GetTotalRevenue(ShopExample.ID, AverageItemPrice)
+	Revenue, err := implShop.GetTotalRevenue(ShopExample.ID, AverageItemPrice)
 
-	TestShop.AssertNumberOfCalls(t, "ExecuteGetSoldItemsByShopID", 1)
+	TestShop.AssertNumberOfCalls(t, "GetSoldItemsByShopID", 1)
 	assert.NoError(t, err)
 	assert.Equal(t, revenueExpected, Revenue)
 }

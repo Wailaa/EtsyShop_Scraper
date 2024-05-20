@@ -141,7 +141,7 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 
 func (s *Shop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error) {
 
-	soldItems, err := s.Process.ExecuteGetSoldItemsByShopID(s, ShopID)
+	soldItems, err := s.Operations.GetSoldItemsByShopID(ShopID)
 	if err != nil {
 		return 0, utils.HandleError(err, "error while calculating revenue")
 	}
