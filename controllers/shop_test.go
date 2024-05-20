@@ -27,7 +27,7 @@ type MockedShop struct {
 	mock.Mock
 }
 
-func (m *MockedShop) ExecuteCreateShop(dispatch controllers.ExecShopMethodProcess, ShopRequest *models.ShopRequest) {
+func (m *MockedShop) ExecuteCreateShop(dispatch controllers.ShopOperations, ShopRequest *models.ShopRequest) {
 
 }
 
@@ -35,22 +35,22 @@ func (m *MockedShop) GetAverageItemPrice(ShopID uint) (float64, error) {
 	args := m.Called()
 	return args.Get(0).(float64), args.Error(1)
 }
-func (m *MockedShop) ExecuteGetTotalRevenue(dispatch controllers.ExecShopMethodProcess, ShopID uint, AverageItemPrice float64) (float64, error) {
+func (m *MockedShop) ExecuteGetTotalRevenue(dispatch controllers.ShopOperations, ShopID uint, AverageItemPrice float64) (float64, error) {
 	args := m.Called()
 	return args.Get(0).(float64), args.Error(1)
 }
 
-func (m *MockedShop) ExecuteGetAverageItemPrice(dispatch controllers.ExecShopMethodProcess, ShopID uint) (float64, error) {
+func (m *MockedShop) ExecuteGetAverageItemPrice(dispatch controllers.ShopOperations, ShopID uint) (float64, error) {
 	args := m.Called()
 	return args.Get(0).(float64), args.Error(1)
 }
 
-func (m *MockedShop) ExecuteCreateShopRequest(dispatch controllers.ExecShopMethodProcess, ShopRequest *models.ShopRequest) error {
+func (m *MockedShop) ExecuteCreateShopRequest(dispatch controllers.ShopOperations, ShopRequest *models.ShopRequest) error {
 	args := m.Called()
 	return args.Error(0)
 }
 
-func (m *MockedShop) ExecuteGetItemsByShopID(dispatch controllers.ExecShopMethodProcess, ID uint) ([]models.Item, error) {
+func (m *MockedShop) ExecuteGetItemsByShopID(dispatch controllers.ShopOperations, ID uint) ([]models.Item, error) {
 	args := m.Called()
 	shopInterface := args.Get(0)
 	var Items []models.Item
@@ -60,7 +60,7 @@ func (m *MockedShop) ExecuteGetItemsByShopID(dispatch controllers.ExecShopMethod
 	return Items, args.Error(1)
 }
 
-func (m *MockedShop) ExecuteGetShopByName(dispatch controllers.ExecShopMethodProcess, ShopName string) (*models.Shop, error) {
+func (m *MockedShop) ExecuteGetShopByName(dispatch controllers.ShopOperations, ShopName string) (*models.Shop, error) {
 
 	args := m.Called()
 	shopInterface := args.Get(0)
@@ -71,7 +71,7 @@ func (m *MockedShop) ExecuteGetShopByName(dispatch controllers.ExecShopMethodPro
 	return shop, args.Error(1)
 }
 
-func (m *MockedShop) ExecuteGetSoldItemsByShopID(dispatch controllers.ExecShopMethodProcess, ID uint) (SoldItemInfos []controllers.ResponseSoldItemInfo, err error) {
+func (m *MockedShop) ExecuteGetSoldItemsByShopID(dispatch controllers.ShopOperations, ID uint) (SoldItemInfos []controllers.ResponseSoldItemInfo, err error) {
 	args := m.Called()
 	shopInterface := args.Get(0)
 	var soldItems []controllers.ResponseSoldItemInfo
@@ -94,7 +94,7 @@ func (m *MockedShop) ExecuteUpdateDiscontinuedItems(dispatch controllers.ShopUpd
 	return soldItems, args.Error(1)
 }
 
-func (m *MockedShop) ExecuteGetSellingStatsByPeriod(dispatch controllers.ExecShopMethodProcess, ShopID uint, timePeriod time.Time) (map[string]controllers.DailySoldStats, error) {
+func (m *MockedShop) ExecuteGetSellingStatsByPeriod(dispatch controllers.ShopOperations, ShopID uint, timePeriod time.Time) (map[string]controllers.DailySoldStats, error) {
 	args := m.Called()
 	shopInterface := args.Get(0)
 	var Stats map[string]controllers.DailySoldStats
