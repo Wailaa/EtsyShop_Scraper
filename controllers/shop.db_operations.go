@@ -219,3 +219,11 @@ func (s *Shop) GetItemsByShopID(ID uint) (items []models.Item, err error) {
 	}
 	return
 }
+
+func (s *Shop) GetShopByName(ShopName string) (shop *models.Shop, err error) {
+
+	if err = s.DB.Preload("Member").Preload("ShopMenu.Menu.Items").Preload("Reviews.ReviewsTopic").Where("name = ?", ShopName).First(&shop).Error; err != nil {
+		return nil, utils.HandleError(err, "no Shop was Found ,error")
+	}
+	return
+}
