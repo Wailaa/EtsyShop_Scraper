@@ -1539,11 +1539,11 @@ func TestGetSoldItemsByShopID_Fail(t *testing.T) {
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	TestShop.On("GetItemsByShopID").Return(nil, errors.New("error while calculating item average price "))
+	TestShop.On("ExecuteGetItemsByShopID").Return(nil, errors.New("error while calculating item average price "))
 
 	Shop.GetSoldItemsByShopID(ShopExample.ID)
 
-	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteGetItemsByShopID", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 func TestGetSoldItemsByShopID_Success(t *testing.T) {
@@ -1565,14 +1565,14 @@ func TestGetSoldItemsByShopID_Success(t *testing.T) {
 
 	Solditems := sqlmock.NewRows([]string{"id", "listingID", "ItemID"}).AddRow(1, 1, 1).AddRow(2, 1, 1).AddRow(3, 3, 3)
 
-	TestShop.On("GetItemsByShopID").Return(Allitems, nil)
+	TestShop.On("ExecuteGetItemsByShopID").Return(Allitems, nil)
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sold_items" WHERE listing_id IN ($1,$2,$3) AND "sold_items"."deleted_at" IS NULL`)).
 		WithArgs().WillReturnRows(Solditems)
 
 	Shop.GetSoldItemsByShopID(ShopExample.ID)
 
-	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteGetItemsByShopID", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 func TestGetSoldItemsByShopID_NoSoldItemsInDB(t *testing.T) {
@@ -1586,14 +1586,14 @@ func TestGetSoldItemsByShopID_NoSoldItemsInDB(t *testing.T) {
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}}, nil)
+	TestShop.On("ExecuteGetItemsByShopID").Return([]models.Item{{}, {}}, nil)
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sold_items" WHERE listing_id IN ($1,$2) AND "sold_items"."deleted_at" IS NULL`)).
 		WithArgs().WillReturnError(errors.New("items were not found"))
 
 	_, err := Shop.GetSoldItemsByShopID(ShopExample.ID)
 
-	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteGetItemsByShopID", 1)
 
 	assert.Contains(t, err.Error(), "items were not found")
 	assert.NoError(t, sqlMock.ExpectationsWereMet())

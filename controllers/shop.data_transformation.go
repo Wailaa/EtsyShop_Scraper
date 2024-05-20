@@ -12,7 +12,7 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 	listingIDs := []uint{}
 	Solditems := []models.SoldItems{}
 
-	AllItems, err := s.Process.GetItemsByShopID(ID)
+	AllItems, err := s.Process.ExecuteGetItemsByShopID(s, ID)
 	if err != nil {
 		return nil, utils.HandleError(err, "items here not found ")
 	}
