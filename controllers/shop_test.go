@@ -45,6 +45,11 @@ func (m *MockedShop) ExecuteGetAverageItemPrice(dispatch controllers.ExecShopMet
 	return args.Get(0).(float64), args.Error(1)
 }
 
+func (m *MockedShop) ExecuteCreateShopRequest(dispatch controllers.ExecShopMethodProcess, ShopRequest *models.ShopRequest) error {
+	args := m.Called()
+	return args.Error(0)
+}
+
 func (m *MockedShop) ExecuteGetSoldItemsByShopID(dispatch controllers.ExecShopMethodProcess, ID uint) (SoldItemInfos []controllers.ResponseSoldItemInfo, err error) {
 	args := m.Called()
 	shopInterface := args.Get(0)

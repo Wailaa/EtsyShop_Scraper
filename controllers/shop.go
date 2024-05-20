@@ -70,6 +70,7 @@ type ShopProcess interface {
 	GetItemsByShopID(ID uint) (items []models.Item, err error)
 	ExecuteGetAverageItemPrice(dispatch ExecShopMethodProcess, ShopID uint) (float64, error)
 	CreateShopRequest(ShopRequest *models.ShopRequest) error
+	ExecuteCreateShopRequest(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest) error
 	ExecuteCreateShop(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest)
 	ExecuteUpdateSellingHistory(dispatch ShopUpdater, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
 	ExecuteUpdateDiscontinuedItems(dispatch ShopUpdater, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
@@ -126,6 +127,10 @@ func (ps *ShopCreators) ExecuteGetSoldItemsByShopID(dispatch ExecShopMethodProce
 func (ps *ShopCreators) ExecuteGetSellingStatsByPeriod(dispatch ExecShopMethodProcess, ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error) {
 	SoldItems, err := dispatch.GetSellingStatsByPeriod(ShopID, timePeriod)
 	return SoldItems, err
+}
+func (ps *ShopCreators) ExecuteCreateShopRequest(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest) error {
+	err := dispatch.CreateShopRequest(ShopRequest)
+	return err
 }
 
 func (pr *ShopCreators) CreateShopRequest(ShopRequest *models.ShopRequest) error {
