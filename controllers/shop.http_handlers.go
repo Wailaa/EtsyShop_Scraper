@@ -129,7 +129,7 @@ func (s *Shop) HandleGetItemsByShopID(ctx *gin.Context) {
 		HandleResponse(ctx, err, http.StatusBadRequest, "failed to get Shop id", nil)
 		return
 	}
-	Items, err := s.Process.GetItemsByShopID(ShopIDToUint)
+	Items, err := s.Process.ExecuteGetItemsByShopID(s, ShopIDToUint)
 	if err != nil {
 		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return

@@ -2568,7 +2568,7 @@ func TestHandleGetItemsByShopID__NoShop(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
 	router.GET("/testroute/:shopID", implShop.HandleGetItemsByShopID)
 
-	TestShop.On("GetItemsByShopID").Return(nil, errors.New("no shop found"))
+	TestShop.On("ExecuteGetItemsByShopID").Return(nil, errors.New("no shop found"))
 
 	req, err := http.NewRequest("GET", "/testroute/1", nil)
 	if err != nil {
@@ -2576,7 +2576,7 @@ func TestHandleGetItemsByShopID__NoShop(t *testing.T) {
 	}
 
 	router.ServeHTTP(w, req)
-	assert.Equal(t, http.StatusBadRequest, w.Code, "GetItemsByShopID found no shop in db")
+	assert.Equal(t, http.StatusBadRequest, w.Code, "ExecuteGetItemsByShopID found no shop in db")
 
 }
 
@@ -2612,7 +2612,7 @@ func TestHandleGetItemsByShopID__Success(t *testing.T) {
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
 
-	TestShop.On("GetItemsByShopID").Return([]models.Item{}, nil)
+	TestShop.On("ExecuteGetItemsByShopID").Return([]models.Item{}, nil)
 	router.GET("/testroute/:shopID", implShop.HandleGetItemsByShopID)
 
 	req, err := http.NewRequest("GET", "/testroute/1", nil)
