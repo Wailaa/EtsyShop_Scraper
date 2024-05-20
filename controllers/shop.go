@@ -65,7 +65,6 @@ type ShopUpdater interface {
 }
 type ShopProcess interface {
 	GetShopByName(ShopName string) (shop *models.Shop, err error)
-	GetItemsByShopID(ID uint) (items []models.Item, err error)
 	ExecuteGetItemsByShopID(dispatch ExecShopMethodProcess, ID uint) ([]models.Item, error)
 	ExecuteGetAverageItemPrice(dispatch ExecShopMethodProcess, ShopID uint) (float64, error)
 	ExecuteCreateShopRequest(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest) error
@@ -140,18 +139,6 @@ func (pr *ShopCreators) GetShopByName(ShopName string) (shop *models.Shop, err e
 
 	if err = pr.DB.Preload("Member").Preload("ShopMenu.Menu.Items").Preload("Reviews.ReviewsTopic").Where("name = ?", ShopName).First(&shop).Error; err != nil {
 		return nil, utils.HandleError(err, "no Shop was Found ,error")
-	}
-	return
-}
-
-func (ps *ShopCreators) GetItemsByShopID(ID uint) (items []models.Item, err error) {
-	shop := &models.Shop{}
-	if err := ps.DB.Preload("ShopMenu.Menu.Items").Where("id = ?", ID).First(shop).Error; err != nil {
-		return nil, utils.HandleError(err, "no Shop was Found")
-	}
-
-	for _, menu := range shop.ShopMenu.Menu {
-		items = append(items, menu.Items...)
 	}
 	return
 }
