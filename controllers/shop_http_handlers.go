@@ -30,19 +30,21 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 		HandleResponse(ctx, err, http.StatusBadRequest, "internal error", nil)
 
 		ShopRequest.Status = "failed"
-		s.Process.ExecuteCreateShopRequest(s, ShopRequest)
+		s.Operations.CreateShopRequest(ShopRequest)
+
 		return
 
 	} else if existedShop != nil {
 		HandleResponse(ctx, nil, http.StatusBadRequest, "Shop already exists", nil)
 
 		ShopRequest.Status = "denied"
-		s.Process.ExecuteCreateShopRequest(s, ShopRequest)
+		s.Operations.CreateShopRequest(ShopRequest)
+
 		return
 	}
 
 	ShopRequest.Status = "Pending"
-	s.Process.ExecuteCreateShopRequest(s, ShopRequest)
+	s.Operations.CreateShopRequest(ShopRequest)
 
 	HandleResponse(ctx, nil, http.StatusOK, "shop request received successfully", nil)
 

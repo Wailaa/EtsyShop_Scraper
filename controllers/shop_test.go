@@ -259,7 +259,7 @@ func TestCreateNewShopRequest_GetShopError(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Scraper: Scraper, Operations: TestShop}
 
 	TestShop.On("GetShopByName").Return(nil, errors.New("Error"))
-	TestShop.On("ExecuteCreateShopRequest").Return(errors.New("SecondError"))
+	TestShop.On("CreateShopRequest").Return(errors.New("SecondError"))
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -271,7 +271,7 @@ func TestCreateNewShopRequest_GetShopError(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertCalled(t, "ExecuteCreateShopRequest")
+	TestShop.AssertCalled(t, "CreateShopRequest")
 	assert.Contains(t, w.Body.String(), "internal error")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 
@@ -290,7 +290,7 @@ func TestCreateNewShopRequest_ShopExists(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Process: TestShop, Operations: TestShop}
 
 	TestShop.On("GetShopByName").Return(&models.Shop{Name: "ShopExample"}, nil)
-	TestShop.On("ExecuteCreateShopRequest").Return(errors.New("SecondError"))
+	TestShop.On("CreateShopRequest").Return(errors.New("SecondError"))
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -302,7 +302,7 @@ func TestCreateNewShopRequest_ShopExists(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertCalled(t, "ExecuteCreateShopRequest")
+	TestShop.AssertCalled(t, "CreateShopRequest")
 	assert.Contains(t, w.Body.String(), "Shop already exists")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 
@@ -321,7 +321,7 @@ func TestCreateNewShopRequest_Success(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Process: TestShop, Operations: TestShop}
 
 	TestShop.On("GetShopByName").Return(nil, errors.New("no Shop was Found ,error: record not found"))
-	TestShop.On("ExecuteCreateShopRequest").Return(nil)
+	TestShop.On("CreateShopRequest").Return(nil)
 	TestShop.On("CreateNewShop").Return(nil)
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
@@ -334,8 +334,8 @@ func TestCreateNewShopRequest_Success(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertCalled(t, "ExecuteCreateShopRequest")
-	TestShop.AssertNumberOfCalls(t, "ExecuteCreateShopRequest", 1)
+	TestShop.AssertCalled(t, "CreateShopRequest")
+	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
 	assert.Contains(t, w.Body.String(), "shop request received successfully")
 	assert.Equal(t, http.StatusOK, w.Code)
 
