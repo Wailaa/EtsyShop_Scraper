@@ -8,7 +8,6 @@ import (
 
 	"EtsyScraper/models"
 	scrap "EtsyScraper/scraping"
-	"EtsyScraper/utils"
 )
 
 type Shop struct {
@@ -64,7 +63,6 @@ type ShopUpdater interface {
 	UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
 }
 type ShopProcess interface {
-	GetShopByName(ShopName string) (shop *models.Shop, err error)
 	ExecuteGetShopByName(dispatch ExecShopMethodProcess, ShopName string) (*models.Shop, error)
 	ExecuteGetItemsByShopID(dispatch ExecShopMethodProcess, ID uint) ([]models.Item, error)
 	ExecuteGetAverageItemPrice(dispatch ExecShopMethodProcess, ShopID uint) (float64, error)
@@ -101,6 +99,7 @@ func NewShopCreators(DB *gorm.DB) *ShopCreators {
 func (ps *ShopCreators) ExecuteCreateShop(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest) {
 	dispatch.CreateNewShop(ShopRequest)
 }
+
 func (ps *ShopCreators) ExecuteUpdateSellingHistory(dispatch ShopUpdater, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
 	err := dispatch.UpdateSellingHistory(Shop, Task, ShopRequest)
 	return err
@@ -120,31 +119,28 @@ func (ps *ShopCreators) ExecuteGetTotalRevenue(dispatch ExecShopMethodProcess, S
 	Average, err := dispatch.GetTotalRevenue(ShopID, AverageItemPrice)
 	return Average, err
 }
+
 func (ps *ShopCreators) ExecuteGetSoldItemsByShopID(dispatch ExecShopMethodProcess, ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error) {
 	SoldItems, err := dispatch.GetSoldItemsByShopID(ID)
 	return SoldItems, err
 }
+
 func (ps *ShopCreators) ExecuteGetSellingStatsByPeriod(dispatch ExecShopMethodProcess, ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error) {
 	SoldItems, err := dispatch.GetSellingStatsByPeriod(ShopID, timePeriod)
 	return SoldItems, err
 }
+
 func (ps *ShopCreators) ExecuteCreateShopRequest(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest) error {
 	err := dispatch.CreateShopRequest(ShopRequest)
 	return err
 }
+
 func (ps *ShopCreators) ExecuteGetItemsByShopID(dispatch ExecShopMethodProcess, ID uint) ([]models.Item, error) {
 	items, err := dispatch.GetItemsByShopID(ID)
 	return items, err
 }
+
 func (ps *ShopCreators) ExecuteGetShopByName(dispatch ExecShopMethodProcess, ShopName string) (*models.Shop, error) {
 	shop, err := dispatch.GetShopByName(ShopName)
 	return shop, err
-}
-
-func (pr *ShopCreators) GetShopByName(ShopName string) (shop *models.Shop, err error) {
-
-	if err = pr.DB.Preload("Member").Preload("ShopMenu.Menu.Items").Preload("Reviews.ReviewsTopic").Where("name = ?", ShopName).First(&shop).Error; err != nil {
-		return nil, utils.HandleError(err, "no Shop was Found ,error")
-	}
-	return
 }
