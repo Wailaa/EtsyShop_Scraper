@@ -205,7 +205,7 @@ func TestCreateNewShopRequest_GetShopError(t *testing.T) {
 	Shop := controllers.NewShopController(implShop)
 
 	TestShop.On("GetShopByName").Return(nil, errors.New("Error"))
-	TestShop.On("CreateShopRequest").Return(errors.New("SecondError"))
+	TestShop.On("ExecuteCreateShopRequest").Return(errors.New("SecondError"))
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -217,7 +217,7 @@ func TestCreateNewShopRequest_GetShopError(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertCalled(t, "CreateShopRequest")
+	TestShop.AssertCalled(t, "ExecuteCreateShopRequest")
 	assert.Contains(t, w.Body.String(), "internal error")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 
@@ -237,7 +237,7 @@ func TestCreateNewShopRequest_ShopExists(t *testing.T) {
 	Shop := controllers.NewShopController(implShop)
 
 	TestShop.On("GetShopByName").Return(&models.Shop{Name: "ShopName"}, nil)
-	TestShop.On("CreateShopRequest").Return(errors.New("SecondError"))
+	TestShop.On("ExecuteCreateShopRequest").Return(errors.New("SecondError"))
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -249,7 +249,7 @@ func TestCreateNewShopRequest_ShopExists(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertCalled(t, "CreateShopRequest")
+	TestShop.AssertCalled(t, "ExecuteCreateShopRequest")
 	assert.Contains(t, w.Body.String(), "Shop already exists")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 
@@ -269,7 +269,7 @@ func TestCreateNewShopRequest_Success(t *testing.T) {
 	Shop := controllers.NewShopController(implShop)
 
 	TestShop.On("GetShopByName").Return(nil, errors.New("no Shop was Found ,error: record not found"))
-	TestShop.On("CreateShopRequest").Return(nil)
+	TestShop.On("ExecuteCreateShopRequest").Return(nil)
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -281,8 +281,8 @@ func TestCreateNewShopRequest_Success(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertCalled(t, "CreateShopRequest")
-	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
+	TestShop.AssertCalled(t, "ExecuteCreateShopRequest")
+	TestShop.AssertNumberOfCalls(t, "ExecuteCreateShopRequest", 1)
 	assert.Contains(t, w.Body.String(), "shop request received successfully")
 	assert.Equal(t, http.StatusOK, w.Code)
 
