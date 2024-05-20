@@ -162,7 +162,7 @@ func (s *Shop) HandleGetSoldItemsByShopID(ctx *gin.Context) {
 		return
 	}
 
-	Items, err := s.Process.ExecuteGetSoldItemsByShopID(s, ShopIDToUint)
+	Items, err := s.Operations.GetSoldItemsByShopID(ShopIDToUint)
 	if err != nil {
 		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return

@@ -2574,9 +2574,9 @@ func TestHandleGetSoldItemsByShopID_Fail(t *testing.T) {
 	_, router, w := SetGinTestMode()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Operations: TestShop}
 
-	TestShop.On("ExecuteGetSoldItemsByShopID").Return(nil, errors.New("error getting data"))
+	TestShop.On("GetSoldItemsByShopID").Return(nil, errors.New("error getting data"))
 
 	router.GET("/testroute/:shopID/all_sold_items", implShop.HandleGetSoldItemsByShopID)
 
@@ -2598,9 +2598,9 @@ func TestHandleGetSoldItemsByShopID_Success(t *testing.T) {
 	_, router, w := SetGinTestMode()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Operations: TestShop}
 
-	TestShop.On("ExecuteGetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{}, nil)
+	TestShop.On("GetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{}, nil)
 
 	router.GET("/testroute/:shopID/all_sold_items", implShop.HandleGetSoldItemsByShopID)
 
