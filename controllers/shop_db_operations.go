@@ -232,7 +232,7 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 	listingIDs := []uint{}
 	Solditems := []models.SoldItems{}
 
-	AllItems, err := s.Process.ExecuteGetItemsByShopID(s, ID)
+	AllItems, err := s.Operations.GetItemsByShopID(ID)
 	if err != nil {
 		return nil, utils.HandleError(err, "items here not found ")
 	}
