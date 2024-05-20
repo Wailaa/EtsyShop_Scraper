@@ -12,7 +12,7 @@ import (
 
 type Shop struct {
 	DB      *gorm.DB
-	Process ShopProcess
+	Process ShopMethodExecutor
 	Scraper scrap.ScrapeUpdateProcess
 }
 
@@ -62,7 +62,7 @@ type ShopUpdater interface {
 	UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
 	UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
 }
-type ShopProcess interface {
+type ShopMethodExecutor interface {
 	ExecuteGetShopByName(dispatch ExecShopMethodProcess, ShopName string) (*models.Shop, error)
 	ExecuteGetItemsByShopID(dispatch ExecShopMethodProcess, ID uint) ([]models.Item, error)
 	ExecuteGetAverageItemPrice(dispatch ExecShopMethodProcess, ShopID uint) (float64, error)
