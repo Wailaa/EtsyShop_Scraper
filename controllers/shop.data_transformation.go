@@ -44,24 +44,6 @@ func (s *Shop) CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[stri
 	return stats, nil
 }
 
-func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
-	itemCount := itemsCount{}
-
-	items, err := s.Process.ExecuteGetItemsByShopID(s, ID)
-	if err != nil {
-		return itemCount, utils.HandleError(err, "error while calculating item average price")
-	}
-	for _, item := range items {
-		if item.Available {
-			itemCount.Available++
-		} else {
-			itemCount.OutOfProduction++
-		}
-	}
-
-	return itemCount, nil
-}
-
 func CalculateTotalRevenue(soldItems []ResponseSoldItemInfo, AverageItemPrice float64) float64 {
 	var revenue float64
 	var ItemPrice float64

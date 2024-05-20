@@ -297,3 +297,21 @@ func (s *Shop) GetSoldItemsInRange(fromDate time.Time, ShopID uint) ([]models.So
 	}
 	return soldItems, nil
 }
+
+func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
+	itemCount := itemsCount{}
+
+	items, err := s.Process.ExecuteGetItemsByShopID(s, ID)
+	if err != nil {
+		return itemCount, utils.HandleError(err, "error while calculating item average price")
+	}
+	for _, item := range items {
+		if item.Available {
+			itemCount.Available++
+		} else {
+			itemCount.OutOfProduction++
+		}
+	}
+
+	return itemCount, nil
+}
