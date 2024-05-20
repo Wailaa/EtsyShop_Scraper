@@ -92,10 +92,6 @@ type ShopCreators struct {
 	DB *gorm.DB
 }
 
-func NewShopCreators(DB *gorm.DB) *ShopCreators {
-	return &ShopCreators{DB}
-}
-
 func (ps *ShopCreators) ExecuteCreateShop(dispatch ShopOperations, ShopRequest *models.ShopRequest) {
 	dispatch.CreateNewShop(ShopRequest)
 }
