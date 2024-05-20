@@ -1328,7 +1328,7 @@ func TestGetShopByID_AveragePriceFail(t *testing.T) {
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	TestShop.On("GetAverageItemPrice").Return(float64(0), errors.New("error getting Item average price"))
+	TestShop.On("ExecuteGetAverageItemPrice").Return(float64(0), errors.New("error getting Item average price"))
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
 		WithArgs(ShopExample.ID, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(ShopExample.ID, ShopExample.Name))
@@ -1368,7 +1368,7 @@ func TestGetShopByID_RevenueFail(t *testing.T) {
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	TestShop.On("GetAverageItemPrice").Return(float64(15.5), nil)
+	TestShop.On("ExecuteGetAverageItemPrice").Return(float64(15.5), nil)
 	TestShop.On("ExecuteGetTotalRevenue").Return(float64(0), errors.New("Error while getting Total revenue"))
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
@@ -1408,7 +1408,7 @@ func TestGetShopByID_Success(t *testing.T) {
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	TestShop.On("GetAverageItemPrice").Return(float64(15.5), nil)
+	TestShop.On("ExecuteGetAverageItemPrice").Return(float64(15.5), nil)
 	TestShop.On("ExecuteGetTotalRevenue").Return(float64(120), nil)
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
@@ -2625,7 +2625,7 @@ func TestHandleHandleGetShopByID__Success(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
 	router.GET("/testroute/:shopID", implShop.HandleGetShopByID)
 
-	TestShop.On("GetAverageItemPrice").Return(1.0, nil)
+	TestShop.On("ExecuteGetAverageItemPrice").Return(1.0, nil)
 	TestShop.On("ExecuteGetTotalRevenue").Return(1.0, nil)
 	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "shop_id"}).AddRow(1, 1))

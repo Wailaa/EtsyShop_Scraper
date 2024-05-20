@@ -105,7 +105,7 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 
 	}
 
-	shop.AverageItemsPrice, err = s.Process.GetAverageItemPrice(shop.ID)
+	shop.AverageItemsPrice, err = s.Process.ExecuteGetAverageItemPrice(s, shop.ID)
 	if err != nil {
 		return nil, utils.HandleError(err, "error while calculating item avearage price")
 	}
