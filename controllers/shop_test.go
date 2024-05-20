@@ -64,11 +64,11 @@ func (m *MockedShop) ExecuteGetShopByName(dispatch controllers.ExecShopMethodPro
 
 	args := m.Called()
 	shopInterface := args.Get(0)
-	var shop models.Shop
+	var shop *models.Shop
 	if shopInterface != nil {
-		shop = shopInterface.(models.Shop)
+		shop = shopInterface.(*models.Shop)
 	}
-	return &shop, args.Error(1)
+	return shop, args.Error(1)
 }
 
 func (m *MockedShop) ExecuteGetSoldItemsByShopID(dispatch controllers.ExecShopMethodProcess, ID uint) (SoldItemInfos []controllers.ResponseSoldItemInfo, err error) {
@@ -212,7 +212,7 @@ func TestCreateNewShopRequest_GetShopError(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Scraper: Scraper}
 	Shop := controllers.NewShopController(implShop)
 
-	TestShop.On("GetShopByName").Return(nil, errors.New("Error"))
+	TestShop.On("ExecuteGetShopByName").Return(nil, errors.New("Error"))
 	TestShop.On("ExecuteCreateShopRequest").Return(errors.New("SecondError"))
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
@@ -244,7 +244,7 @@ func TestCreateNewShopRequest_ShopExists(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Process: TestShop}
 	Shop := controllers.NewShopController(implShop)
 
-	TestShop.On("GetShopByName").Return(&models.Shop{Name: "ShopName"}, nil)
+	TestShop.On("ExecuteGetShopByName").Return(&models.Shop{Name: "ShopName"}, nil)
 	TestShop.On("ExecuteCreateShopRequest").Return(errors.New("SecondError"))
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
@@ -276,7 +276,7 @@ func TestCreateNewShopRequest_Success(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Process: TestShop}
 	Shop := controllers.NewShopController(implShop)
 
-	TestShop.On("GetShopByName").Return(nil, errors.New("no Shop was Found ,error: record not found"))
+	TestShop.On("ExecuteGetShopByName").Return(nil, errors.New("no Shop was Found ,error: record not found"))
 	TestShop.On("ExecuteCreateShopRequest").Return(nil)
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
