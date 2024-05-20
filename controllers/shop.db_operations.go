@@ -227,3 +227,39 @@ func (s *Shop) GetShopByName(ShopName string) (shop *models.Shop, err error) {
 	}
 	return
 }
+
+func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error) {
+	listingIDs := []uint{}
+	Solditems := []models.SoldItems{}
+
+	AllItems, err := s.Process.ExecuteGetItemsByShopID(s, ID)
+	if err != nil {
+		return nil, utils.HandleError(err, "items here not found ")
+	}
+
+	for _, item := range AllItems {
+		listingIDs = append(listingIDs, item.ListingID)
+	}
+
+	if err := s.DB.Where("listing_id IN ?", listingIDs).Find(&Solditems).Error; err != nil {
+		return nil, utils.HandleError(err, "items were not found ")
+	}
+
+	soldQuantity := map[uint]int{}
+	for _, SoldItem := range Solditems {
+		soldQuantity[SoldItem.ItemID]++
+	}
+
+	for key, value := range soldQuantity {
+		for _, item := range AllItems {
+			if key == item.ID {
+				SoldItemInfo := CreateSoldItemInfo(&item)
+				SoldItemInfo.SoldQuantity = value
+				SoldItemInfos = append(SoldItemInfos, *SoldItemInfo)
+			}
+		}
+
+	}
+
+	return
+}
