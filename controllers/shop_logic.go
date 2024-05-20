@@ -136,7 +136,7 @@ func (s *Shop) SoldItemsTask(Shop *models.Shop, Task *models.TaskSchedule, ShopR
 	durationUntilNextTask := time.Until(time.Now().Add(randTimeSet * time.Second))
 
 	time.AfterFunc(durationUntilNextTask, func() {
-		s.Process.ExecuteUpdateSellingHistory(s, Shop, Task, ShopRequest)
+		s.Operations.UpdateSellingHistory(Shop, Task, ShopRequest)
 	})
 	return nil
 }
