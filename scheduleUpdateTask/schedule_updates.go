@@ -130,7 +130,7 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 	if len(SoldItemsQueueList) > 0 {
 		for _, queue := range SoldItemsQueueList {
 
-			newController := controllers.NewShopController(controllers.Shop{DB: u.DB, Process: &controllers.ShopCreators{DB: u.DB}, Scraper: &scrap.Scraper{}})
+			newController := controllers.NewShopController(controllers.Shop{DB: u.DB, Scraper: &scrap.Scraper{}})
 			UpdateSoldItems(queue, newController)
 			log.Printf("added %v new SoldItems to Shop: %s\n", queue.Task.UpdateSoldItems, queue.Shop.Name)
 		}
