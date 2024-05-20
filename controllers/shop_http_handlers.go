@@ -60,7 +60,7 @@ func (s *Shop) FollowShop(ctx *gin.Context) {
 
 	currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 
-	requestedShop, err := s.Process.ExecuteGetShopByName(s, shopToFollow.FollowShopName)
+	requestedShop, err := s.Operations.GetShopByName(shopToFollow.FollowShopName)
 	if err != nil {
 		if err.Error() == "record not found" {
 			HandleResponse(ctx, err, http.StatusBadRequest, "shop not found", nil)
