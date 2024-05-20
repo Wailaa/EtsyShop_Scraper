@@ -1146,7 +1146,7 @@ func TestUnFollowShop_ShopNotFound(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Scraper: Scraper}
 	Shop := controllers.NewShopController(implShop)
 
-	TestShop.On("GetShopByName").Return(nil, errors.New("record not found"))
+	TestShop.On("ExecuteGetShopByName").Return(nil, errors.New("record not found"))
 
 	router.POST("/unfollow_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -1158,7 +1158,7 @@ func TestUnFollowShop_ShopNotFound(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertCalled(t, "GetShopByName")
+	TestShop.AssertCalled(t, "ExecuteGetShopByName")
 	assert.Contains(t, w.Body.String(), "shop not found")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 }
@@ -1175,7 +1175,7 @@ func TestUnFollowShop_GetShopByNameFail(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Scraper: Scraper}
 	Shop := controllers.NewShopController(implShop)
 
-	TestShop.On("GetShopByName").Return(nil, errors.New("Error getting Shop"))
+	TestShop.On("ExecuteGetShopByName").Return(nil, errors.New("Error getting Shop"))
 
 	router.POST("/unfollow_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -1187,7 +1187,7 @@ func TestUnFollowShop_GetShopByNameFail(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertNumberOfCalls(t, "GetShopByName", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteGetShopByName", 1)
 	assert.Contains(t, w.Body.String(), "Error getting Shop")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 }
@@ -1205,7 +1205,7 @@ func TestUnFollowShop_GetAccountFail(t *testing.T) {
 	Shop := controllers.NewShopController(implShop)
 
 	ShopExample := models.Shop{}
-	TestShop.On("GetShopByName").Return(&ShopExample, nil)
+	TestShop.On("ExecuteGetShopByName").Return(&ShopExample, nil)
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
 		WithArgs(currentUserUUID.String(), 1).WillReturnError(errors.New("Error while getting account"))
@@ -1220,7 +1220,7 @@ func TestUnFollowShop_GetAccountFail(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertNumberOfCalls(t, "GetShopByName", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteGetShopByName", 1)
 	assert.Contains(t, w.Body.String(), "Error while getting account")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
@@ -1242,7 +1242,7 @@ func TestUnFollowShop_Success(t *testing.T) {
 
 	ShopExample := models.Shop{}
 	ShopExample.ID = 2
-	TestShop.On("GetShopByName").Return(&ShopExample, nil)
+	TestShop.On("ExecuteGetShopByName").Return(&ShopExample, nil)
 
 	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
 		AddRow(currentUserUUID.String(), time, time, time, "Testing", "User", "", "", "free", false, "", false, "", time, time)
@@ -1268,7 +1268,7 @@ func TestUnFollowShop_Success(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertNumberOfCalls(t, "GetShopByName", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteGetShopByName", 1)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())

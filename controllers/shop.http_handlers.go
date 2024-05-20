@@ -87,7 +87,7 @@ func (s *Shop) UnFollowShop(ctx *gin.Context) {
 
 	currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 
-	requestedShop, err := s.Process.GetShopByName(unFollowShop.UnFollowShopName)
+	requestedShop, err := s.Process.ExecuteGetShopByName(s, unFollowShop.UnFollowShopName)
 	if err != nil {
 		if err.Error() == "record not found" {
 			HandleResponse(ctx, err, http.StatusBadRequest, "shop not found", nil)
