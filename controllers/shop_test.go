@@ -824,8 +824,7 @@ func TestUpdateDiscontinuedItems_GetItemsByShopID_fail(t *testing.T) {
 
 	TestShop := &MockedShop{}
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Process: TestShop}
-	Shop := controllers.NewShopController(implShop)
+	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Process: TestShop, Operations: TestShop}
 
 	userID := uuid.New()
 	Task := &models.TaskSchedule{
@@ -847,13 +846,13 @@ func TestUpdateDiscontinuedItems_GetItemsByShopID_fail(t *testing.T) {
 	}
 
 	Scraper.On("ScrapSalesHistory").Return([]models.SoldItems{{}, {}, {}}, Task)
-	TestShop.On("ExecuteGetItemsByShopID").Return(nil, errors.New("Error While fetching Shop's details"))
+	TestShop.On("GetItemsByShopID").Return(nil, errors.New("Error While fetching Shop's details"))
 
-	_, err := Shop.UpdateDiscontinuedItems(ShopExample, Task, ShopRequest)
+	_, err := implShop.UpdateDiscontinuedItems(ShopExample, Task, ShopRequest)
 
 	assert.Error(t, err)
 	Scraper.AssertNumberOfCalls(t, "ScrapSalesHistory", 1)
-	TestShop.AssertNumberOfCalls(t, "ExecuteGetItemsByShopID", 1)
+	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
 	assert.Contains(t, err.Error(), "Error While fetching Shop's details")
 }
 func TestUpdateDiscontinuedItems_Success(t *testing.T) {
@@ -863,8 +862,7 @@ func TestUpdateDiscontinuedItems_Success(t *testing.T) {
 
 	TestShop := &MockedShop{}
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Process: TestShop}
-	Shop := controllers.NewShopController(implShop)
+	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Process: TestShop, Operations: TestShop}
 
 	userID := uuid.New()
 	Task := &models.TaskSchedule{
@@ -901,7 +899,7 @@ func TestUpdateDiscontinuedItems_Success(t *testing.T) {
 	}
 
 	Scraper.On("ScrapSalesHistory").Return(SoldItems, Task)
-	TestShop.On("ExecuteGetItemsByShopID").Return(ShopItems, nil)
+	TestShop.On("GetItemsByShopID").Return(ShopItems, nil)
 
 	sqlMock.ExpectBegin()
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
@@ -918,11 +916,11 @@ func TestUpdateDiscontinuedItems_Success(t *testing.T) {
 
 	sqlMock.ExpectCommit()
 
-	_, err := Shop.UpdateDiscontinuedItems(&ExampleShop, Task, ShopRequest)
+	_, err := implShop.UpdateDiscontinuedItems(&ExampleShop, Task, ShopRequest)
 
 	assert.NoError(t, err)
 	Scraper.AssertNumberOfCalls(t, "ScrapSalesHistory", 1)
-	TestShop.AssertNumberOfCalls(t, "ExecuteGetItemsByShopID", 1)
+	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
 
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
