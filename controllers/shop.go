@@ -61,18 +61,6 @@ type ShopUpdater interface {
 	UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
 	UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
 }
-type ShopMethodExecutor interface {
-	ExecuteGetShopByName(dispatch ShopOperations, ShopName string) (*models.Shop, error)
-	ExecuteGetItemsByShopID(dispatch ShopOperations, ID uint) ([]models.Item, error)
-	ExecuteGetAverageItemPrice(dispatch ShopOperations, ShopID uint) (float64, error)
-	ExecuteCreateShopRequest(dispatch ShopOperations, ShopRequest *models.ShopRequest) error
-	ExecuteCreateShop(dispatch ShopOperations, ShopRequest *models.ShopRequest)
-	ExecuteUpdateSellingHistory(dispatch ShopUpdater, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
-	ExecuteUpdateDiscontinuedItems(dispatch ShopUpdater, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
-	ExecuteGetTotalRevenue(dispatch ShopOperations, ShopID uint, AverageItemPrice float64) (float64, error)
-	ExecuteGetSoldItemsByShopID(dispatch ShopOperations, ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error)
-	ExecuteGetSellingStatsByPeriod(dispatch ShopOperations, ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error)
-}
 
 type ShopOperations interface {
 	GetShopByName(ShopName string) (shop *models.Shop, err error)
