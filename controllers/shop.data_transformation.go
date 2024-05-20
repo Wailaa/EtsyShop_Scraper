@@ -5,7 +5,6 @@ import (
 	"EtsyScraper/utils"
 	"log"
 	"math"
-	"time"
 )
 
 func (s *Shop) CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[string]DailySoldStats, error) {
@@ -43,24 +42,6 @@ func (s *Shop) CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[stri
 	}
 
 	return stats, nil
-}
-
-func (s *Shop) GetSoldItemsInRange(fromDate time.Time, ShopID uint) ([]models.SoldItems, error) {
-	soldItems := []models.SoldItems{}
-
-	tillDate := fromDate.Add(24 * time.Hour)
-
-	if err := s.DB.Table("shops").
-		Select("sold_items.*").
-		Joins("JOIN shop_menus ON shops.id = shop_menus.shop_id").
-		Joins("JOIN menu_items ON shop_menus.id = menu_items.shop_menu_id").
-		Joins("JOIN items ON menu_items.id = items.menu_item_id").
-		Joins("JOIN sold_items ON items.id = sold_items.item_id").
-		Where("shops.id = ? AND sold_items.created_at BETWEEN ? AND ?", ShopID, fromDate, tillDate).
-		Find(&soldItems).Error; err != nil {
-		return nil, utils.HandleError(err)
-	}
-	return soldItems, nil
 }
 
 func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
