@@ -3011,3 +3011,49 @@ func TestCreateShopRequest_TypeShop_Success(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 
 }
+
+func TestGetItemsByShopID_TypeShop_Success(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+	implShop := controllers.Shop{DB: MockedDataBase}
+
+	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample.ID = uint(2)
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
+		WithArgs(ShopExample.ID, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(ShopExample.ID, ShopExample.Name))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_menus" WHERE "shop_menus"."shop_id" = $1 AND "shop_menus"."deleted_at" IS NULL`)).
+		WithArgs(ShopExample.ID).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopID", "TotalItemsAmount"}).AddRow(9, ShopExample.ID, 5).AddRow(11, ShopExample.ID, 10))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "menu_items" WHERE "menu_items"."shop_menu_id" IN ($1,$2) AND "menu_items"."deleted_at" IS NULL`)).
+		WithArgs().WillReturnRows(sqlmock.NewRows([]string{"id", "ShopMenuID", "SectionID"}).AddRow(8, 9, "SelectionID"))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "items" WHERE "items"."menu_item_id" = $1 AND "items"."deleted_at" IS NULL`)).
+		WithArgs(8).WillReturnRows(sqlmock.NewRows([]string{"id", "Name", "Available", "MenuItemID"}).AddRow(8, "ItemName", true, 8))
+
+	implShop.GetItemsByShopID(ShopExample.ID)
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
+}
+
+func TestGetItemsByShopID_TypeShop_Fail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	implShop := controllers.Shop{DB: MockedDataBase}
+	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample.ID = uint(2)
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
+		WithArgs(ShopExample.ID, 1).WillReturnError(errors.New("error while getting shop from DB"))
+
+	_, err := implShop.GetItemsByShopID(ShopExample.ID)
+
+	assert.Contains(t, err.Error(), "error while getting shop from DB")
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
+}

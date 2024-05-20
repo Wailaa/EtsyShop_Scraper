@@ -78,6 +78,7 @@ type ShopProcess interface {
 
 type ExecShopMethodProcess interface {
 	CreateNewShop(ShopRequest *models.ShopRequest) error
+	GetItemsByShopID(ID uint) (items []models.Item, err error)
 	GetAverageItemPrice(ShopID uint) (float64, error)
 	CreateShopRequest(ShopRequest *models.ShopRequest) error
 	GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error)
