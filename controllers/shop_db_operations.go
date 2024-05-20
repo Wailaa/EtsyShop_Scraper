@@ -301,7 +301,7 @@ func (s *Shop) GetSoldItemsInRange(fromDate time.Time, ShopID uint) ([]models.So
 func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
 	itemCount := itemsCount{}
 
-	items, err := s.Process.ExecuteGetItemsByShopID(s, ID)
+	items, err := s.Operations.GetItemsByShopID(ID)
 	if err != nil {
 		return itemCount, utils.HandleError(err, "error while calculating item average price")
 	}
