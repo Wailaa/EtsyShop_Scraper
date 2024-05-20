@@ -27,14 +27,71 @@ type MockedShop struct {
 	mock.Mock
 }
 
-func (m *MockedShop) ExecuteCreateShop(dispatch controllers.ShopOperations, ShopRequest *models.ShopRequest) {
+func (m *MockedShop) GetShopByName(ShopName string) (*models.Shop, error) {
 
+	args := m.Called()
+	shopInterface := args.Get(0)
+	var shop *models.Shop
+	if shopInterface != nil {
+		shop = shopInterface.(*models.Shop)
+	}
+	return shop, args.Error(1)
+}
+
+func (m *MockedShop) CreateNewShop(ShopRequest *models.ShopRequest) error {
+	args := m.Called()
+	return args.Error(0)
+}
+
+func (m *MockedShop) GetItemsByShopID(ID uint) ([]models.Item, error) {
+	args := m.Called()
+	shopInterface := args.Get(0)
+	var Items []models.Item
+	if shopInterface != nil {
+		Items = shopInterface.([]models.Item)
+	}
+	return Items, args.Error(1)
 }
 
 func (m *MockedShop) GetAverageItemPrice(ShopID uint) (float64, error) {
 	args := m.Called()
 	return args.Get(0).(float64), args.Error(1)
 }
+
+func (m *MockedShop) CreateShopRequest(ShopRequest *models.ShopRequest) error {
+	args := m.Called()
+	return args.Error(0)
+}
+
+func (m *MockedShop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error) {
+	args := m.Called()
+	return args.Get(0).(float64), args.Error(1)
+}
+
+func (m *MockedShop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []controllers.ResponseSoldItemInfo, err error) {
+	args := m.Called()
+	shopInterface := args.Get(0)
+	var soldItems []controllers.ResponseSoldItemInfo
+	if shopInterface != nil {
+		soldItems = shopInterface.([]controllers.ResponseSoldItemInfo)
+	}
+	return soldItems, args.Error(1)
+}
+
+func (m *MockedShop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[string]controllers.DailySoldStats, error) {
+	args := m.Called()
+	shopInterface := args.Get(0)
+	var Stats map[string]controllers.DailySoldStats
+	if shopInterface != nil {
+		Stats = shopInterface.(map[string]controllers.DailySoldStats)
+	}
+	return Stats, args.Error(1)
+}
+
+func (m *MockedShop) ExecuteCreateShop(dispatch controllers.ShopOperations, ShopRequest *models.ShopRequest) {
+
+}
+
 func (m *MockedShop) ExecuteGetTotalRevenue(dispatch controllers.ShopOperations, ShopID uint, AverageItemPrice float64) (float64, error) {
 	args := m.Called()
 	return args.Get(0).(float64), args.Error(1)
