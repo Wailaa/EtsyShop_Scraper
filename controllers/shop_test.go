@@ -1354,7 +1354,7 @@ func TestGetShopByID_RevenueFail(t *testing.T) {
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
 	TestShop.On("GetAverageItemPrice").Return(float64(15.5), nil)
-	TestShop.On("ExecuteGetTotalRevenue").Return(float64(0), errors.New("Error while getting Total revenue"))
+	TestShop.On("GetTotalRevenue").Return(float64(0), errors.New("Error while getting Total revenue"))
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
 		WithArgs(ShopExample.ID, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "name", "has_sold_history"}).AddRow(ShopExample.ID, ShopExample.Name, true))
@@ -1388,13 +1388,12 @@ func TestGetShopByID_Success(t *testing.T) {
 	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
-	Shop := controllers.NewShopController(implShop)
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Operations: TestShop}
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	TestShop.On("ExecuteGetAverageItemPrice").Return(float64(15.5), nil)
-	TestShop.On("ExecuteGetTotalRevenue").Return(float64(120), nil)
+	TestShop.On("GetAverageItemPrice").Return(float64(15.5), nil)
+	TestShop.On("GetTotalRevenue").Return(float64(120), nil)
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
 		WithArgs(ShopExample.ID, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(ShopExample.ID, ShopExample.Name))
@@ -1414,7 +1413,7 @@ func TestGetShopByID_Success(t *testing.T) {
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "menu_items" WHERE "menu_items"."shop_menu_id" IN ($1,$2) AND "menu_items"."deleted_at" IS NULL`)).
 		WithArgs().WillReturnRows(sqlmock.NewRows([]string{"id", "ShopMenuID", "SectionID"}).AddRow(8, 9, "SelectionID"))
 
-	Shop.GetShopByID(ShopExample.ID)
+	implShop.GetShopByID(ShopExample.ID)
 
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
@@ -2461,7 +2460,7 @@ func TestHandleHandleGetShopByID__Success(t *testing.T) {
 	router.GET("/testroute/:shopID", implShop.HandleGetShopByID)
 
 	TestShop.On("GetAverageItemPrice").Return(1.0, nil)
-	TestShop.On("ExecuteGetTotalRevenue").Return(1.0, nil)
+	TestShop.On("GetTotalRevenue").Return(1.0, nil)
 	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "shop_id"}).AddRow(1, 1))
 	sqlMock.ExpectQuery(regexp.QuoteMeta(``)).WillReturnRows(sqlmock.NewRows([]string{"id", "shop_id"}).AddRow(1, 1))

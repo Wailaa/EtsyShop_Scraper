@@ -116,7 +116,7 @@ func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
 		return
 	}
 
-	shop.Revenue, err = s.Process.ExecuteGetTotalRevenue(s, shop.ID, shop.AverageItemsPrice)
+	shop.Revenue, err = s.Operations.GetTotalRevenue(shop.ID, shop.AverageItemsPrice)
 	if err != nil {
 		return nil, utils.HandleError(err, "error while calculating shop's revenue")
 	}
