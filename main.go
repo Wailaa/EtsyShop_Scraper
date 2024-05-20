@@ -42,8 +42,7 @@ func main() {
 
 	utils := &utils.Utils{}
 	Scraper := &scrap.Scraper{}
-	Creatrors := &controllers.ShopCreators{DB: initializer.DB}
-	implShop := controllers.Shop{DB: initializer.DB, Scraper: Scraper, Process: Creatrors}
+	implShop := controllers.Shop{DB: initializer.DB, Scraper: Scraper}
 	implShop.Operations = &implShop
 
 	userRoutes := routes.NewUserRouteController(controllers.NewUserController(initializer.DB, utils))
