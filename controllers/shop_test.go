@@ -50,6 +50,16 @@ func (m *MockedShop) ExecuteCreateShopRequest(dispatch controllers.ExecShopMetho
 	return args.Error(0)
 }
 
+func (m *MockedShop) ExecuteGetItemsByShopID(dispatch controllers.ExecShopMethodProcess, ID uint) ([]models.Item, error) {
+	args := m.Called()
+	shopInterface := args.Get(0)
+	var Items []models.Item
+	if shopInterface != nil {
+		Items = shopInterface.([]models.Item)
+	}
+	return Items, args.Error(1)
+}
+
 func (m *MockedShop) ExecuteGetSoldItemsByShopID(dispatch controllers.ExecShopMethodProcess, ID uint) (SoldItemInfos []controllers.ResponseSoldItemInfo, err error) {
 	args := m.Called()
 	shopInterface := args.Get(0)
