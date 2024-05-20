@@ -203,7 +203,7 @@ func (s *Shop) ProcessStatsRequest(ctx *gin.Context) {
 	date := time.Now().AddDate(year, month, day)
 	dateMidnight := utils.TruncateDate(date)
 
-	LastSevenDays, err := s.Process.ExecuteGetSellingStatsByPeriod(s, ShopIDToUint, dateMidnight)
+	LastSevenDays, err := s.Operations.GetSellingStatsByPeriod(ShopIDToUint, dateMidnight)
 	if err != nil {
 		HandleResponse(ctx, err, http.StatusInternalServerError, "error while handling stats", nil)
 		return

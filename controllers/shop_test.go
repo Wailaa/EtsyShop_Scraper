@@ -1623,18 +1623,17 @@ func TestProcessStatsRequest_GetSellingStatsByPeriod_Fail(t *testing.T) {
 	_, router, w := SetGinTestMode()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
-	Shop := controllers.NewShopController(implShop)
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Operations: TestShop}
 
 	ShopID := uint(2)
 	Period := "lastSevenDays"
 
 	route := fmt.Sprintf("/stats/%v/%s", ShopID, Period)
 
-	TestShop.On("ExecuteGetSellingStatsByPeriod").Return(nil, errors.New("error while fetcheing data from db"))
+	TestShop.On("GetSellingStatsByPeriod").Return(nil, errors.New("error while fetcheing data from db"))
 
 	router.GET("/stats/:shopID/:period", func(ctx *gin.Context) {
-		Shop.ProcessStatsRequest(ctx)
+		implShop.ProcessStatsRequest(ctx)
 	})
 
 	req, _ := http.NewRequest("GET", route, nil)
@@ -1642,7 +1641,7 @@ func TestProcessStatsRequest_GetSellingStatsByPeriod_Fail(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertNumberOfCalls(t, "ExecuteGetSellingStatsByPeriod", 1)
+	TestShop.AssertNumberOfCalls(t, "GetSellingStatsByPeriod", 1)
 	assert.Contains(t, w.Body.String(), "error while handling stats")
 
 }
@@ -1655,8 +1654,7 @@ func TestProcessStatsRequest_Success(t *testing.T) {
 	_, router, w := SetGinTestMode()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
-	Shop := controllers.NewShopController(implShop)
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Operations: TestShop}
 
 	ShopID := uint(2)
 	Period := "lastSevenDays"
@@ -1670,10 +1668,10 @@ func TestProcessStatsRequest_Success(t *testing.T) {
 		},
 	}
 
-	TestShop.On("ExecuteGetSellingStatsByPeriod").Return(stats, nil)
+	TestShop.On("GetSellingStatsByPeriod").Return(stats, nil)
 
 	router.GET("/stats/:shopID/:period", func(ctx *gin.Context) {
-		Shop.ProcessStatsRequest(ctx)
+		implShop.ProcessStatsRequest(ctx)
 	})
 
 	req, _ := http.NewRequest("GET", route, nil)
@@ -1681,7 +1679,7 @@ func TestProcessStatsRequest_Success(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertNumberOfCalls(t, "ExecuteGetSellingStatsByPeriod", 1)
+	TestShop.AssertNumberOfCalls(t, "GetSellingStatsByPeriod", 1)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
