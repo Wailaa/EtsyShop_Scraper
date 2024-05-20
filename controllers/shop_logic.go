@@ -38,7 +38,7 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 	if scrapeMenu.HasSoldHistory && scrapeMenu.TotalSales > 0 {
 		log.Println("Shop's selling history initiated for ShopRequest.ID: ", ShopRequest.ID)
 
-		if err := s.Process.ExecuteUpdateSellingHistory(s, scrapeMenu, Task, ShopRequest); err != nil {
+		if err := s.Operations.UpdateSellingHistory(scrapeMenu, Task, ShopRequest); err != nil {
 			ShopRequest.Status = "failed"
 			s.Operations.CreateShopRequest(ShopRequest)
 			message := fmt.Sprintf("Shop's selling history failed for ShopRequest.ID: %v", ShopRequest.ID)
