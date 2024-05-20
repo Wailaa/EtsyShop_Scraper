@@ -1503,11 +1503,11 @@ func TestGetItemsCountByShopID_Fail(t *testing.T) {
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	TestShop.On("GetItemsByShopID").Return(nil, errors.New("error while calculating item average price "))
+	TestShop.On("ExecuteGetItemsByShopID").Return(nil, errors.New("error while calculating item average price "))
 
 	Shop.GetItemsCountByShopID(ShopExample.ID)
 
-	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteGetItemsByShopID", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 func TestGetItemsCountByShopID_Success(t *testing.T) {
@@ -1521,11 +1521,11 @@ func TestGetItemsCountByShopID_Success(t *testing.T) {
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}}, nil)
+	TestShop.On("ExecuteGetItemsByShopID").Return([]models.Item{{}, {}}, nil)
 
 	Shop.GetItemsCountByShopID(ShopExample.ID)
 
-	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteGetItemsByShopID", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 func TestGetSoldItemsByShopID_Fail(t *testing.T) {
@@ -2728,7 +2728,7 @@ func TestHandleGetItemsCountByShopID__Fail(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
 	router.GET("/testroute/:shopID/items_count", implShop.HandleGetItemsCountByShopID)
 
-	TestShop.On("GetItemsByShopID").Return(nil, errors.New("no shop found"))
+	TestShop.On("ExecuteGetItemsByShopID").Return(nil, errors.New("no shop found"))
 
 	req, err := http.NewRequest("GET", "/testroute/1/items_count", nil)
 	if err != nil {
@@ -2751,7 +2751,7 @@ func TestHandleGetItemsCountByShopID_Success(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
 	router.GET("/testroute/:shopID/items_count", implShop.HandleGetItemsCountByShopID)
 
-	TestShop.On("GetItemsByShopID").Return([]models.Item{}, nil)
+	TestShop.On("ExecuteGetItemsByShopID").Return([]models.Item{}, nil)
 
 	req, err := http.NewRequest("GET", "/testroute/1/items_count", nil)
 	if err != nil {
