@@ -11,17 +11,19 @@ import (
 )
 
 type Shop struct {
-	DB      *gorm.DB
-	Process ShopMethodExecutor
-	Scraper scrap.ScrapeUpdateProcess
+	DB         *gorm.DB
+	Process    ShopMethodExecutor
+	Scraper    scrap.ScrapeUpdateProcess
+	Operations ShopOperations
 }
 
 func NewShopController(implementSHOP Shop) *Shop {
 
 	return &Shop{
-		DB:      implementSHOP.DB,
-		Process: implementSHOP.Process,
-		Scraper: implementSHOP.Scraper,
+		DB:         implementSHOP.DB,
+		Process:    implementSHOP.Process,
+		Scraper:    implementSHOP.Scraper,
+		Operations: &implementSHOP,
 	}
 }
 
