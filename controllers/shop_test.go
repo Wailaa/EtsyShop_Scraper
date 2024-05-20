@@ -2041,7 +2041,7 @@ func TestCheckAndUpdateOutOfProdMenu(t *testing.T) {
 	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Operations: TestShop}
 
 	AllMenus := []models.MenuItem{{Category: "All"}, {Category: "UnCategorized"}, {Category: "Out Of Production"}}
 
@@ -2053,7 +2053,7 @@ func TestCheckAndUpdateOutOfProdMenu(t *testing.T) {
 		Status:   "Pending",
 	}
 
-	TestShop.On("ExecuteCreateShopRequest").Return(nil)
+	TestShop.On("CreateShopRequest").Return(nil)
 
 	sqlMock.ExpectBegin()
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "menu_items" ("created_at","updated_at","deleted_at","shop_menu_id","category","section_id","link","amount") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "id"`)).
