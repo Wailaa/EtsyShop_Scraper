@@ -1,11 +1,9 @@
 package controllers
 
 import (
-	"errors"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 
 	"EtsyScraper/models"
@@ -69,7 +67,6 @@ type ShopProcess interface {
 	GetShopByName(ShopName string) (shop *models.Shop, err error)
 	GetItemsByShopID(ID uint) (items []models.Item, err error)
 	ExecuteGetAverageItemPrice(dispatch ExecShopMethodProcess, ShopID uint) (float64, error)
-	CreateShopRequest(ShopRequest *models.ShopRequest) error
 	ExecuteCreateShopRequest(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest) error
 	ExecuteCreateShop(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest)
 	ExecuteUpdateSellingHistory(dispatch ShopUpdater, Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
@@ -131,19 +128,6 @@ func (ps *ShopCreators) ExecuteGetSellingStatsByPeriod(dispatch ExecShopMethodPr
 func (ps *ShopCreators) ExecuteCreateShopRequest(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest) error {
 	err := dispatch.CreateShopRequest(ShopRequest)
 	return err
-}
-
-func (pr *ShopCreators) CreateShopRequest(ShopRequest *models.ShopRequest) error {
-	if ShopRequest.AccountID == uuid.Nil {
-		err := errors.New("no AccountID was passed")
-		return utils.HandleError(err)
-	}
-
-	if err := pr.DB.Save(ShopRequest).Error; err != nil {
-		return utils.HandleError(err)
-	}
-
-	return nil
 }
 
 func (pr *ShopCreators) GetShopByName(ShopName string) (shop *models.Shop, err error) {

@@ -92,10 +92,7 @@ func (m *MockedShop) GetItemsByShopID(ID uint) ([]models.Item, error) {
 	}
 	return items, args.Error(1)
 }
-func (m *MockedShop) CreateShopRequest(shopRequest *models.ShopRequest) error {
-	args := m.Called()
-	return args.Error(0)
-}
+
 func (m *MockedShop) GetShopByName(name string) (*models.Shop, error) {
 	args := m.Called()
 	shopInterface := args.Get(0)
@@ -1658,65 +1655,6 @@ func TestSoldItemsTask(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "ExecuteGetSoldItemsByShopID", 1)
 	assert.NoError(t, err)
 	assert.Equal(t, revenueExpected, Revenue)
-}
-
-func TestCreateShopRequest_FailNoAccount(t *testing.T) {
-
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-	TestShop := &controllers.ShopCreators{DB: MockedDataBase}
-
-	ShopRequest := &models.ShopRequest{
-		ShopName: "exampleShop",
-		Status:   "Pending",
-	}
-
-	err := TestShop.CreateShopRequest(ShopRequest)
-
-	assert.Contains(t, err.Error(), "no AccountID was passed")
-
-}
-func TestCreateShopRequest_FailSaveData(t *testing.T) {
-
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-	TestShop := &controllers.ShopCreators{DB: MockedDataBase}
-
-	ShopRequest := &models.ShopRequest{
-		AccountID: uuid.New(),
-		ShopName:  "exampleShop",
-		Status:    "Pending",
-	}
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shop_requests" ("created_at","updated_at","deleted_at","account_id","shop_name","status") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "id"`)).WillReturnError(errors.New("Failed to save ShopRequest"))
-	sqlMock.ExpectRollback()
-
-	err := TestShop.CreateShopRequest(ShopRequest)
-
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-	assert.Contains(t, err.Error(), "Failed to save ShopRequest")
-}
-func TestCreateShopRequest_Success(t *testing.T) {
-
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-	TestShop := &controllers.ShopCreators{DB: MockedDataBase}
-
-	ShopRequest := &models.ShopRequest{
-		AccountID: uuid.New(),
-		ShopName:  "exampleShop",
-		Status:    "Pending",
-	}
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shop_requests" ("created_at","updated_at","deleted_at","account_id","shop_name","status") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "id"`)).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-	sqlMock.ExpectCommit()
-	TestShop.CreateShopRequest(ShopRequest)
-
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-
 }
 
 func TestProcessStatsRequest_InvalidPeriod(t *testing.T) {
