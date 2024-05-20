@@ -365,7 +365,7 @@ func TestCreateNewShop_SaveMenuToDB_Fail(t *testing.T) {
 		Name: "exampleShop",
 	}
 
-	TestShop.On("CreateShopRequest").Return(nil)
+	TestShop.On("ExecuteCreateShopRequest").Return(nil)
 
 	Scraper.On("ScrapShop").Return(ShopExample, nil)
 	Scraper.On("ScrapAllMenuItems").Return(ShopExample)
@@ -383,7 +383,7 @@ func TestCreateNewShop_SaveMenuToDB_Fail(t *testing.T) {
 	err := Shop.CreateNewShop(ShopRequest)
 
 	assert.Error(t, err)
-	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteCreateShopRequest", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 func TestCreateNewShop_SaveMenuToDB_Success(t *testing.T) {
@@ -406,7 +406,7 @@ func TestCreateNewShop_SaveMenuToDB_Success(t *testing.T) {
 		Name: "exampleShop",
 	}
 
-	TestShop.On("CreateShopRequest").Return(nil)
+	TestShop.On("ExecuteCreateShopRequest").Return(nil)
 
 	Scraper.On("ScrapShop").Return(ShopExample, nil)
 	Scraper.On("ScrapAllMenuItems").Return(ShopExample)
@@ -424,7 +424,7 @@ func TestCreateNewShop_SaveMenuToDB_Success(t *testing.T) {
 	err := Shop.CreateNewShop(ShopRequest)
 
 	assert.NoError(t, err)
-	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 2)
+	TestShop.AssertNumberOfCalls(t, "ExecuteCreateShopRequest", 2)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 func TestCreateNewShop_HasSoldHistory(t *testing.T) {
@@ -449,7 +449,7 @@ func TestCreateNewShop_HasSoldHistory(t *testing.T) {
 		HasSoldHistory: true,
 	}
 
-	TestShop.On("CreateShopRequest").Return(nil)
+	TestShop.On("ExecuteCreateShopRequest").Return(nil)
 
 	Scraper.On("ScrapShop").Return(ShopExample, nil)
 	Scraper.On("ScrapAllMenuItems").Return(ShopExample)
@@ -468,7 +468,7 @@ func TestCreateNewShop_HasSoldHistory(t *testing.T) {
 	err := Shop.CreateNewShop(ShopRequest)
 
 	assert.NoError(t, err)
-	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteCreateShopRequest", 1)
 	TestShop.AssertNumberOfCalls(t, "ExecuteUpdateSellingHistory", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
@@ -1994,7 +1994,7 @@ func TestUpdateShopMenuToDB(t *testing.T) {
 		},
 	}
 
-	TestShop.On("CreateShopRequest").Return(nil)
+	TestShop.On("ExecuteCreateShopRequest").Return(nil)
 
 	sqlMock.ExpectBegin()
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
@@ -2011,7 +2011,7 @@ func TestUpdateShopMenuToDB(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteCreateShopRequest", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
@@ -2036,7 +2036,7 @@ func TestUpdateShopMenuToDB_Fail(t *testing.T) {
 		HasSoldHistory: true,
 	}
 
-	TestShop.On("CreateShopRequest").Return(nil)
+	TestShop.On("ExecuteCreateShopRequest").Return(nil)
 
 	sqlMock.ExpectBegin()
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
@@ -2047,7 +2047,7 @@ func TestUpdateShopMenuToDB_Fail(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "database Error")
-	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteCreateShopRequest", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 

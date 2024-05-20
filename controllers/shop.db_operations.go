@@ -28,13 +28,13 @@ func (s *Shop) UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopReq
 
 	if err := s.DB.Save(Shop).Error; err != nil {
 		ShopRequest.Status = "failed"
-		s.Process.CreateShopRequest(ShopRequest)
+		s.Process.ExecuteCreateShopRequest(s, ShopRequest)
 		message := fmt.Sprintf("failed to save Shop's menu into database for ShopRequest.ID: %v", ShopRequest.ID)
 		return utils.HandleError(err, message)
 	}
 
 	ShopRequest.Status = "done"
-	s.Process.CreateShopRequest(ShopRequest)
+	s.Process.ExecuteCreateShopRequest(s, ShopRequest)
 	log.Println("Shop's menu data saved successfully while handling ShopRequest.ID: ", ShopRequest.ID)
 	return nil
 }
