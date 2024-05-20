@@ -805,13 +805,13 @@ func TestUpdateDiscontinuedItems_GetItemsByShopID_fail(t *testing.T) {
 	}
 
 	Scraper.On("ScrapSalesHistory").Return([]models.SoldItems{{}, {}, {}}, Task)
-	TestShop.On("GetItemsByShopID").Return(nil, errors.New("Error While fetching Shop's details"))
+	TestShop.On("ExecuteGetItemsByShopID").Return(nil, errors.New("Error While fetching Shop's details"))
 
 	_, err := Shop.UpdateDiscontinuedItems(ShopExample, Task, ShopRequest)
 
 	assert.Error(t, err)
 	Scraper.AssertNumberOfCalls(t, "ScrapSalesHistory", 1)
-	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteGetItemsByShopID", 1)
 	assert.Contains(t, err.Error(), "Error While fetching Shop's details")
 }
 func TestUpdateDiscontinuedItems_Success(t *testing.T) {
@@ -859,7 +859,7 @@ func TestUpdateDiscontinuedItems_Success(t *testing.T) {
 	}
 
 	Scraper.On("ScrapSalesHistory").Return(SoldItems, Task)
-	TestShop.On("GetItemsByShopID").Return(ShopItems, nil)
+	TestShop.On("ExecuteGetItemsByShopID").Return(ShopItems, nil)
 
 	sqlMock.ExpectBegin()
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
@@ -880,7 +880,7 @@ func TestUpdateDiscontinuedItems_Success(t *testing.T) {
 
 	assert.NoError(t, err)
 	Scraper.AssertNumberOfCalls(t, "ScrapSalesHistory", 1)
-	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
+	TestShop.AssertNumberOfCalls(t, "ExecuteGetItemsByShopID", 1)
 
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
@@ -2636,7 +2636,7 @@ func TestHandleGetSoldItemsByShopID__NoShop(t *testing.T) {
 	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop}
 	router.GET("/testroute/:shopID/all_sold_items", implShop.HandleGetSoldItemsByShopID)
 
-	TestShop.On("GetItemsByShopID").Return(nil, errors.New("no shop found"))
+	TestShop.On("ExecuteGetItemsByShopID").Return(nil, errors.New("no shop found"))
 
 	req, err := http.NewRequest("GET", "/testroute//all_sold_items", nil)
 	if err != nil {

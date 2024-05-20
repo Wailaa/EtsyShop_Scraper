@@ -108,7 +108,7 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 		return scrapSoldItems, nil
 	}
 
-	getAllItems, err := s.Process.GetItemsByShopID(Shop.ID)
+	getAllItems, err := s.Process.ExecuteGetItemsByShopID(s, Shop.ID)
 	if err != nil {
 		return nil, utils.HandleError(err)
 	}
