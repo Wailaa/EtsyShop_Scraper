@@ -3,6 +3,7 @@ package controllers
 import (
 	"EtsyScraper/models"
 	"EtsyScraper/utils"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -192,4 +193,17 @@ func (s *Shop) GetAverageItemPrice(ShopID uint) (float64, error) {
 	averagePrice = RoundToTwoDecimalDigits(averagePrice)
 
 	return averagePrice, nil
+}
+
+func (s *Shop) CreateShopRequest(ShopRequest *models.ShopRequest) error {
+	if ShopRequest.AccountID == uuid.Nil {
+		err := errors.New("no AccountID was passed")
+		return utils.HandleError(err)
+	}
+
+	if err := s.DB.Save(ShopRequest).Error; err != nil {
+		return utils.HandleError(err)
+	}
+
+	return nil
 }

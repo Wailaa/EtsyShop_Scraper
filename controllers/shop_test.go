@@ -3009,3 +3009,62 @@ func TestGetAverageItemPrice_Shop_Fail(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 
 }
+
+func TestCreateShopRequest_TypeShop_FailNoAccount(t *testing.T) {
+
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+	implShop := controllers.Shop{DB: MockedDataBase}
+
+	ShopRequest := &models.ShopRequest{
+		ShopName: "exampleShop",
+		Status:   "Pending",
+	}
+
+	err := implShop.CreateShopRequest(ShopRequest)
+
+	assert.Contains(t, err.Error(), "no AccountID was passed")
+
+}
+func TestCreateShopRequest_TypeShop_FailSaveData(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+	implShop := controllers.Shop{DB: MockedDataBase}
+
+	ShopRequest := &models.ShopRequest{
+		AccountID: uuid.New(),
+		ShopName:  "exampleShop",
+		Status:    "Pending",
+	}
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shop_requests" ("created_at","updated_at","deleted_at","account_id","shop_name","status") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "id"`)).WillReturnError(errors.New("Failed to save ShopRequest"))
+	sqlMock.ExpectRollback()
+
+	err := implShop.CreateShopRequest(ShopRequest)
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+	assert.Contains(t, err.Error(), "Failed to save ShopRequest")
+}
+func TestCreateShopRequest_TypeShop_Success(t *testing.T) {
+
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+	implShop := controllers.Shop{DB: MockedDataBase}
+
+	ShopRequest := &models.ShopRequest{
+		AccountID: uuid.New(),
+		ShopName:  "exampleShop",
+		Status:    "Pending",
+	}
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shop_requests" ("created_at","updated_at","deleted_at","account_id","shop_name","status") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "id"`)).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+	sqlMock.ExpectCommit()
+	implShop.CreateShopRequest(ShopRequest)
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
+}
