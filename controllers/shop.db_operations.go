@@ -15,7 +15,7 @@ func (s *Shop) SaveShopToDB(scrappedShop *models.Shop, ShopRequest *models.ShopR
 
 	if err := s.DB.Create(scrappedShop).Error; err != nil {
 		ShopRequest.Status = "failed"
-		s.Process.CreateShopRequest(ShopRequest)
+		s.Process.ExecuteCreateShopRequest(s, ShopRequest)
 		message := fmt.Sprintf("failed to save Shop's data while handling ShopRequest.ID: %v", ShopRequest.ID)
 		return utils.HandleError(err, message)
 	}
