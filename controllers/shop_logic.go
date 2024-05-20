@@ -40,14 +40,14 @@ func (s *Shop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 
 		if err := s.Process.ExecuteUpdateSellingHistory(s, scrapeMenu, Task, ShopRequest); err != nil {
 			ShopRequest.Status = "failed"
-			s.Process.ExecuteCreateShopRequest(s, ShopRequest)
+			s.Operations.CreateShopRequest(ShopRequest)
 			message := fmt.Sprintf("Shop's selling history failed for ShopRequest.ID: %v", ShopRequest.ID)
 			return utils.HandleError(err, message)
 
 		}
 	} else {
 		ShopRequest.Status = "done"
-		s.Process.ExecuteCreateShopRequest(s, ShopRequest)
+		s.Operations.CreateShopRequest(ShopRequest)
 	}
 	return nil
 }

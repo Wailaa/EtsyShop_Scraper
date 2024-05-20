@@ -34,7 +34,7 @@ func (s *Shop) UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopReq
 	}
 
 	ShopRequest.Status = "done"
-	s.Process.ExecuteCreateShopRequest(s, ShopRequest)
+	s.Operations.CreateShopRequest(ShopRequest)
 	log.Println("Shop's menu data saved successfully while handling ShopRequest.ID: ", ShopRequest.ID)
 	return nil
 }
