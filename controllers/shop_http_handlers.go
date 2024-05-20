@@ -46,7 +46,7 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 
 	HandleResponse(ctx, nil, http.StatusOK, "shop request received successfully", nil)
 
-	go s.Process.ExecuteCreateShop(s, ShopRequest)
+	go s.Operations.CreateNewShop(ShopRequest)
 
 }
 

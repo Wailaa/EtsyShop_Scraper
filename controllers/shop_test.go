@@ -201,10 +201,10 @@ func TestCreateNewShopRequest_Panic(t *testing.T) {
 
 	ctx, router, w := SetGinTestMode()
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper}
-	Shop := controllers.NewShopController(implShop)
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
 
-	router.Use(Shop.CreateNewShopRequest)
+	router.Use(implShop.CreateNewShopRequest)
 
 	router.GET("/create_shop", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"message": "success"})
@@ -228,12 +228,12 @@ func TestCreateNewShopRequest_InvalidJson(t *testing.T) {
 
 	currentUserUUID := uuid.New()
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper}
-	Shop := controllers.NewShopController(implShop)
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
-	}, Shop.CreateNewShopRequest)
+	}, implShop.CreateNewShopRequest)
 
 	body := []byte{}
 	req, _ := http.NewRequest("POST", "/create_shop", bytes.NewBuffer(body))
@@ -256,15 +256,14 @@ func TestCreateNewShopRequest_GetShopError(t *testing.T) {
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Scraper: Scraper}
-	Shop := controllers.NewShopController(implShop)
+	implShop := controllers.Shop{DB: MockedDataBase, Process: TestShop, Scraper: Scraper, Operations: TestShop}
 
-	TestShop.On("ExecuteGetShopByName").Return(nil, errors.New("Error"))
+	TestShop.On("GetShopByName").Return(nil, errors.New("Error"))
 	TestShop.On("ExecuteCreateShopRequest").Return(errors.New("SecondError"))
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
-	}, Shop.CreateNewShopRequest)
+	}, implShop.CreateNewShopRequest)
 
 	body := []byte(`{"new_shop_name":"ShopExample"}`)
 	req, _ := http.NewRequest("POST", "/create_shop", bytes.NewBuffer(body))
@@ -290,7 +289,7 @@ func TestCreateNewShopRequest_ShopExists(t *testing.T) {
 	Scraper := &MockScrapper{}
 	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Process: TestShop, Operations: TestShop}
 
-	TestShop.On("GetShopByName").Return(&models.Shop{Name: "ShopName"}, nil)
+	TestShop.On("GetShopByName").Return(&models.Shop{Name: "ShopExample"}, nil)
 	TestShop.On("ExecuteCreateShopRequest").Return(errors.New("SecondError"))
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
@@ -323,6 +322,7 @@ func TestCreateNewShopRequest_Success(t *testing.T) {
 
 	TestShop.On("GetShopByName").Return(nil, errors.New("no Shop was Found ,error: record not found"))
 	TestShop.On("ExecuteCreateShopRequest").Return(nil)
+	TestShop.On("CreateNewShop").Return(nil)
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
