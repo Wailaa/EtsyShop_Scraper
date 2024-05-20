@@ -68,7 +68,7 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 		return utils.HandleError(err)
 	}
 
-	AllItems, err := s.Process.ExecuteGetItemsByShopID(s, Shop.ID)
+	AllItems, err := s.Operations.GetItemsByShopID(Shop.ID)
 	if err != nil {
 		return utils.HandleError(err)
 	}
