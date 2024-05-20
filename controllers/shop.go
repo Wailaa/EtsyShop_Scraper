@@ -65,6 +65,7 @@ type ShopUpdater interface {
 }
 type ShopProcess interface {
 	GetShopByName(ShopName string) (shop *models.Shop, err error)
+	ExecuteGetShopByName(dispatch ExecShopMethodProcess, ShopName string) (*models.Shop, error)
 	ExecuteGetItemsByShopID(dispatch ExecShopMethodProcess, ID uint) ([]models.Item, error)
 	ExecuteGetAverageItemPrice(dispatch ExecShopMethodProcess, ShopID uint) (float64, error)
 	ExecuteCreateShopRequest(dispatch ExecShopMethodProcess, ShopRequest *models.ShopRequest) error
@@ -134,6 +135,10 @@ func (ps *ShopCreators) ExecuteCreateShopRequest(dispatch ExecShopMethodProcess,
 func (ps *ShopCreators) ExecuteGetItemsByShopID(dispatch ExecShopMethodProcess, ID uint) ([]models.Item, error) {
 	items, err := dispatch.GetItemsByShopID(ID)
 	return items, err
+}
+func (ps *ShopCreators) ExecuteGetShopByName(dispatch ExecShopMethodProcess, ShopName string) (*models.Shop, error) {
+	shop, err := dispatch.GetShopByName(ShopName)
+	return shop, err
 }
 
 func (pr *ShopCreators) GetShopByName(ShopName string) (shop *models.Shop, err error) {

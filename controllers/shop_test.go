@@ -60,6 +60,17 @@ func (m *MockedShop) ExecuteGetItemsByShopID(dispatch controllers.ExecShopMethod
 	return Items, args.Error(1)
 }
 
+func (m *MockedShop) ExecuteGetShopByName(dispatch controllers.ExecShopMethodProcess, ShopName string) (*models.Shop, error) {
+
+	args := m.Called()
+	shopInterface := args.Get(0)
+	var shop models.Shop
+	if shopInterface != nil {
+		shop = shopInterface.(models.Shop)
+	}
+	return &shop, args.Error(1)
+}
+
 func (m *MockedShop) ExecuteGetSoldItemsByShopID(dispatch controllers.ExecShopMethodProcess, ID uint) (SoldItemInfos []controllers.ResponseSoldItemInfo, err error) {
 	args := m.Called()
 	shopInterface := args.Get(0)
