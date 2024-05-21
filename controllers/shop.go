@@ -57,11 +57,6 @@ type itemsCount struct {
 	OutOfProduction int
 }
 
-type ShopUpdater interface {
-	UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
-	UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
-}
-
 type ShopOperations interface {
 	GetShopByName(ShopName string) (shop *models.Shop, err error)
 	CreateNewShop(ShopRequest *models.ShopRequest) error
