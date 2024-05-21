@@ -140,7 +140,7 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 	return nil
 }
 
-func UpdateSoldItems(queue UpdateSoldItemsQueue, newController controllers.ShopUpdater) {
+func UpdateSoldItems(queue UpdateSoldItemsQueue, newController controllers.ShopOperations) {
 	ShopRequest := &models.ShopRequest{}
 	newController.UpdateSellingHistory(&queue.Shop, &queue.Task, ShopRequest)
 }
