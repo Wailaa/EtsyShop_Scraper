@@ -12,6 +12,7 @@ import (
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 	"gorm.io/gorm"
 
+	"EtsyScraper/controllers"
 	"EtsyScraper/models"
 	scheduleUpdates "EtsyScraper/scheduleUpdateTask"
 	setupMockServer "EtsyScraper/setupTests"
@@ -36,13 +37,79 @@ type MockShopUpdater struct {
 	mock.Mock
 }
 
-func (m *MockShopUpdater) UpdateSellingHistory(shop *models.Shop, task *models.TaskSchedule, shopRequest *models.ShopRequest) error {
+func (m *MockShopUpdater) GetShopByName(ShopName string) (*models.Shop, error) {
+
+	args := m.Called()
+	shopInterface := args.Get(0)
+	var shop *models.Shop
+	if shopInterface != nil {
+		shop = shopInterface.(*models.Shop)
+	}
+	return shop, args.Error(1)
+}
+
+func (m *MockShopUpdater) CreateNewShop(ShopRequest *models.ShopRequest) error {
+	args := m.Called()
+	return args.Error(0)
+}
+
+func (m *MockShopUpdater) GetItemsByShopID(ID uint) ([]models.Item, error) {
+	args := m.Called()
+	shopInterface := args.Get(0)
+	var Items []models.Item
+	if shopInterface != nil {
+		Items = shopInterface.([]models.Item)
+	}
+	return Items, args.Error(1)
+}
+
+func (m *MockShopUpdater) GetAverageItemPrice(ShopID uint) (float64, error) {
+	args := m.Called()
+	return args.Get(0).(float64), args.Error(1)
+}
+
+func (m *MockShopUpdater) CreateShopRequest(ShopRequest *models.ShopRequest) error {
+	args := m.Called()
+	return args.Error(0)
+}
+
+func (m *MockShopUpdater) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error) {
+	args := m.Called()
+	return args.Get(0).(float64), args.Error(1)
+}
+
+func (m *MockShopUpdater) GetSoldItemsByShopID(ID uint) (SoldItemInfos []controllers.ResponseSoldItemInfo, err error) {
+	args := m.Called()
+	shopInterface := args.Get(0)
+	var soldItems []controllers.ResponseSoldItemInfo
+	if shopInterface != nil {
+		soldItems = shopInterface.([]controllers.ResponseSoldItemInfo)
+	}
+	return soldItems, args.Error(1)
+}
+
+func (m *MockShopUpdater) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[string]controllers.DailySoldStats, error) {
+	args := m.Called()
+	shopInterface := args.Get(0)
+	var Stats map[string]controllers.DailySoldStats
+	if shopInterface != nil {
+		Stats = shopInterface.(map[string]controllers.DailySoldStats)
+	}
+	return Stats, args.Error(1)
+}
+
+func (m *MockShopUpdater) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error {
 	args := m.Called()
 	return args.Error(0)
 }
 func (m *MockShopUpdater) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error) {
 	args := m.Called()
-	return args.Get(0).([]models.SoldItems), args.Error(1)
+	shopInterface := args.Get(0)
+	var soldItems []models.SoldItems
+	if shopInterface != nil {
+		soldItems = shopInterface.([]models.SoldItems)
+	}
+	return soldItems, args.Error(1)
 }
 
 func TestScheduleScrapUpdate_SchedulesCronJob(t *testing.T) {
