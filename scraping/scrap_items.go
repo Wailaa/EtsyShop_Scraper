@@ -159,17 +159,9 @@ func HandleUnCategorized(shop *models.Shop, HasSalesCategory bool, AllItemCatego
 
 	if ShouldProcessItems(shop, HasSalesCategory) {
 		UnCategorizedItems := FilterUncategorizedItems(shop, AllItemCategoryIndex, ListingIdCount)
-		if len(UnCategorizedItems) > 0 {
-			UnCategorizedMenu := models.MenuItem{
-				ShopMenuID: shop.ShopMenu.Menu[AllItemCategoryIndex].ShopMenuID,
-				Category:   "UnCategorized",
-				SectionID:  shop.ShopMenu.Menu[AllItemCategoryIndex].SectionID,
-				Link:       shop.ShopMenu.Menu[AllItemCategoryIndex].Link,
-				Amount:     len(UnCategorizedItems),
-				Items:      UnCategorizedItems,
-			}
 
-			shop.ShopMenu.Menu = append(shop.ShopMenu.Menu, UnCategorizedMenu)
+		if len(UnCategorizedItems) > 0 {
+			CreateUncategorizedMenu(shop, AllItemCategoryIndex, UnCategorizedItems)
 		}
 
 		shop.ShopMenu.Menu[AllItemCategoryIndex].Items = []models.Item{}
