@@ -627,3 +627,58 @@ func TestAddToQueue(t *testing.T) {
 	}
 
 }
+
+func TestShouldProcessItems(t *testing.T) {
+	tests := []struct {
+		name             string
+		hasSalesCategory bool
+		shop             models.Shop
+		expected         bool
+	}{
+		{
+			name:             "Shop has no sale category and",
+			hasSalesCategory: false,
+			shop: models.Shop{ShopMenu: models.ShopMenu{
+				Menu: []models.MenuItem{
+					{Category: "All"},
+					{Category: "NotSales"},
+				},
+			},
+			},
+			expected: true,
+		},
+		{
+			name:             "",
+			hasSalesCategory: true,
+			shop: models.Shop{ShopMenu: models.ShopMenu{
+				Menu: []models.MenuItem{
+					{Category: "All"},
+					{Category: "NotSales"},
+					{Category: "Example"},
+				},
+			},
+			},
+			expected: true,
+		},
+		{
+			name:             "",
+			hasSalesCategory: false,
+			shop: models.Shop{ShopMenu: models.ShopMenu{
+				Menu: []models.MenuItem{
+					{Category: "All"},
+				},
+			},
+			},
+			expected: false,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := ShouldProcessItems(&tc.shop, tc.hasSalesCategory)
+			if result != tc.expected {
+				t.Errorf("Expected ShouldProcessItems to be %v, but got %v", tc.expected, result)
+			}
+		})
+	}
+
+}

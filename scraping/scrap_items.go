@@ -274,3 +274,7 @@ func AddToQueue(SectionID string, pagesCount int, link string, q *queue.Queue) {
 		}
 	}
 }
+
+func ShouldProcessItems(shop *models.Shop, hasSalesCategory bool) bool {
+	return (len(shop.ShopMenu.Menu) > 1 && !hasSalesCategory) || (len(shop.ShopMenu.Menu) > 2 && hasSalesCategory)
+}
