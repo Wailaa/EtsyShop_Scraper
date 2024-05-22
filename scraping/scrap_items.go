@@ -158,15 +158,7 @@ func HandleUnCategorized(shop *models.Shop, HasSalesCategory bool, AllItemCatego
 	UnCategorizedItems := []models.Item{}
 
 	if ShouldProcessItems(shop, HasSalesCategory) {
-		for ListingID, Amount := range ListingIdCount {
-			if Amount == 1 {
-				for _, item := range shop.ShopMenu.Menu[AllItemCategoryIndex].Items {
-					if item.ListingID == ListingID {
-						UnCategorizedItems = append(UnCategorizedItems, item)
-					}
-				}
-			}
-		}
+		UnCategorizedItems := FilterUncategorizedItems(shop, AllItemCategoryIndex, ListingIdCount)
 		if len(UnCategorizedItems) > 0 {
 			UnCategorizedMenu := models.MenuItem{
 				ShopMenuID: shop.ShopMenu.Menu[AllItemCategoryIndex].ShopMenuID,
