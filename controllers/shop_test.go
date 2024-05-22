@@ -42,6 +42,11 @@ func (m *MockedShop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 	args := m.Called()
 	return args.Error(0)
 }
+func (m *MockedShop) CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[string]controllers.DailySoldStats, error) {
+	args := m.Called()
+
+	return args.Get(0).(map[string]controllers.DailySoldStats), args.Error(1)
+}
 
 func (m *MockedShop) GetItemsByShopID(ID uint) ([]models.Item, error) {
 	args := m.Called()
@@ -1625,9 +1630,10 @@ func TestGetSellingStatsByPeriod_SelectData(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	implShop := controllers.Shop{DB: MockedDataBase}
-	Shop := controllers.NewShopController(implShop)
+	TestShop := &MockedShop{}
+	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
 
+	TestShop.On("CreateSoldStats").Return(map[string]controllers.DailySoldStats{}, nil)
 	ShopID := uint(2)
 	now := time.Now()
 	Period := now.AddDate(0, 0, -6)
@@ -1635,7 +1641,7 @@ func TestGetSellingStatsByPeriod_SelectData(t *testing.T) {
 	DailySales := sqlmock.NewRows([]string{"id", "created_at", "ShopID", "TotalSales"}).AddRow(1, now.AddDate(0, 0, -3), ShopID, 90).AddRow(2, now.AddDate(0, 0, -4), ShopID, 95)
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "daily_shop_sales" WHERE (shop_id = $1 AND created_at > $2) AND "daily_shop_sales"."deleted_at" IS NULL`)).WithArgs(ShopID, Period).WillReturnRows(DailySales)
 
-	Shop.GetSellingStatsByPeriod(ShopID, Period)
+	implShop.GetSellingStatsByPeriod(ShopID, Period)
 
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }

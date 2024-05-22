@@ -132,7 +132,7 @@ func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[s
 		return nil, utils.HandleError(err)
 	}
 
-	stats, err := s.CreateSoldStats(dailyShopSales)
+	stats, err := s.Operations.CreateSoldStats(dailyShopSales)
 	if err != nil {
 		return nil, utils.HandleError(err)
 	}

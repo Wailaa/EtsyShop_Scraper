@@ -63,6 +63,12 @@ func (m *MockShopUpdater) GetItemsByShopID(ID uint) ([]models.Item, error) {
 	return Items, args.Error(1)
 }
 
+func (m *MockShopUpdater) CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[string]controllers.DailySoldStats, error) {
+	args := m.Called()
+
+	return args.Get(0).(map[string]controllers.DailySoldStats), args.Error(1)
+}
+
 func (m *MockShopUpdater) GetAverageItemPrice(ShopID uint) (float64, error) {
 	args := m.Called()
 	return args.Get(0).(float64), args.Error(1)

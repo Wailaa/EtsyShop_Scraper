@@ -68,6 +68,7 @@ type ShopOperations interface {
 	GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error)
 	UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
 	UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
+	CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[string]DailySoldStats, error)
 }
 
 var queueMutex sync.Mutex
