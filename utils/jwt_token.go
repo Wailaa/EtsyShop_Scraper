@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 
@@ -138,4 +139,19 @@ func (ut *Utils) IsJWTBlackListed(token *models.Token) (bool, error) {
 	}
 
 	return false, nil
+}
+func (ut *Utils) GetTokens(ctx *gin.Context) (map[string]*models.Token, error) {
+
+	tokens := make(map[string]*models.Token)
+	if accessToken, err := ctx.Cookie("access_token"); err == nil {
+		tokens["access_token"] = models.NewToken(accessToken)
+	}
+	if refreshToken, err := ctx.Cookie("refresh_token"); err == nil {
+		tokens["refresh_token"] = models.NewToken(refreshToken)
+	}
+	if len(tokens) == 0 {
+		err := fmt.Errorf("failed to retrieve both tokens ")
+		return nil, HandleError(err)
+	}
+	return tokens, nil
 }

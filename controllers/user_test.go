@@ -81,12 +81,10 @@ func (m *mockUtils) GetRandomUserAgent() string {
 
 	return ""
 }
+func (m *mockUtils) GetTokens(ctx *gin.Context) (map[string]*models.Token, error) {
 
-func SetGinTestMode() (*gin.Context, *gin.Engine, *httptest.ResponseRecorder) {
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
-	ctx, router := gin.CreateTestContext(w)
-	return ctx, router, w
+	args := m.Called()
+	return args.Get(0).(map[string]*models.Token), args.Error(1)
 }
 
 func TestRegisterUser_InvalidJson(t *testing.T) {
@@ -94,7 +92,7 @@ func TestRegisterUser_InvalidJson(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -116,7 +114,7 @@ func TestRegisterUser_PassNoMatch(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -673,32 +671,6 @@ func TestLoginAccount_Success(t *testing.T) {
 
 }
 
-func TestGetTokens_Success(t *testing.T) {
-	ctx, _, _ := SetGinTestMode()
-
-	req := httptest.NewRequest("GET", "/", nil)
-	req.AddCookie(&http.Cookie{Name: "access_token", Value: "access_token_value"})
-	req.AddCookie(&http.Cookie{Name: "refresh_token", Value: "refresh_token_value"})
-	ctx.Request = req
-
-	tokens, _ := controllers.GetTokens(ctx)
-
-	assert.Equal(t, 2, len(tokens))
-
-}
-
-func TestGetTokens_Fail(t *testing.T) {
-	ctx, _, _ := SetGinTestMode()
-
-	req := httptest.NewRequest("GET", "/", nil)
-	ctx.Request = req
-
-	_, err := controllers.GetTokens(ctx)
-
-	assert.Error(t, err)
-
-}
-
 func TestLogOutAccount_Success_No_Cookie(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -707,6 +679,7 @@ func TestLogOutAccount_Success_No_Cookie(t *testing.T) {
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
+	MockedUtils.On("GetTokens").Return(map[string]*models.Token{}, errors.New("no tokens"))
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
 
 	router.GET("/logout", User.LogOutAccount)
@@ -729,8 +702,11 @@ func TestLogOutAccount_SuccessWithCookies(t *testing.T) {
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
-
+	token1 := models.Token("access_token_value")
+	token2 := models.Token("refresh_token_value")
 	account := uuid.New()
+
+	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"access_token": &token1, "refresh_token": &token2}, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{
 		CreatedAt: 12344533,
 		ExpiresAt: 12344533,
@@ -786,6 +762,10 @@ func TestLogOutAccount_UserNotFound(t *testing.T) {
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
 
 	account := uuid.New()
+	token1 := models.Token("access_token_value")
+	token2 := models.Token("refresh_token_value")
+
+	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"access_token": &token1, "refresh_token": &token2}, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{
 		CreatedAt: 12344533,
 		ExpiresAt: 12344533,
@@ -823,6 +803,10 @@ func TestLogOutAccount(t *testing.T) {
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
 
 	account := uuid.New()
+	token1 := models.Token("access_token_value")
+	token2 := models.Token("refresh_token_value")
+
+	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"access_token": &token1, "refresh_token": &token2}, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{
 		CreatedAt: 12344533,
 		ExpiresAt: 12344533,
@@ -1185,6 +1169,8 @@ func TestChangePass_Success(t *testing.T) {
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
 
 	MockedUtils.On("IsPassVerified").Return(true)
+	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, nil)
+	MockedUtils.On("GetTokens").Return(map[string]*models.Token{}, nil)
 	MockedUtils.On("HashPass").Return("SomePass", nil)
 
 	router.POST("/changepassword", func(ctx *gin.Context) {

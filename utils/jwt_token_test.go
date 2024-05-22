@@ -1,6 +1,8 @@
 package utils_test
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -171,6 +173,32 @@ func TestBlacklistJWT_TokenNotValid(t *testing.T) {
 
 	expectedErrorMessage := "error while blacklisting token: error: invalidate token: token contains an invalid number of segments"
 	assert.EqualError(t, err, expectedErrorMessage)
+	assert.Error(t, err)
+
+}
+
+func TestGetTokens_Success(t *testing.T) {
+	ctx, _, _ := setupMockServer.SetGinTestMode()
+	jwt := utils.Utils{}
+	req := httptest.NewRequest("GET", "/", nil)
+	req.AddCookie(&http.Cookie{Name: "access_token", Value: "access_token_value"})
+	req.AddCookie(&http.Cookie{Name: "refresh_token", Value: "refresh_token_value"})
+	ctx.Request = req
+
+	tokens, _ := jwt.GetTokens(ctx)
+
+	assert.Equal(t, 2, len(tokens))
+
+}
+
+func TestGetTokens_Fail(t *testing.T) {
+	ctx, _, _ := setupMockServer.SetGinTestMode()
+	jwt := utils.Utils{}
+	req := httptest.NewRequest("GET", "/", nil)
+	ctx.Request = req
+
+	_, err := jwt.GetTokens(ctx)
+
 	assert.Error(t, err)
 
 }

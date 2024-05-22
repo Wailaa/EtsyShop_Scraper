@@ -17,7 +17,7 @@ func AuthMiddleWare(Process utils.UtilsProcess) gin.HandlerFunc {
 		config := initializer.LoadProjConfig(".")
 
 		user := &models.Account{}
-		JwtTokens, err := GetTokens(ctx)
+		JwtTokens, err := Process.GetTokens(ctx)
 		if err != nil {
 			HandleResponse(ctx, err, http.StatusUnauthorized, err.Error()+" please login again", nil)
 			return

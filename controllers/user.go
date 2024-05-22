@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"reflect"
@@ -192,25 +191,10 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 
 }
 
-func GetTokens(ctx *gin.Context) (map[string]*models.Token, error) {
-	tokens := make(map[string]*models.Token)
-	if accessToken, err := ctx.Cookie("access_token"); err == nil {
-		tokens["access_token"] = models.NewToken(accessToken)
-	}
-	if refreshToken, err := ctx.Cookie("refresh_token"); err == nil {
-		tokens["refresh_token"] = models.NewToken(refreshToken)
-	}
-	if len(tokens) == 0 {
-		err := fmt.Errorf("failed to retrieve both tokens ")
-		return nil, utils.HandleError(err)
-	}
-	return tokens, nil
-}
-
 func (s *User) LogOutAccount(ctx *gin.Context) {
 	var userUUID uuid.UUID
 
-	tokenList, err := GetTokens(ctx)
+	tokenList, err := s.utils.GetTokens(ctx)
 	if err != nil {
 		HandleResponse(ctx, err, http.StatusOK, "", nil)
 		return

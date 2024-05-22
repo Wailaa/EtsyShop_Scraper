@@ -3,6 +3,7 @@ package utils
 import (
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
 	"EtsyScraper/models"
@@ -24,4 +25,5 @@ type UtilsProcess interface {
 	IsJWTBlackListed(token *models.Token) (bool, error)
 	PickProxyProvider() ProxySetting
 	GetRandomUserAgent() string
+	GetTokens(ctx *gin.Context) (map[string]*models.Token, error)
 }

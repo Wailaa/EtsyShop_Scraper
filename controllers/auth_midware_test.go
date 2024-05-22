@@ -2,6 +2,7 @@ package controllers_test
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -24,6 +25,7 @@ func TestAuthMiddleWare_noCookies(t *testing.T) {
 	ctx, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
+	MockedUtils.On("GetTokens").Return(map[string]*models.Token{}, fmt.Errorf("failed to retrieve both tokens "))
 	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils))
 
 	req := httptest.NewRequest("GET", "/", nil)
@@ -41,7 +43,7 @@ func TestAuthMiddleWare_AccessToken_IsBlackListed(t *testing.T) {
 
 	userID := uuid.New()
 	MockedUtils := &mockUtils{}
-
+	MockedUtils.On("GetTokens").Return(map[string]*models.Token{}, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{
 		CreatedAt: 12344533,
 		ExpiresAt: 12344533,
@@ -72,11 +74,15 @@ func TestAuthMiddleWare_AccessToken_IsBlackListed_False(t *testing.T) {
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	initializer.DB = MockedDataBase
-
 	currentUserUUID := interface{}(nil)
 	Now := time.Now()
 	userID := uuid.New()
 	MockedUtils := &mockUtils{}
+
+	token := models.NewToken("SomeToken")
+	MockedUtils.On("GetTokens").Return(map[string]*models.Token{
+		"access_token": token,
+	}, nil)
 
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{
 		CreatedAt: 12344533,
@@ -111,6 +117,7 @@ func TestAuthMiddleWare_RefreshToken_Error(t *testing.T) {
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
+	MockedUtils.On("GetTokens").Return(map[string]*models.Token{}, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, errors.New("not Valid"))
 	MockedUtils.On("IsJWTBlackListed").Return(true, nil)
 
@@ -133,6 +140,9 @@ func TestAuthMiddleWare_RefreshAccessToken_fail(t *testing.T) {
 
 	token := models.Token("")
 	MockedUtils := &mockUtils{}
+	refToken := models.NewToken("SomeToken")
+
+	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"refresh_token": refToken}, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, errors.New("not Valid"))
 	MockedUtils.On("IsJWTBlackListed").Return(true, nil)
 	MockedUtils.On("RefreshAccToken").Return(&token, errors.New("failed to refresh access token"))
@@ -157,6 +167,9 @@ func TestAuthMiddleWare_ValidateNewToken(t *testing.T) {
 	token := models.Token("")
 
 	MockedUtils := &mockUtils{}
+	refToken := models.NewToken("SomeToken")
+
+	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"refresh_token": refToken}, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, errors.New("not Valid"))
 	MockedUtils.On("IsJWTBlackListed").Return(true, nil)
 
@@ -191,6 +204,7 @@ func TestAuthMiddleWare_NewCookie(t *testing.T) {
 
 	MockedUtils := &mockUtils{}
 
+	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"refresh_token": &token}, nil)
 	MockedUtils.On("IsJWTBlackListed").Return(true, nil)
 
 	MockedUtils.On("RefreshAccToken").Return(&token, nil)
@@ -239,9 +253,8 @@ func TestAuthMiddleWare_Success_Key_Set(t *testing.T) {
 	var currentUserUUID uuid.UUID
 
 	MockedUtils := &mockUtils{}
-
+	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"refresh_token": &token}, nil)
 	MockedUtils.On("IsJWTBlackListed").Return(true, nil)
-
 	MockedUtils.On("RefreshAccToken").Return(&token, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{
 		CreatedAt: 12344533,
