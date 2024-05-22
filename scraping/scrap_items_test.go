@@ -728,3 +728,25 @@ func TestCreateUncategorizedMenu(t *testing.T) {
 	assert.Equal(t, MenuSizeBefore+1, MenuSizeAfter)
 
 }
+
+func TestResetMenuAllToZeroItems(t *testing.T) {
+	shop := &models.Shop{ShopMenu: models.ShopMenu{
+		Menu: []models.MenuItem{
+			{
+				Category: "All",
+				Items: []models.Item{
+					{ListingID: 653443},
+					{ListingID: 23456436},
+					{ListingID: 1254345},
+					{ListingID: 190232},
+				},
+			},
+		},
+	}}
+	AllItemCategoryIndex := 0
+
+	result := ResetMenuAllToZeroItems(shop, AllItemCategoryIndex)
+	ItemsOfCategoryAll := result.ShopMenu.Menu[0].Items
+
+	assert.Equal(t, 0, len(ItemsOfCategoryAll))
+}

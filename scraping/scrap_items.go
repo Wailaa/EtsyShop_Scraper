@@ -294,3 +294,8 @@ func CreateUncategorizedMenu(shop *models.Shop, AllItemCategoryIndex int, UnCate
 	shop.ShopMenu.Menu = append(shop.ShopMenu.Menu, UnCategorizedMenu)
 	return shop
 }
+
+func ResetMenuAllToZeroItems(shop *models.Shop, AllItemCategoryIndex int) *models.Shop {
+	shop.ShopMenu.Menu[AllItemCategoryIndex].Items = []models.Item{}
+	return shop
+}
