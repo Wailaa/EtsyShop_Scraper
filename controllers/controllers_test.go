@@ -3,6 +3,7 @@ package controllers_test
 import (
 	"EtsyScraper/controllers"
 	"EtsyScraper/models"
+	setupMockServer "EtsyScraper/setupTests"
 	"errors"
 	"testing"
 
@@ -66,7 +67,7 @@ func TestHandleResponse(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx, _, w := SetGinTestMode()
+			ctx, _, w := setupMockServer.SetGinTestMode()
 			controllers.HandleResponse(ctx, tc.err, tc.status, tc.message, tc.data)
 
 			assert.Equal(t, tc.expectedBody, w.Body.String())

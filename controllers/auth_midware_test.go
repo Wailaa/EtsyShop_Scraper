@@ -21,7 +21,7 @@ import (
 
 func TestAuthMiddleWare_noCookies(t *testing.T) {
 
-	ctx, router, w := SetGinTestMode()
+	ctx, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils))
@@ -37,7 +37,7 @@ func TestAuthMiddleWare_noCookies(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 func TestAuthMiddleWare_AccessToken_IsBlackListed(t *testing.T) {
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	userID := uuid.New()
 	MockedUtils := &mockUtils{}
@@ -69,7 +69,7 @@ func TestAuthMiddleWare_AccessToken_IsBlackListed_False(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
@@ -108,7 +108,7 @@ func TestAuthMiddleWare_AccessToken_IsBlackListed_False(t *testing.T) {
 
 func TestAuthMiddleWare_RefreshToken_Error(t *testing.T) {
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, errors.New("not Valid"))
@@ -129,7 +129,7 @@ func TestAuthMiddleWare_RefreshToken_Error(t *testing.T) {
 
 func TestAuthMiddleWare_RefreshAccessToken_fail(t *testing.T) {
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	token := models.Token("")
 	MockedUtils := &mockUtils{}
@@ -152,7 +152,7 @@ func TestAuthMiddleWare_RefreshAccessToken_fail(t *testing.T) {
 
 func TestAuthMiddleWare_ValidateNewToken(t *testing.T) {
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	token := models.Token("")
 
@@ -181,7 +181,7 @@ func TestAuthMiddleWare_NewCookie(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
@@ -229,7 +229,7 @@ func TestAuthMiddleWare_Success_Key_Set(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
@@ -273,7 +273,7 @@ func TestAuthorization_NoCurrentUser_Panic(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	ctx, router, w := SetGinTestMode()
+	ctx, router, w := setupMockServer.SetGinTestMode()
 
 	router.Use(controllers.Authorization())
 
@@ -294,7 +294,7 @@ func TestAuthorization_UserNotFound(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
@@ -319,7 +319,7 @@ func TestAuthorization_NotVerified(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
@@ -349,7 +349,7 @@ func TestAuthorization_Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
@@ -384,7 +384,7 @@ func TestIsAccountFollowingShop_Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
@@ -421,7 +421,7 @@ func TestIsAccountFollowingShop_NoShopID(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
@@ -445,7 +445,7 @@ func TestIsAccountFollowingShop_DataBaseError(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 
@@ -472,7 +472,7 @@ func TestIsAccountFollowingShop_NotFollowing(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	initializer.DB = MockedDataBase
 

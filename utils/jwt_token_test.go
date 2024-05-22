@@ -9,6 +9,7 @@ import (
 
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
+	setupMockServer "EtsyScraper/setupTests"
 	"EtsyScraper/utils"
 )
 

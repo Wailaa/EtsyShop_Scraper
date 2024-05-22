@@ -144,7 +144,7 @@ func TestRegisterUser_PassShort(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -172,7 +172,7 @@ func TestRegisterUser_HashPassErr(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -204,7 +204,7 @@ func TestRegisterUser_VerificationStringErr(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -238,7 +238,7 @@ func TestRegisterUser_DataBaseError(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, _ := SetGinTestMode()
+	_, router, _ := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -280,7 +280,7 @@ func TestRegisterUser_ExpectCreateAccount(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -384,7 +384,7 @@ func TestLoginAccount_InvalidJson(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -406,7 +406,7 @@ func TestLoginAccount_InvalidEmailEmpty(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -441,7 +441,7 @@ func TestLoginAccount_PassVerified_fail(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -479,7 +479,7 @@ func TestLoginAccount_AccessToken(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	expectedError := errors.New("Error while creating Token")
 
@@ -521,7 +521,7 @@ func TestLoginAccount_AccessToken_failed(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	expectedError := errors.New("Error while creating Token")
 
@@ -563,7 +563,7 @@ func TestLoginAccount_RefreshTokenFailed(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	expectedError := errors.New("Error while creating Token")
 
@@ -607,7 +607,7 @@ func TestLoginAccount_Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -704,7 +704,7 @@ func TestLogOutAccount_Success_No_Cookie(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -725,7 +725,7 @@ func TestLogOutAccount_SuccessWithCookies(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	ctx, router, w := SetGinTestMode()
+	ctx, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -780,7 +780,7 @@ func TestLogOutAccount_UserNotFound(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	ctx, router, w := SetGinTestMode()
+	ctx, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -812,12 +812,12 @@ func TestLogOutAccount_UserNotFound(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestLogOutAccount_(t *testing.T) {
+func TestLogOutAccount(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
-	ctx, router, w := SetGinTestMode()
+	ctx, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -854,7 +854,7 @@ func TestVerifyAccount_NoTranID(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -878,7 +878,7 @@ func TestVerifyAccount_EmptyAccount(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -909,7 +909,7 @@ func TestVerifyAccount_AlreadyVerified(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -939,7 +939,7 @@ func TestVerifyAccount_Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -976,7 +976,7 @@ func TestChangePass_FailedBindJson(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 
@@ -1001,7 +1001,7 @@ func TestChangePass_UserNotFound(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 
@@ -1032,7 +1032,7 @@ func TestChangePass_EmptyAccount(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	emptyAccount := models.Account{}
@@ -1068,7 +1068,7 @@ func TestChangePass_PassNoMatch(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 
@@ -1098,7 +1098,7 @@ func TestChangePass_HashFail(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	emptyAccount := models.Account{}
@@ -1138,7 +1138,7 @@ func TestChangePass_PassNotConfirmed(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	emptyAccount := models.Account{}
@@ -1176,7 +1176,7 @@ func TestChangePass_Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	emptyAccount := models.Account{}
@@ -1221,7 +1221,7 @@ func TestForgotPassReq_FailedBindJson(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -1241,7 +1241,7 @@ func TestForgotPassReq_UserNotFound(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -1271,7 +1271,7 @@ func TestForgotPassReq_VerificationToken(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -1304,7 +1304,7 @@ func TestForgotPassReq_Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	c, router, w := SetGinTestMode()
+	c, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -1342,7 +1342,7 @@ func TestResetPass(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -1363,7 +1363,7 @@ func TestResetPass_PassNoMachs(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -1385,7 +1385,7 @@ func TestResetPass_UserNotFound(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -1409,7 +1409,7 @@ func TestResetPass_EmptyAccount(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -1438,7 +1438,7 @@ func TestResetPass_RCP_Token_no_Match(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils)
@@ -1468,7 +1468,7 @@ func TestResetPass_Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
 	MockedUtils.On("HashPass").Return("NewHasshedPass", nil)

@@ -140,7 +140,7 @@ func TestCreateNewShopRequest_Panic(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	ctx, router, w := SetGinTestMode()
+	ctx, router, w := setupMockServer.SetGinTestMode()
 	Scraper := &MockScrapper{}
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
@@ -165,7 +165,7 @@ func TestCreateNewShopRequest_InvalidJson(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &MockScrapper{}
@@ -192,7 +192,7 @@ func TestCreateNewShopRequest_GetShopError(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
@@ -223,7 +223,7 @@ func TestCreateNewShopRequest_ShopExists(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	TestShop := &MockedShop{}
@@ -254,7 +254,7 @@ func TestCreateNewShopRequest_Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	TestShop := &MockedShop{}
@@ -864,7 +864,7 @@ func TestFollowShop_InvalidJson(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &MockScrapper{}
@@ -891,7 +891,7 @@ func TestFollowShop_Panic(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	ctx, router, w := SetGinTestMode()
+	ctx, router, w := setupMockServer.SetGinTestMode()
 	Scraper := &MockScrapper{}
 	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper}
 	Shop := controllers.NewShopController(implShop)
@@ -915,7 +915,7 @@ func TestFollowShop_ShopNotFound(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
@@ -943,7 +943,7 @@ func TestFollowShop_GetShopByNameFail(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
@@ -971,7 +971,7 @@ func TestFollowShop_GetAccountFail(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
@@ -1005,7 +1005,7 @@ func TestFollowShop_Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	time := time.Now()
 	currentUserUUID := uuid.New()
@@ -1056,7 +1056,7 @@ func TestUnFollowShop_InvalidJson(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &MockScrapper{}
@@ -1083,7 +1083,7 @@ func TestUnFollowShop_Panic(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	ctx, router, w := SetGinTestMode()
+	ctx, router, w := setupMockServer.SetGinTestMode()
 	Scraper := &MockScrapper{}
 	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper}
 	Shop := controllers.NewShopController(implShop)
@@ -1107,7 +1107,7 @@ func TestUnFollowShop_ShopNotFound(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
@@ -1135,7 +1135,7 @@ func TestUnFollowShop_GetShopByNameFail(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
@@ -1163,7 +1163,7 @@ func TestUnFollowShop_GetAccountFail(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
@@ -1197,7 +1197,7 @@ func TestUnFollowShop_Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	time := time.Now()
 	currentUserUUID := uuid.New()
@@ -1526,7 +1526,7 @@ func TestProcessStatsRequest_InvalidPeriod(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	implShop := controllers.Shop{DB: MockedDataBase}
 	Shop := controllers.NewShopController(implShop)
@@ -1555,7 +1555,7 @@ func TestProcessStatsRequest_GetSellingStatsByPeriod_Fail(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
@@ -1586,7 +1586,7 @@ func TestProcessStatsRequest_Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
@@ -2332,7 +2332,7 @@ func TestHandleHandleGetShopByID__NoShop(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	implShop := controllers.Shop{DB: MockedDataBase}
 	router.GET("/testroute/:shopID", implShop.HandleGetShopByID)
@@ -2353,7 +2353,7 @@ func TestHandleHandleGetShopByID__fail(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	implShop := controllers.Shop{DB: MockedDataBase}
 	router.GET("/testroute/:shopID", implShop.HandleGetShopByID)
@@ -2373,7 +2373,7 @@ func TestHandleHandleGetShopByID__Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
@@ -2403,7 +2403,7 @@ func TestHandleGetItemsByShopID__NoShop(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
@@ -2426,7 +2426,7 @@ func TestHandleGetItemsByShopID_Fail(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	implShop := controllers.Shop{DB: MockedDataBase}
 
@@ -2447,7 +2447,7 @@ func TestHandleGetItemsByShopID__Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
@@ -2470,7 +2470,7 @@ func TestHandleGetSoldItemsByShopID__NoShop(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{DB: MockedDataBase}
@@ -2493,7 +2493,7 @@ func TestHandleGetSoldItemsByShopID_Fail(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
@@ -2517,7 +2517,7 @@ func TestHandleGetSoldItemsByShopID_Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
@@ -2541,7 +2541,7 @@ func TestHandleGetItemsCountByShopID__NoShop(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	implShop := controllers.Shop{DB: MockedDataBase}
 	router.GET("/testroute/:shopID/items_count", implShop.HandleGetItemsCountByShopID)
@@ -2561,7 +2561,7 @@ func TestHandleGetItemsCountByShopID__Fail(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
@@ -2584,7 +2584,7 @@ func TestHandleGetItemsCountByShopID_Success(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	_, router, w := SetGinTestMode()
+	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
