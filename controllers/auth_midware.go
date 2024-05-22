@@ -120,3 +120,25 @@ func IsAccountFollowingShop() gin.HandlerFunc {
 		ctx.Next()
 	}
 }
+
+func IsAuthorized(ctx *gin.Context, Process utils.UtilsProcess, Token *models.Token) bool {
+
+	user := &models.Account{}
+	userClaims, err := Process.ValidateJWT(Token)
+	if err != nil {
+		return false
+	}
+
+	isBlackListed, err := Process.IsJWTBlackListed(Token)
+	if err != nil || isBlackListed {
+		return false
+	}
+
+	if err := initializer.DB.Where("id = ?", userClaims.UserUUID).First(user).Error; err != nil {
+		HandleResponse(ctx, err, http.StatusUnauthorized, err.Error(), nil)
+		return false
+	}
+	ctx.Set("currentUserUUID", userClaims.UserUUID)
+
+	return true
+}

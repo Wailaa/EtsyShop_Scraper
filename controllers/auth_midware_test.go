@@ -511,3 +511,77 @@ func TestIsAccountFollowingShop_NotFollowing(t *testing.T) {
 	router.ServeHTTP(w, c.Request)
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
+
+func TestIsAuthorized(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	initializer.DB = MockedDataBase
+	c, _, w := setupMockServer.SetGinTestMode()
+
+	user := uuid.New()
+
+	token := models.Token("anotherToken")
+	Now := time.Now()
+	MockedUtils := &mockUtils{}
+	MockedUtils.On("IsJWTBlackListed").Return(false, nil)
+	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{
+		CreatedAt: 12344533,
+		ExpiresAt: 12344533,
+		UserUUID:  user,
+	}, nil)
+
+	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
+		AddRow(user.String(), Now, Now, nil, "Testing", "User", "test@test1242q21.com", "", "free", false, "", false, "", Now, Now)
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WithArgs(user.String(), 1).WillReturnRows(Account)
+
+	controllers.IsAuthorized(c, MockedUtils, &token)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestIsAuthorizedFailNoClaims(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	initializer.DB = MockedDataBase
+	c, _, _ := setupMockServer.SetGinTestMode()
+
+	token := models.Token("anotherToken")
+
+	MockedUtils := &mockUtils{}
+	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, errors.New("some error"))
+
+	result := controllers.IsAuthorized(c, MockedUtils, &token)
+
+	assert.False(t, result)
+}
+
+func TestIsAuthorizedFailedIsBlackListed(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	initializer.DB = MockedDataBase
+	c, _, _ := setupMockServer.SetGinTestMode()
+
+	user := uuid.New()
+
+	token := models.Token("anotherToken")
+
+	MockedUtils := &mockUtils{}
+	MockedUtils.On("IsJWTBlackListed").Return(true, nil)
+	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{
+		CreatedAt: 12344533,
+		ExpiresAt: 12344533,
+		UserUUID:  user,
+	}, nil)
+
+	result := controllers.IsAuthorized(c, MockedUtils, &token)
+
+	assert.False(t, result)
+}
