@@ -157,7 +157,7 @@ func CheckCategoryName(Category string) bool {
 func HandleUnCategorized(shop *models.Shop, HasSalesCategory bool, AllItemCategoryIndex int) *models.Shop {
 	UnCategorizedItems := []models.Item{}
 
-	if (len(shop.ShopMenu.Menu) > 1 && !HasSalesCategory) || (len(shop.ShopMenu.Menu) > 2 && HasSalesCategory) {
+	if ShouldProcessItems(shop, HasSalesCategory) {
 		for ListingID, Amount := range ListingIdCount {
 			if Amount == 1 {
 				for _, item := range shop.ShopMenu.Menu[AllItemCategoryIndex].Items {
