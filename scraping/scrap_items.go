@@ -155,18 +155,16 @@ func CheckCategoryName(Category string) bool {
 }
 
 func HandleUnCategorized(shop *models.Shop, HasSalesCategory bool, AllItemCategoryIndex int) *models.Shop {
-	UnCategorizedItems := []models.Item{}
 
 	if ShouldProcessItems(shop, HasSalesCategory) {
 		UnCategorizedItems := FilterUncategorizedItems(shop, AllItemCategoryIndex, ListingIdCount)
 
 		if len(UnCategorizedItems) > 0 {
-			CreateUncategorizedMenu(shop, AllItemCategoryIndex, UnCategorizedItems)
+			shop = CreateUncategorizedMenu(shop, AllItemCategoryIndex, UnCategorizedItems)
 		}
 
-		shop.ShopMenu.Menu[AllItemCategoryIndex].Items = []models.Item{}
+		shop = ResetMenuAllToZeroItems(shop, AllItemCategoryIndex)
 	}
-
 	return shop
 }
 
