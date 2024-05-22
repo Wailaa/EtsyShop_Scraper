@@ -288,3 +288,17 @@ func FilterUncategorizedItems(shop *models.Shop, allItemCategoryIndex int, listi
 	return uncategorizedItems
 }
 
+func CreateUncategorizedMenu(shop *models.Shop, AllItemCategoryIndex int, UnCategorizedItems []models.Item) *models.Shop {
+	Menu := shop.ShopMenu.Menu[AllItemCategoryIndex]
+	UnCategorizedMenu := models.MenuItem{
+		ShopMenuID: Menu.ShopMenuID,
+		Category:   "UnCategorized",
+		SectionID:  shop.ShopMenu.Menu[AllItemCategoryIndex].SectionID,
+		Link:       shop.ShopMenu.Menu[AllItemCategoryIndex].Link,
+		Amount:     len(UnCategorizedItems),
+		Items:      UnCategorizedItems,
+	}
+
+	shop.ShopMenu.Menu = append(shop.ShopMenu.Menu, UnCategorizedMenu)
+	return shop
+}

@@ -709,3 +709,22 @@ func TestFilterUncategorizedItems(t *testing.T) {
 	assert.Equal(t, 2, len(result))
 
 }
+
+func TestCreateUncategorizedMenu(t *testing.T) {
+	shop := &models.Shop{ShopMenu: models.ShopMenu{
+		Menu: []models.MenuItem{
+			{
+				Category: "All",
+			},
+		},
+	}}
+	AllItemCategoryIndex := 0
+	UnCategorizedItems := []models.Item{{}, {}, {}}
+
+	MenuSizeBefore := len(shop.ShopMenu.Menu)
+	result := CreateUncategorizedMenu(shop, AllItemCategoryIndex, UnCategorizedItems)
+	MenuSizeAfter := len(result.ShopMenu.Menu)
+
+	assert.Equal(t, MenuSizeBefore+1, MenuSizeAfter)
+
+}
