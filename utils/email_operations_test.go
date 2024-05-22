@@ -19,7 +19,7 @@ func TestGenerateRandomInt(t *testing.T) {
 	assert.NotEmpty(t, result)
 }
 
-func TestSendVerificationEmail_InvalidCredentials(t *testing.T) {
+func TestSendVerificationEmailInvalidCredentials(t *testing.T) {
 	Email := &utils.Utils{}
 
 	mockConfig := initializer.Config{
@@ -43,7 +43,7 @@ func TestSendVerificationEmail_InvalidCredentials(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestSendVerificationEmail_WrongUserEmailAddress(t *testing.T) {
+func TestSendVerificationEmailWrongUserEmailAddress(t *testing.T) {
 	Email := &utils.Utils{}
 
 	mockConfig := initializer.Config{
@@ -63,7 +63,7 @@ func TestSendVerificationEmail_WrongUserEmailAddress(t *testing.T) {
 	assert.Contains(t, err.Error(), "mail: no address")
 }
 
-func TestSendVerificationEmail_WrongClientOrigin(t *testing.T) {
+func TestSendVerificationEmailWrongClientOrigin(t *testing.T) {
 	Email := &utils.Utils{}
 
 	mockConfig := initializer.Config{
@@ -85,7 +85,7 @@ func TestSendVerificationEmail_WrongClientOrigin(t *testing.T) {
 	assert.Contains(t, err.Error(), "can't assign requested address")
 
 }
-func TestSendVerificationEmail_Success(t *testing.T) {
+func TestSendVerificationEmailSuccess(t *testing.T) {
 	FakeHostServer, port, serverStop := setupMockServer.MockSMTPServer()
 	defer serverStop()
 
@@ -116,7 +116,7 @@ func TestSendVerificationEmail_Success(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestSendResetPassEmail_InvalidCredentials(t *testing.T) {
+func TestSendResetPassEmailInvalidCredentials(t *testing.T) {
 	Email := &utils.Utils{}
 	mockConfig := initializer.Config{
 		ClientOrigin: "invalid-url",
@@ -140,7 +140,7 @@ func TestSendResetPassEmail_InvalidCredentials(t *testing.T) {
 
 }
 
-func TestSendResetPassEmail_success(t *testing.T) {
+func TestSendResetPassEmailsuccess(t *testing.T) {
 
 	FakeHostServer, port, serverStop := setupMockServer.MockSMTPServer()
 	defer serverStop()
@@ -168,7 +168,7 @@ func TestSendResetPassEmail_success(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestGenerateVerificationURL_Success(t *testing.T) {
+func TestGenerateVerificationURLSuccess(t *testing.T) {
 	utils.Config.ClientOrigin = "www.test_domain.com"
 	urlDetails := utils.URLConfig{
 		ParamName: "test_param",
@@ -182,7 +182,7 @@ func TestGenerateVerificationURL_Success(t *testing.T) {
 	assert.NoError(t, err)
 
 }
-func TestGenerateVerificationURL_Fail(t *testing.T) {
+func TestGenerateVerificationURLFail(t *testing.T) {
 	utils.Config.ClientOrigin = "www.test_domain.com"
 
 	urlDetails := utils.URLConfig{
@@ -198,7 +198,7 @@ func TestGenerateVerificationURL_Fail(t *testing.T) {
 
 }
 
-func TestComposeEmail_IncompleteDetails(t *testing.T) {
+func TestComposeEmailIncompleteDetails(t *testing.T) {
 	details := utils.EmailDetails{
 		To:         "",
 		Subject:    "Test Email",
@@ -211,7 +211,7 @@ func TestComposeEmail_IncompleteDetails(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "details are missing")
 }
-func TestComposeEmail_SMTPHostFail(t *testing.T) {
+func TestComposeEmailSMTPHostFail(t *testing.T) {
 
 	mockConfig := initializer.Config{
 		ClientOrigin: "exampleDomain.com",
@@ -239,7 +239,7 @@ func TestComposeEmail_SMTPHostFail(t *testing.T) {
 	assert.Contains(t, err.Error(), "missing address")
 }
 
-func TestComposeEmail_Success(t *testing.T) {
+func TestComposeEmailSuccess(t *testing.T) {
 	FakeHostServer, port, serverStop := setupMockServer.MockSMTPServer()
 	defer serverStop()
 

@@ -16,7 +16,7 @@ import (
 	setupMockServer "EtsyScraper/setupTests"
 )
 
-func TestScrapALLMenuItems_Success(t *testing.T) {
+func TestScrapALLMenuItemsSuccess(t *testing.T) {
 	UpdateScraper := &Scraper{}
 	mockConfig := initializer.Config{
 		ProxyHostURL1: "",
@@ -93,7 +93,7 @@ func TestScrapALLMenuItems_Success(t *testing.T) {
 
 }
 
-func TestScrapALLMenuItems_UnCategorized(t *testing.T) {
+func TestScrapALLMenuItemsUnCategorized(t *testing.T) {
 	collector.RateLimiting = 0 * time.Second
 	UpdateScraper := &Scraper{}
 	mockConfig := initializer.Config{
@@ -175,7 +175,7 @@ func TestScrapALLMenuItems_UnCategorized(t *testing.T) {
 
 }
 
-func TestScrapNextItemPage_Success(t *testing.T) {
+func TestScrapNextItemPageSuccess(t *testing.T) {
 	mockConfig := initializer.Config{
 		ProxyHostURL1: "",
 		ProxyHostURL2: "",
@@ -257,7 +257,7 @@ func TestScrapShopItems(t *testing.T) {
 
 }
 
-func TestGetSectionID_Success(t *testing.T) {
+func TestGetSectionIDSuccess(t *testing.T) {
 
 	link := "http://example.com/ExampleShop?section_id=46704591"
 	SectionID := GetSectionID(link)
@@ -265,7 +265,7 @@ func TestGetSectionID_Success(t *testing.T) {
 
 }
 
-func TestGetSectionID_MultipleParams(t *testing.T) {
+func TestGetSectionIDMultipleParams(t *testing.T) {
 
 	link := "http://example.com/ExampleShop?ref=items-pagination&page=2&section_id=46704591&sort_order=price_desc"
 	SectionID := GetSectionID(link)
@@ -273,7 +273,7 @@ func TestGetSectionID_MultipleParams(t *testing.T) {
 
 }
 
-func TestGetSectionID_EmptyString(t *testing.T) {
+func TestGetSectionIDEmptyString(t *testing.T) {
 
 	link := "http://example.com/ExampleShop?ref=items-pagination&page=2"
 	SectionID := GetSectionID(link)
@@ -296,7 +296,7 @@ func TestCheckCategoryName(t *testing.T) {
 
 }
 
-func TestHandleUnCategorized_CreateUnCategorized(t *testing.T) {
+func TestHandleUnCategorizedCreateUnCategorized(t *testing.T) {
 	AllItemCategoryIndex := 0
 	UpdatedShop := &models.Shop{
 		ShopMenu: models.ShopMenu{

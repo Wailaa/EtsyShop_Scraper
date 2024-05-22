@@ -118,7 +118,7 @@ func (m *MockShopUpdater) UpdateDiscontinuedItems(Shop *models.Shop, Task *model
 	return soldItems, args.Error(1)
 }
 
-func TestScheduleScrapUpdate_SchedulesCronJob(t *testing.T) {
+func TestScheduleScrapUpdateSchedulesCronJob(t *testing.T) {
 
 	cronJob := &MockCronJob{}
 
@@ -131,7 +131,7 @@ func TestScheduleScrapUpdate_SchedulesCronJob(t *testing.T) {
 	assert.Equal(t, "12 15 * * *", cronJob.AddFuncArg1)
 }
 
-func TestUpdateSoldItems_ShopParameterNil(t *testing.T) {
+func TestUpdateSoldItemsShopParameterNil(t *testing.T) {
 
 	shopController := &MockShopUpdater{}
 
@@ -147,7 +147,7 @@ func TestUpdateSoldItems_ShopParameterNil(t *testing.T) {
 
 }
 
-func TestGetAllShops_Success(t *testing.T) {
+func TestGetAllShopsSuccess(t *testing.T) {
 	mock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	defer testDB.Close()
 
@@ -183,7 +183,7 @@ func TestGetAllShops_Success(t *testing.T) {
 	assert.Nil(t, mock.ExpectationsWereMet())
 }
 
-func TestGetAllShops_Error(t *testing.T) {
+func TestGetAllShopsError(t *testing.T) {
 	mock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	defer testDB.Close()
 
@@ -204,7 +204,7 @@ func TestMenuExists(t *testing.T) {
 	result := scheduleUpdates.MenuExists(Menu, ListOfMenus)
 	assert.True(t, result)
 }
-func TestMenuExists_NotFound(t *testing.T) {
+func TestMenuExistsNotFound(t *testing.T) {
 	Menu := "test"
 	ListOfMenus := []string{"this", "is", "a", "Test"}
 	result := scheduleUpdates.MenuExists(Menu, ListOfMenus)
@@ -245,7 +245,7 @@ func (m *MockScrapper) ScrapSalesHistory(ShopName string, Task *models.TaskSched
 	return args.Get(0).([]models.SoldItems), args.Get(1).(*models.TaskSchedule)
 }
 
-func TestStartShopUpdate_UpdatesSuccess(t *testing.T) {
+func TestStartShopUpdateUpdatesSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -304,7 +304,7 @@ func TestStartShopUpdate_UpdatesSuccess(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestStartShopUpdate_OneUpdate(t *testing.T) {
+func TestStartShopUpdateOneUpdate(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -350,7 +350,7 @@ func TestStartShopUpdate_OneUpdate(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestShopItemsUpdate_NoUpdates(t *testing.T) {
+func TestShopItemsUpdateNoUpdates(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -425,7 +425,7 @@ func TestShopItemsUpdate_NoUpdates(t *testing.T) {
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestShopItemsUpdate_FewUpdates(t *testing.T) {
+func TestShopItemsUpdateFewUpdates(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -512,7 +512,7 @@ func TestShopItemsUpdate_FewUpdates(t *testing.T) {
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestShopItemsUpdate_NewItemAdded(t *testing.T) {
+func TestShopItemsUpdateNewItemAdded(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -603,7 +603,7 @@ func TestShopItemsUpdate_NewItemAdded(t *testing.T) {
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestShopItemsUpdate_CreateNewMenu(t *testing.T) {
+func TestShopItemsUpdateCreateNewMenu(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -746,7 +746,7 @@ func TestShouldUpdateItem(t *testing.T) {
 	}
 }
 
-func TestApplyUpdated_Success(t *testing.T) {
+func TestApplyUpdatedSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -787,7 +787,7 @@ func TestApplyUpdated_Success(t *testing.T) {
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestApplyUpdated_Fail(t *testing.T) {
+func TestApplyUpdatedFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -819,7 +819,7 @@ func TestApplyUpdated_Fail(t *testing.T) {
 	assert.Error(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestHandleOutOfProductionItems_CreateNewMenu(t *testing.T) {
+func TestHandleOutOfProductionItemsCreateNewMenu(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -874,7 +874,7 @@ func TestHandleOutOfProductionItems_CreateNewMenu(t *testing.T) {
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestHandleOutOfProductionItems_Exists(t *testing.T) {
+func TestHandleOutOfProductionItemsExists(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -924,7 +924,7 @@ func TestHandleOutOfProductionItems_Exists(t *testing.T) {
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestAddNewItem_Success(t *testing.T) {
+func TestAddNewItemSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -961,7 +961,7 @@ func TestAddNewItem_Success(t *testing.T) {
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestAddNewItem_Fail(t *testing.T) {
+func TestAddNewItemFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1029,7 +1029,7 @@ func TestCreateDailySales(t *testing.T) {
 
 }
 
-func TestCreateDailySales_Fail(t *testing.T) {
+func TestCreateDailySalesFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()

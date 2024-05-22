@@ -11,7 +11,7 @@ import (
 	setupMockServer "EtsyScraper/setupTests"
 )
 
-func TestCheckForUpdates_Success(t *testing.T) {
+func TestCheckForUpdatesSuccess(t *testing.T) {
 	collector.RateLimiting = 0 * time.Second
 	mockConfig := initializer.Config{
 		ProxyHostURL1: "",

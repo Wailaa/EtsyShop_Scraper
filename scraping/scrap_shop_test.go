@@ -16,7 +16,7 @@ import (
 	"EtsyScraper/utils"
 )
 
-func TestScrapShop_AllCallBacks(t *testing.T) {
+func TestScrapShopAllCallBacks(t *testing.T) {
 	shop := &models.Shop{}
 
 	ShopMenuItems := `[{"category_name":"All","link":"MissArtisanShop?\u0026section_id=0","item_amount":15}]`

@@ -45,23 +45,3 @@ func TestCreateClaimsValidIClaims(t *testing.T) {
 	assert.Equal(t, expectedUserUUID, customClaims.UserUUID)
 
 }
-
-func TestCreateClaims(t *testing.T) {
-
-	claims := jwt.MapClaims{
-		"iat":      float64(1234567890),
-		"exp":      float64(1234567890),
-		"userUUID": "123e4567-e89b-12d3-a456-426614174000",
-	}
-
-	customClaims := models.CreateClaims(claims)
-
-	expectedCreatedAt := int64(1234567890)
-	expectedExpiresAt := int64(1234567890)
-	expectedUserUUID, _ := uuid.Parse("123e4567-e89b-12d3-a456-426614174000")
-
-	assert.Equal(t, expectedCreatedAt, customClaims.CreatedAt)
-	assert.Equal(t, expectedExpiresAt, customClaims.ExpiresAt)
-	assert.Equal(t, expectedUserUUID, customClaims.UserUUID)
-
-}

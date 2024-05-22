@@ -30,7 +30,7 @@ func TestCorrectPassword(t *testing.T) {
 	}
 }
 
-func TestCorrectPassword_NoPassMatch(t *testing.T) {
+func TestCorrectPasswordNoPassMatch(t *testing.T) {
 	ps := &utils.Utils{}
 	pass := "password123"
 	wrongPass := "123password"

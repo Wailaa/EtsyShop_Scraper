@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestValidConfiguration_ConnectionSuccess(t *testing.T) {
+func TestValidConfigurationConnectionSuccess(t *testing.T) {
 
 	config := initializer.LoadProjConfig("../")
 

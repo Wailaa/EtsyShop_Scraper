@@ -14,7 +14,7 @@ import (
 	setupMockServer "EtsyScraper/setupTests"
 )
 
-func TestScrapesSoldItems_Success(t *testing.T) {
+func TestScrapesSoldItemsSuccess(t *testing.T) {
 	scraper := &Scraper{}
 	mockConfig := initializer.Config{
 		ProxyHostURL1: "",
@@ -48,7 +48,7 @@ func TestScrapesSoldItems_Success(t *testing.T) {
 
 }
 
-func TestScrapSoldItems_Success(t *testing.T) {
+func TestScrapSoldItemsSuccess(t *testing.T) {
 	c := collector.NewCollyCollector().C
 	c.Limit(&colly.LimitRule{
 		DomainGlob:  "*",
@@ -77,7 +77,7 @@ func TestScrapSoldItems_Success(t *testing.T) {
 	assert.Equal(t, 24, len(*items))
 }
 
-func TestScrapSoldItemPages_Success(t *testing.T) {
+func TestScrapSoldItemPagesSuccess(t *testing.T) {
 	ShopName := "Example"
 
 	c := collector.NewCollyCollector().C
@@ -118,7 +118,7 @@ func TestScrapSoldItemPages_Success(t *testing.T) {
 
 }
 
-func TestScrapSoldItemPages_IsPaginationScrapped(t *testing.T) {
+func TestScrapSoldItemPagesIsPaginationScrapped(t *testing.T) {
 	ShopName := "Example"
 
 	c := collector.NewCollyCollector().C
@@ -164,7 +164,7 @@ func TestScrapSoldItemPages_IsPaginationScrapped(t *testing.T) {
 	assert.False(t, Task.IsScrapeFinished)
 }
 
-func TestAddURLtoQueue_CurrentPage(t *testing.T) {
+func TestAddURLtoQueueCurrentPage(t *testing.T) {
 	ShopName := "Example"
 	mockConfig := initializer.Config{
 		ProxyHostURL1: "",
@@ -191,7 +191,7 @@ func TestAddURLtoQueue_CurrentPage(t *testing.T) {
 
 }
 
-func TestAddURLtoQueue_IsScrapeFinished(t *testing.T) {
+func TestAddURLtoQueueIsScrapeFinished(t *testing.T) {
 	ShopName := "Example"
 	mockConfig := initializer.Config{
 		ProxyHostURL1: "",
@@ -235,7 +235,7 @@ func TestExtractPageNumber(t *testing.T) {
 
 }
 
-func TestExtractPageNumber_NoPage(t *testing.T) {
+func TestExtractPageNumberNoPage(t *testing.T) {
 	URL := "http://example.com"
 
 	Task := &models.TaskSchedule{

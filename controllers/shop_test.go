@@ -139,7 +139,7 @@ func (m *MockScrapper) ScrapSalesHistory(ShopName string, Task *models.TaskSched
 	return args.Get(0).([]models.SoldItems), args.Get(1).(*models.TaskSchedule)
 }
 
-func TestCreateNewShopRequest_Panic(t *testing.T) {
+func TestCreateNewShopRequestPanic(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -165,7 +165,7 @@ func TestCreateNewShopRequest_Panic(t *testing.T) {
 
 }
 
-func TestCreateNewShopRequest_InvalidJson(t *testing.T) {
+func TestCreateNewShopRequestInvalidJson(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -191,7 +191,7 @@ func TestCreateNewShopRequest_InvalidJson(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 
 }
-func TestCreateNewShopRequest_GetShopError(t *testing.T) {
+func TestCreateNewShopRequestGetShopError(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -222,7 +222,7 @@ func TestCreateNewShopRequest_GetShopError(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 
 }
-func TestCreateNewShopRequest_ShopExists(t *testing.T) {
+func TestCreateNewShopRequestShopExists(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -253,7 +253,7 @@ func TestCreateNewShopRequest_ShopExists(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 
 }
-func TestCreateNewShopRequest_Success(t *testing.T) {
+func TestCreateNewShopRequestSuccess(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -287,7 +287,7 @@ func TestCreateNewShopRequest_Success(t *testing.T) {
 
 }
 
-func TestCreateNewShop_ScrapperErr(t *testing.T) {
+func TestCreateNewShopScrapperErr(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -309,7 +309,7 @@ func TestCreateNewShop_ScrapperErr(t *testing.T) {
 	assert.Contains(t, err.Error(), "record not found")
 	assert.Error(t, err)
 }
-func TestCreateNewShop_FailedSaveShopToDB(t *testing.T) {
+func TestCreateNewShopFailedSaveShopToDB(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -343,7 +343,7 @@ func TestCreateNewShop_FailedSaveShopToDB(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestCreateNewShop_SaveMenuToDB_Fail(t *testing.T) {
+func TestCreateNewShopSaveMenuToDBFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -383,7 +383,7 @@ func TestCreateNewShop_SaveMenuToDB_Fail(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestCreateNewShop_SaveMenuToDB_Success(t *testing.T) {
+func TestCreateNewShopSaveMenuToDBSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -423,7 +423,7 @@ func TestCreateNewShop_SaveMenuToDB_Success(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 2)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestCreateNewShop_HasSoldHistory(t *testing.T) {
+func TestCreateNewShopHasSoldHistory(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -468,7 +468,7 @@ func TestCreateNewShop_HasSoldHistory(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestUpdateSellingHistory_DisContintuesSoldItemsFail(t *testing.T) {
+func TestUpdateSellingHistoryDisContintuesSoldItemsFail(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -506,7 +506,7 @@ func TestUpdateSellingHistory_DisContintuesSoldItemsFail(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "UpdateDiscontinuedItems", 1)
 
 }
-func TestUpdateSellingHistory_DisContintuesSoldItemsEmpty(t *testing.T) {
+func TestUpdateSellingHistoryDisContintuesSoldItemsEmpty(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -543,7 +543,7 @@ func TestUpdateSellingHistory_DisContintuesSoldItemsEmpty(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "UpdateDiscontinuedItems", 1)
 
 }
-func TestUpdateSellingHistory_GetItemsFail(t *testing.T) {
+func TestUpdateSellingHistoryGetItemsFail(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -582,7 +582,7 @@ func TestUpdateSellingHistory_GetItemsFail(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
 
 }
-func TestUpdateSellingHistory_InsertIntoDBFail(t *testing.T) {
+func TestUpdateSellingHistoryInsertIntoDBFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -625,7 +625,7 @@ func TestUpdateSellingHistory_InsertIntoDBFail(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "UpdateDiscontinuedItems", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestUpdateSellingHistory_InsertIntoDB(t *testing.T) {
+func TestUpdateSellingHistoryInsertIntoDB(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -669,7 +669,7 @@ func TestUpdateSellingHistory_InsertIntoDB(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestUpdateSellingHistory_TaskSoldItem(t *testing.T) {
+func TestUpdateSellingHistoryTaskSoldItem(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -719,7 +719,7 @@ func TestUpdateSellingHistory_TaskSoldItem(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestUpdateDiscontinuedItems_EmptySoldItems(t *testing.T) {
+func TestUpdateDiscontinuedItemsEmptySoldItems(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -756,7 +756,7 @@ func TestUpdateDiscontinuedItems_EmptySoldItems(t *testing.T) {
 	Scraper.AssertNumberOfCalls(t, "ScrapSalesHistory", 1)
 
 }
-func TestUpdateDiscontinuedItems_GetItemsByShopID_fail(t *testing.T) {
+func TestUpdateDiscontinuedItemsGetItemsByShopIDfail(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -794,7 +794,7 @@ func TestUpdateDiscontinuedItems_GetItemsByShopID_fail(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
 	assert.Contains(t, err.Error(), "Error While fetching Shop's details")
 }
-func TestUpdateDiscontinuedItems_Success(t *testing.T) {
+func TestUpdateDiscontinuedItemsSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -864,7 +864,7 @@ func TestUpdateDiscontinuedItems_Success(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestFollowShop_InvalidJson(t *testing.T) {
+func TestFollowShopInvalidJson(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -891,7 +891,7 @@ func TestFollowShop_InvalidJson(t *testing.T) {
 
 }
 
-func TestFollowShop_Panic(t *testing.T) {
+func TestFollowShopPanic(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -915,7 +915,7 @@ func TestFollowShop_Panic(t *testing.T) {
 	})
 }
 
-func TestFollowShop_ShopNotFound(t *testing.T) {
+func TestFollowShopShopNotFound(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -943,7 +943,7 @@ func TestFollowShop_ShopNotFound(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "shop not found")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 }
-func TestFollowShop_GetShopByNameFail(t *testing.T) {
+func TestFollowShopGetShopByNameFail(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -971,7 +971,7 @@ func TestFollowShop_GetShopByNameFail(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "error while processing the request")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 }
-func TestFollowShop_GetAccountFail(t *testing.T) {
+func TestFollowShopGetAccountFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1005,7 +1005,7 @@ func TestFollowShop_GetAccountFail(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestFollowShop_Success(t *testing.T) {
+func TestFollowShopSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1056,7 +1056,7 @@ func TestFollowShop_Success(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestUnFollowShop_InvalidJson(t *testing.T) {
+func TestUnFollowShopInvalidJson(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1083,7 +1083,7 @@ func TestUnFollowShop_InvalidJson(t *testing.T) {
 
 }
 
-func TestUnFollowShop_Panic(t *testing.T) {
+func TestUnFollowShopPanic(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1107,7 +1107,7 @@ func TestUnFollowShop_Panic(t *testing.T) {
 	})
 }
 
-func TestUnFollowShop_ShopNotFound(t *testing.T) {
+func TestUnFollowShopShopNotFound(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1135,7 +1135,7 @@ func TestUnFollowShop_ShopNotFound(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "shop not found")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 }
-func TestUnFollowShop_GetShopByNameFail(t *testing.T) {
+func TestUnFollowShopGetShopByNameFail(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1163,7 +1163,7 @@ func TestUnFollowShop_GetShopByNameFail(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Error getting Shop")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 }
-func TestUnFollowShop_GetAccountFail(t *testing.T) {
+func TestUnFollowShopGetAccountFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1197,7 +1197,7 @@ func TestUnFollowShop_GetAccountFail(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestUnFollowShop_Success(t *testing.T) {
+func TestUnFollowShopSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1244,7 +1244,7 @@ func TestUnFollowShop_Success(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestGetShopByID_AveragePriceFail(t *testing.T) {
+func TestGetShopByIDAveragePriceFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1283,7 +1283,7 @@ func TestGetShopByID_AveragePriceFail(t *testing.T) {
 	assert.Error(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestGetShopByID_RevenueFail(t *testing.T) {
+func TestGetShopByIDRevenueFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1322,7 +1322,7 @@ func TestGetShopByID_RevenueFail(t *testing.T) {
 	assert.Contains(t, err.Error(), "Error while getting Total revenue")
 	assert.Error(t, sqlMock.ExpectationsWereMet())
 }
-func TestGetShopByID_Success(t *testing.T) {
+func TestGetShopByIDSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1358,7 +1358,7 @@ func TestGetShopByID_Success(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestGetItemsCountByShopID_Fail(t *testing.T) {
+func TestGetItemsCountByShopIDFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1375,7 +1375,7 @@ func TestGetItemsCountByShopID_Fail(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestGetItemsCountByShopID_Success(t *testing.T) {
+func TestGetItemsCountByShopIDSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1392,7 +1392,7 @@ func TestGetItemsCountByShopID_Success(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestGetSoldItemsByShopID_Fail(t *testing.T) {
+func TestGetSoldItemsByShopIDFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1409,7 +1409,7 @@ func TestGetSoldItemsByShopID_Fail(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestGetSoldItemsByShopID_Success(t *testing.T) {
+func TestGetSoldItemsByShopIDSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1437,7 +1437,7 @@ func TestGetSoldItemsByShopID_Success(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestGetSoldItemsByShopID_NoSoldItemsInDB(t *testing.T) {
+func TestGetSoldItemsByShopIDNoSoldItemsInDB(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1460,7 +1460,7 @@ func TestGetSoldItemsByShopID_NoSoldItemsInDB(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestGetTotalRevenue_Fail(t *testing.T) {
+func TestGetTotalRevenueFail(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1480,7 +1480,7 @@ func TestGetTotalRevenue_Fail(t *testing.T) {
 	assert.Contains(t, err.Error(), "Sold items where not found")
 
 }
-func TestGetTotalRevenue_Success(t *testing.T) {
+func TestGetTotalRevenueSuccess(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1503,29 +1503,7 @@ func TestGetTotalRevenue_Success(t *testing.T) {
 
 }
 
-func TestSoldItemsTask(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
-
-	ShopExample := models.Shop{Name: "ExampleShop"}
-	ShopExample.ID = uint(2)
-	AverageItemPrice := 19.2
-	revenueExpected := 485.68
-
-	TestShop.On("GetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{{Available: true, OriginalPrice: 15.2, SoldQuantity: 3}, {Available: true, OriginalPrice: 19.12, SoldQuantity: 10}, {Available: true, OriginalPrice: 124.44, SoldQuantity: 2}}, nil)
-
-	Revenue, err := implShop.GetTotalRevenue(ShopExample.ID, AverageItemPrice)
-
-	TestShop.AssertNumberOfCalls(t, "GetSoldItemsByShopID", 1)
-	assert.NoError(t, err)
-	assert.Equal(t, revenueExpected, Revenue)
-}
-
-func TestProcessStatsRequest_InvalidPeriod(t *testing.T) {
+func TestProcessStatsRequestInvalidPeriod(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1554,7 +1532,7 @@ func TestProcessStatsRequest_InvalidPeriod(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 }
-func TestProcessStatsRequest_GetSellingStatsByPeriod_Fail(t *testing.T) {
+func TestProcessStatsRequestGetSellingStatsByPeriodFail(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1585,7 +1563,7 @@ func TestProcessStatsRequest_GetSellingStatsByPeriod_Fail(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "error while handling stats")
 
 }
-func TestProcessStatsRequest_Success(t *testing.T) {
+func TestProcessStatsRequestSuccess(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1624,7 +1602,7 @@ func TestProcessStatsRequest_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestGetSellingStatsByPeriod_SelectData(t *testing.T) {
+func TestGetSellingStatsByPeriodSelectData(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1645,7 +1623,7 @@ func TestGetSellingStatsByPeriod_SelectData(t *testing.T) {
 
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestGetSellingStatsByPeriod_SelectDataaFail(t *testing.T) {
+func TestGetSellingStatsByPeriodSelectDataaFail(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1665,7 +1643,7 @@ func TestGetSellingStatsByPeriod_SelectDataaFail(t *testing.T) {
 	assert.Contains(t, err.Error(), "error fetching data")
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestGetSellingStatsByPeriod_Success(t *testing.T) {
+func TestGetSellingStatsByPeriodSuccess(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1734,7 +1712,7 @@ func TestSaveShopToDB(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestSaveShopToDB_Failed(t *testing.T) {
+func TestSaveShopToDBFailed(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1820,7 +1798,7 @@ func TestUpdateShopMenuToDB(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestUpdateShopMenuToDB_Fail(t *testing.T) {
+func TestUpdateShopMenuToDBFail(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1887,7 +1865,7 @@ func TestSaveSoldItemsToDB(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestSaveSoldItemsToDB_Fail(t *testing.T) {
+func TestSaveSoldItemsToDBFail(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1908,7 +1886,7 @@ func TestSaveSoldItemsToDB_Fail(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestUpdateDailySales_Success(t *testing.T) {
+func TestUpdateDailySalesSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1932,7 +1910,7 @@ func TestUpdateDailySales_Success(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestUpdateDailySales_Failed(t *testing.T) {
+func TestUpdateDailySalesFailed(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2006,7 +1984,7 @@ func TestCheckAndUpdateOutOfProdMenu(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestCheckAndUpdateOutOfProdMenu_NoExist(t *testing.T) {
+func TestCheckAndUpdateOutOfProdMenuNoExist(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -2072,7 +2050,7 @@ func TestCreateNewOutOfProdMenu(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestCreateNewOutOfProdMenu_Fail(t *testing.T) {
+func TestCreateNewOutOfProdMenuFail(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -2175,7 +2153,7 @@ func TestUpdateAccountShopRelation(t *testing.T) {
 
 }
 
-func TestUpdateAccountShopRelation_Fail(t *testing.T) {
+func TestUpdateAccountShopRelationFail(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -2280,7 +2258,7 @@ func TestRoundTwoDecimalDigits(t *testing.T) {
 	}
 }
 
-func TestGetItemsBySoldItems_Success(t *testing.T) {
+func TestGetItemsBySoldItemsSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2308,7 +2286,7 @@ func TestGetItemsBySoldItems_Success(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestGetItemsBySoldItems_Fail(t *testing.T) {
+func TestGetItemsBySoldItemsFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2333,7 +2311,7 @@ func TestGetItemsBySoldItems_Fail(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestHandleHandleGetShopByID__NoShop(t *testing.T) {
+func TestHandleHandleGetShopByIDNoShop(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2354,7 +2332,7 @@ func TestHandleHandleGetShopByID__NoShop(t *testing.T) {
 
 }
 
-func TestHandleHandleGetShopByID__fail(t *testing.T) {
+func TestHandleHandleGetShopByIDfail(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2374,7 +2352,7 @@ func TestHandleHandleGetShopByID__fail(t *testing.T) {
 
 }
 
-func TestHandleHandleGetShopByID__Success(t *testing.T) {
+func TestHandleHandleGetShopByIDSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2404,7 +2382,7 @@ func TestHandleHandleGetShopByID__Success(t *testing.T) {
 
 }
 
-func TestHandleGetItemsByShopID__NoShop(t *testing.T) {
+func TestHandleGetItemsByShopIDNoShop(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2427,7 +2405,7 @@ func TestHandleGetItemsByShopID__NoShop(t *testing.T) {
 
 }
 
-func TestHandleGetItemsByShopID_Fail(t *testing.T) {
+func TestHandleGetItemsByShopIDFail(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2448,7 +2426,7 @@ func TestHandleGetItemsByShopID_Fail(t *testing.T) {
 
 }
 
-func TestHandleGetItemsByShopID__Success(t *testing.T) {
+func TestHandleGetItemsByShopIDSuccess(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2471,7 +2449,7 @@ func TestHandleGetItemsByShopID__Success(t *testing.T) {
 
 }
 
-func TestHandleGetSoldItemsByShopID__NoShop(t *testing.T) {
+func TestHandleGetSoldItemsByShopIDNoShop(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2494,7 +2472,7 @@ func TestHandleGetSoldItemsByShopID__NoShop(t *testing.T) {
 
 }
 
-func TestHandleGetSoldItemsByShopID_Fail(t *testing.T) {
+func TestHandleGetSoldItemsByShopIDFail(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2518,7 +2496,7 @@ func TestHandleGetSoldItemsByShopID_Fail(t *testing.T) {
 
 }
 
-func TestHandleGetSoldItemsByShopID_Success(t *testing.T) {
+func TestHandleGetSoldItemsByShopIDSuccess(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2542,7 +2520,7 @@ func TestHandleGetSoldItemsByShopID_Success(t *testing.T) {
 
 }
 
-func TestHandleGetItemsCountByShopID__NoShop(t *testing.T) {
+func TestHandleGetItemsCountByShopIDNoShop(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2562,7 +2540,7 @@ func TestHandleGetItemsCountByShopID__NoShop(t *testing.T) {
 
 }
 
-func TestHandleGetItemsCountByShopID__Fail(t *testing.T) {
+func TestHandleGetItemsCountByShopIDFail(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2585,7 +2563,7 @@ func TestHandleGetItemsCountByShopID__Fail(t *testing.T) {
 
 }
 
-func TestHandleGetItemsCountByShopID_Success(t *testing.T) {
+func TestHandleGetItemsCountByShopIDSuccess(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2627,7 +2605,7 @@ func TestCalculateTotalRevenue(t *testing.T) {
 	assert.Equal(t, expectedRevenue, revenue)
 }
 
-func TestGetSoldItemsInRange_success(t *testing.T) {
+func TestGetSoldItemsInRangesuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2645,7 +2623,7 @@ func TestGetSoldItemsInRange_success(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestGetSoldItemsInRange_Fail(t *testing.T) {
+func TestGetSoldItemsInRangeFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2663,7 +2641,7 @@ func TestGetSoldItemsInRange_Fail(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestCreateSoldStats_Fail(t *testing.T) {
+func TestCreateSoldStatsFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2690,7 +2668,7 @@ func TestCreateSoldStats_Fail(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestCreateSoldStats_Success_with_Items(t *testing.T) {
+func TestCreateSoldStatsSuccessWithItems(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2729,7 +2707,7 @@ func TestCreateSoldStats_Success_with_Items(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestCreateSoldStats_Success_with_No_Items(t *testing.T) {
+func TestCreateSoldStatsSuccesswithNoItems(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2767,7 +2745,7 @@ func TestCreateSoldStats_Success_with_No_Items(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestGetAverageItemPrice_Shop_Success(t *testing.T) {
+func TestGetAverageItemPriceShopSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2788,7 +2766,7 @@ func TestGetAverageItemPrice_Shop_Success(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 
 }
-func TestGetAverageItemPrice_Shop_Fail(t *testing.T) {
+func TestGetAverageItemPriceShopFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2808,7 +2786,7 @@ func TestGetAverageItemPrice_Shop_Fail(t *testing.T) {
 
 }
 
-func TestCreateShopRequest_TypeShop_FailNoAccount(t *testing.T) {
+func TestCreateShopRequestTypeShopFailNoAccount(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -2825,7 +2803,7 @@ func TestCreateShopRequest_TypeShop_FailNoAccount(t *testing.T) {
 	assert.Contains(t, err.Error(), "no AccountID was passed")
 
 }
-func TestCreateShopRequest_TypeShop_FailSaveData(t *testing.T) {
+func TestCreateShopRequestTypeShopFailSaveData(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -2846,7 +2824,7 @@ func TestCreateShopRequest_TypeShop_FailSaveData(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 	assert.Contains(t, err.Error(), "Failed to save ShopRequest")
 }
-func TestCreateShopRequest_TypeShop_Success(t *testing.T) {
+func TestCreateShopRequestTypeShopSuccess(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -2867,7 +2845,7 @@ func TestCreateShopRequest_TypeShop_Success(t *testing.T) {
 
 }
 
-func TestGetItemsByShopID_TypeShop_Success(t *testing.T) {
+func TestGetItemsByShopIDTypeShopSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2894,7 +2872,7 @@ func TestGetItemsByShopID_TypeShop_Success(t *testing.T) {
 
 }
 
-func TestGetItemsByShopID_TypeShop_Fail(t *testing.T) {
+func TestGetItemsByShopIDTypeShopFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -2913,7 +2891,7 @@ func TestGetItemsByShopID_TypeShop_Fail(t *testing.T) {
 
 }
 
-func TestGetShopByName_TypeShop_Success(t *testing.T) {
+func TestGetShopByNameTypeShopSuccess(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -2949,7 +2927,7 @@ func TestGetShopByName_TypeShop_Success(t *testing.T) {
 
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestGetShopByName_TypeShop_fail(t *testing.T) {
+func TestGetShopByNameTypeShopfail(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()

@@ -31,7 +31,7 @@ func TestValidRedisDBConnect(t *testing.T) {
 	}
 }
 
-func TestValidRedisDBConnect_WrongPort(t *testing.T) {
+func TestValidRedisDBConnectWrongPort(t *testing.T) {
 
 	config := &initializer.Config{
 		RedisURL: "localhost:1111",
@@ -40,7 +40,7 @@ func TestValidRedisDBConnect_WrongPort(t *testing.T) {
 	initializer.RedisDBConnect(config)
 
 	if initializer.RedisClient == nil {
-		t.Errorf("RedisClient is nil")
+		t.Errorf("RedisClient is nil ")
 	}
 
 	context := context.TODO()
@@ -50,7 +50,7 @@ func TestValidRedisDBConnect_WrongPort(t *testing.T) {
 
 }
 
-func TestValidRedisDBConnect_IntegretionTest(t *testing.T) {
+func TestValidRedisDBConnectIntegretionTest(t *testing.T) {
 
 	config := initializer.LoadProjConfig(".")
 

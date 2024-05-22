@@ -8,7 +8,7 @@ import (
 	"EtsyScraper/models"
 )
 
-func TestCreateMenuItem_ValidInput(t *testing.T) {
+func TestCreateMenuItemValidInput(t *testing.T) {
 
 	menuItem := models.MenuItem{
 		ShopMenuID: 1,
@@ -27,7 +27,7 @@ func TestCreateMenuItem_ValidInput(t *testing.T) {
 	assert.Equal(t, menuItem.Amount, result.Amount)
 }
 
-func TestCreateMenuItem_EmptyInput(t *testing.T) {
+func TestCreateMenuItemEmptyInput(t *testing.T) {
 
 	menuItem := models.MenuItem{}
 
@@ -40,7 +40,7 @@ func TestCreateMenuItem_EmptyInput(t *testing.T) {
 	assert.Equal(t, 0, result.Amount)
 }
 
-func TestCreateShopReviews_ValidInput(t *testing.T) {
+func TestCreateShopReviewsValidInput(t *testing.T) {
 
 	input := &models.Reviews{
 		ShopID:       100,
@@ -58,7 +58,7 @@ func TestCreateShopReviews_ValidInput(t *testing.T) {
 	assert.Equal(t, len(input.ReviewsTopic), len(result.ReviewsTopic))
 }
 
-func TestCreateShopMember_ValidInput(t *testing.T) {
+func TestCreateShopMemberValidInput(t *testing.T) {
 	shopMember := &models.ShopMember{
 		ShopID: 1,
 		Name:   "Biggie",

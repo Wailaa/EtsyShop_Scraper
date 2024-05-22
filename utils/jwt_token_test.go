@@ -23,7 +23,7 @@ func InitiateUtilTest() (jwt *utils.Utils, exp time.Duration, userUUID uuid.UUID
 	return
 }
 
-func TestCreateJwtToken_ValidClaims_ReturnsTokenObject(t *testing.T) {
+func TestCreateJwtTokenValidClaimsReturnsTokenObject(t *testing.T) {
 	jwt, exp, userUUID := InitiateUtilTest()
 
 	token, err := jwt.CreateJwtToken(exp, userUUID)
@@ -32,7 +32,7 @@ func TestCreateJwtToken_ValidClaims_ReturnsTokenObject(t *testing.T) {
 	assert.NotNil(t, token)
 }
 
-func TestCreateJwtToken_FailedToGenerateToken_ReturnsError(t *testing.T) {
+func TestCreateJwtTokenFailedToGenerateTokenReturnsError(t *testing.T) {
 	jwt, exp, userUUID := InitiateUtilTest()
 
 	utils.Config.JwtSecret = ""
@@ -42,7 +42,7 @@ func TestCreateJwtToken_FailedToGenerateToken_ReturnsError(t *testing.T) {
 	assert.Nil(t, token)
 }
 
-func TestValidateJWT_ValidToken(t *testing.T) {
+func TestValidateJWTValidToken(t *testing.T) {
 	jwt, exp, userUUID := InitiateUtilTest()
 
 	token, _ := jwt.CreateJwtToken(exp, userUUID)
@@ -53,7 +53,7 @@ func TestValidateJWT_ValidToken(t *testing.T) {
 	assert.NotNil(t, claims)
 }
 
-func TestValidateJWT_InvalidSignature(t *testing.T) {
+func TestValidateJWTInvalidSignature(t *testing.T) {
 	jwt, _, _ := InitiateUtilTest()
 
 	token := "invalid_token"
@@ -65,7 +65,7 @@ func TestValidateJWT_InvalidSignature(t *testing.T) {
 	assert.Nil(t, claims)
 }
 
-func TestRefreshAccToken_ValidRefreshToken(t *testing.T) {
+func TestRefreshAccTokenValidRefreshToken(t *testing.T) {
 	jwt, exp, userUUID := InitiateUtilTest()
 	token, _ := jwt.CreateJwtToken(exp, userUUID)
 
@@ -75,7 +75,7 @@ func TestRefreshAccToken_ValidRefreshToken(t *testing.T) {
 	assert.NotNil(t, newAccessToken)
 }
 
-func TestRefreshAccToken_InvalidToken(t *testing.T) {
+func TestRefreshAccTokenInvalidToken(t *testing.T) {
 	jwt := utils.Utils{}
 	refreshToken := models.NewToken("invalid_refresh_token")
 
@@ -85,7 +85,7 @@ func TestRefreshAccToken_InvalidToken(t *testing.T) {
 	assert.Nil(t, newAccessToken)
 }
 
-func TestIsJWTBlackListed_NotBlacklistedToken(t *testing.T) {
+func TestIsJWTBlackListedNotBlacklistedToken(t *testing.T) {
 	jwt, exp, userUUID := InitiateUtilTest()
 
 	mockToken, err := jwt.CreateJwtToken(exp, userUUID)
@@ -100,7 +100,7 @@ func TestIsJWTBlackListed_NotBlacklistedToken(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestIsJWTBlackListed_Exists(t *testing.T) {
+func TestIsJWTBlackListedExists(t *testing.T) {
 	jwt, exp, userUUID := InitiateUtilTest()
 
 	mockToken, err := jwt.CreateJwtToken(exp, userUUID)
@@ -119,7 +119,7 @@ func TestIsJWTBlackListed_Exists(t *testing.T) {
 	assert.True(t, blacklisted)
 }
 
-func TestBlacklistJWT_ValidToken(t *testing.T) {
+func TestBlacklistJWTValidToken(t *testing.T) {
 	jwt, exp, userUUID := InitiateUtilTest()
 
 	mockToken, _ := jwt.CreateJwtToken(exp, userUUID)
@@ -132,7 +132,7 @@ func TestBlacklistJWT_ValidToken(t *testing.T) {
 
 }
 
-func TestBlacklistJWT_EmptyToken(t *testing.T) {
+func TestBlacklistJWTEmptyToken(t *testing.T) {
 	jwt, _, _ := InitiateUtilTest()
 
 	newToken := models.Token("")
@@ -144,7 +144,7 @@ func TestBlacklistJWT_EmptyToken(t *testing.T) {
 	assert.Error(t, err)
 
 }
-func TestBlacklistJWT_TokenIsBlackListed(t *testing.T) {
+func TestBlacklistJWTTokenIsBlackListed(t *testing.T) {
 	jwt, exp, userUUID := InitiateUtilTest()
 
 	mockToken, _ := jwt.CreateJwtToken(exp, userUUID)
@@ -162,7 +162,7 @@ func TestBlacklistJWT_TokenIsBlackListed(t *testing.T) {
 
 }
 
-func TestBlacklistJWT_TokenNotValid(t *testing.T) {
+func TestBlacklistJWTTokenNotValid(t *testing.T) {
 	jwt, _, _ := InitiateUtilTest()
 
 	newToken := models.Token("test")
@@ -177,7 +177,7 @@ func TestBlacklistJWT_TokenNotValid(t *testing.T) {
 
 }
 
-func TestGetTokens_Success(t *testing.T) {
+func TestGetTokensSuccess(t *testing.T) {
 	ctx, _, _ := setupMockServer.SetGinTestMode()
 	jwt := utils.Utils{}
 	req := httptest.NewRequest("GET", "/", nil)
@@ -191,7 +191,7 @@ func TestGetTokens_Success(t *testing.T) {
 
 }
 
-func TestGetTokens_Fail(t *testing.T) {
+func TestGetTokensFail(t *testing.T) {
 	ctx, _, _ := setupMockServer.SetGinTestMode()
 	jwt := utils.Utils{}
 	req := httptest.NewRequest("GET", "/", nil)

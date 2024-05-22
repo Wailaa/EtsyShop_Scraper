@@ -87,7 +87,7 @@ func (m *mockUtils) GetTokens(ctx *gin.Context) (map[string]*models.Token, error
 	return args.Get(0).(map[string]*models.Token), args.Error(1)
 }
 
-func TestRegisterUser_InvalidJson(t *testing.T) {
+func TestRegisterUserInvalidJson(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -109,7 +109,7 @@ func TestRegisterUser_InvalidJson(t *testing.T) {
 
 }
 
-func TestRegisterUser_PassNoMatch(t *testing.T) {
+func TestRegisterUserPassNoMatch(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -137,7 +137,7 @@ func TestRegisterUser_PassNoMatch(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 }
 
-func TestRegisterUser_PassShort(t *testing.T) {
+func TestRegisterUserPassShort(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -165,7 +165,7 @@ func TestRegisterUser_PassShort(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 }
 
-func TestRegisterUser_HashPassErr(t *testing.T) {
+func TestRegisterUserHashPassErr(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -197,7 +197,7 @@ func TestRegisterUser_HashPassErr(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusConflict)
 }
 
-func TestRegisterUser_VerificationStringErr(t *testing.T) {
+func TestRegisterUserVerificationStringErr(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -231,7 +231,7 @@ func TestRegisterUser_VerificationStringErr(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusConflict)
 }
 
-func TestRegisterUser_DataBaseError(t *testing.T) {
+func TestRegisterUserDataBaseError(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -273,7 +273,7 @@ func TestRegisterUser_DataBaseError(t *testing.T) {
 	}
 }
 
-func TestRegisterUser_ExpectCreateAccount(t *testing.T) {
+func TestRegisterUserExpectCreateAccount(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -312,7 +312,7 @@ func TestRegisterUser_ExpectCreateAccount(t *testing.T) {
 
 }
 
-func TestGetAccountByEmail_Success(t *testing.T) {
+func TestGetAccountByEmailSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -335,7 +335,7 @@ func TestGetAccountByEmail_Success(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestGetAccountByID_Success(t *testing.T) {
+func TestGetAccountByIDSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -358,7 +358,7 @@ func TestGetAccountByID_Success(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestGetAccountByID_Fail(t *testing.T) {
+func TestGetAccountByIDFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -377,7 +377,7 @@ func TestGetAccountByID_Fail(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestLoginAccount_InvalidJson(t *testing.T) {
+func TestLoginAccountInvalidJson(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -399,7 +399,7 @@ func TestLoginAccount_InvalidJson(t *testing.T) {
 
 }
 
-func TestLoginAccount_InvalidEmailEmpty(t *testing.T) {
+func TestLoginAccountInvalidEmailEmpty(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -434,7 +434,7 @@ func TestLoginAccount_InvalidEmailEmpty(t *testing.T) {
 
 }
 
-func TestLoginAccount_PassVerified_fail(t *testing.T) {
+func TestLoginAccountPassVerifiedfail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -472,7 +472,7 @@ func TestLoginAccount_PassVerified_fail(t *testing.T) {
 
 }
 
-func TestLoginAccount_AccessToken(t *testing.T) {
+func TestLoginAccountAccessToken(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -514,7 +514,7 @@ func TestLoginAccount_AccessToken(t *testing.T) {
 
 }
 
-func TestLoginAccount_AccessToken_failed(t *testing.T) {
+func TestLoginAccountAccessTokenfailed(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -556,7 +556,7 @@ func TestLoginAccount_AccessToken_failed(t *testing.T) {
 
 }
 
-func TestLoginAccount_RefreshTokenFailed(t *testing.T) {
+func TestLoginAccountRefreshTokenFailed(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -600,7 +600,7 @@ func TestLoginAccount_RefreshTokenFailed(t *testing.T) {
 
 }
 
-func TestLoginAccount_Success(t *testing.T) {
+func TestLoginAccountSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -671,7 +671,7 @@ func TestLoginAccount_Success(t *testing.T) {
 
 }
 
-func TestLogOutAccount_Success_No_Cookie(t *testing.T) {
+func TestLogOutAccountSuccessNoCookie(t *testing.T) {
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -693,7 +693,7 @@ func TestLogOutAccount_Success_No_Cookie(t *testing.T) {
 
 }
 
-func TestLogOutAccount_SuccessWithCookies(t *testing.T) {
+func TestLogOutAccountSuccessWithCookies(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -751,7 +751,7 @@ func TestLogOutAccount_SuccessWithCookies(t *testing.T) {
 	MockedUtils.AssertCalled(t, "BlacklistJWT")
 }
 
-func TestLogOutAccount_UserNotFound(t *testing.T) {
+func TestLogOutAccountUserNotFound(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -812,11 +812,11 @@ func TestLogOutAccount(t *testing.T) {
 		ExpiresAt: 12344533,
 		UserUUID:  account,
 	}, nil)
-
+	MockedUtils.On("BlacklistJWT").Return(nil)
 	sqlMock.ExpectBegin()
 	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_out"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), account).WillReturnError(errors.New("User Not Found"))
-	sqlMock.ExpectRollback()
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), account).WillReturnResult(sqlmock.NewResult(1, 1))
+	sqlMock.ExpectCommit()
 
 	router.GET("/logout", User.LogOutAccount)
 
@@ -829,11 +829,11 @@ func TestLogOutAccount(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestVerifyAccount_NoTranID(t *testing.T) {
+func TestVerifyAccountNoTranID(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -857,7 +857,7 @@ func TestVerifyAccount_NoTranID(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 
 }
-func TestVerifyAccount_EmptyAccount(t *testing.T) {
+func TestVerifyAccountEmptyAccount(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -888,7 +888,7 @@ func TestVerifyAccount_EmptyAccount(t *testing.T) {
 
 }
 
-func TestVerifyAccount_AlreadyVerified(t *testing.T) {
+func TestVerifyAccountAlreadyVerified(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -918,7 +918,7 @@ func TestVerifyAccount_AlreadyVerified(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 
 }
-func TestVerifyAccount_Success(t *testing.T) {
+func TestVerifyAccountSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -954,7 +954,7 @@ func TestVerifyAccount_Success(t *testing.T) {
 
 }
 
-func TestChangePass_FailedBindJson(t *testing.T) {
+func TestChangePassFailedBindJson(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -979,7 +979,7 @@ func TestChangePass_FailedBindJson(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
-func TestChangePass_UserNotFound(t *testing.T) {
+func TestChangePassUserNotFound(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1010,7 +1010,7 @@ func TestChangePass_UserNotFound(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestChangePass_EmptyAccount(t *testing.T) {
+func TestChangePassEmptyAccount(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1046,7 +1046,7 @@ func TestChangePass_EmptyAccount(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestChangePass_PassNoMatch(t *testing.T) {
+func TestChangePassPassNoMatch(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1076,7 +1076,7 @@ func TestChangePass_PassNoMatch(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 
 }
-func TestChangePass_HashFail(t *testing.T) {
+func TestChangePassHashFail(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1116,7 +1116,7 @@ func TestChangePass_HashFail(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestChangePass_PassNotConfirmed(t *testing.T) {
+func TestChangePassPassNotConfirmed(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1154,7 +1154,7 @@ func TestChangePass_PassNotConfirmed(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestChangePass_Success(t *testing.T) {
+func TestChangePassSuccess(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1201,7 +1201,7 @@ func TestChangePass_Success(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestForgotPassReq_FailedBindJson(t *testing.T) {
+func TestForgotPassReqFailedBindJson(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1221,7 +1221,7 @@ func TestForgotPassReq_FailedBindJson(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 
 }
-func TestForgotPassReq_UserNotFound(t *testing.T) {
+func TestForgotPassReqUserNotFound(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1251,7 +1251,7 @@ func TestForgotPassReq_UserNotFound(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestForgotPassReq_VerificationToken(t *testing.T) {
+func TestForgotPassReqVerificationToken(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1284,7 +1284,7 @@ func TestForgotPassReq_VerificationToken(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestForgotPassReq_Success(t *testing.T) {
+func TestForgotPassReqSuccess(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1344,7 +1344,7 @@ func TestResetPass(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusNotFound)
 }
 
-func TestResetPass_PassNoMachs(t *testing.T) {
+func TestResetPassPassNoMachs(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1365,7 +1365,7 @@ func TestResetPass_PassNoMachs(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusForbidden)
 }
 
-func TestResetPass_UserNotFound(t *testing.T) {
+func TestResetPassUserNotFound(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1389,7 +1389,7 @@ func TestResetPass_UserNotFound(t *testing.T) {
 
 	assert.Equal(t, w.Code, http.StatusForbidden)
 }
-func TestResetPass_EmptyAccount(t *testing.T) {
+func TestResetPassEmptyAccount(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1418,7 +1418,7 @@ func TestResetPass_EmptyAccount(t *testing.T) {
 
 	assert.Equal(t, w.Code, http.StatusForbidden)
 }
-func TestResetPass_RCP_Token_no_Match(t *testing.T) {
+func TestResetPassRCPTokenNoMatch(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1448,7 +1448,7 @@ func TestResetPass_RCP_Token_no_Match(t *testing.T) {
 
 	assert.Equal(t, w.Code, http.StatusForbidden)
 }
-func TestResetPass_Success(t *testing.T) {
+func TestResetPassSuccess(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1505,7 +1505,7 @@ func TestUpdateLastTimeLoggedIn(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestUpdateLastTimeLoggedIn_Failed(t *testing.T) {
+func TestUpdateLastTimeLoggedInFailed(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1564,7 +1564,7 @@ func TestJoinShopFollowing(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
-func TestJoinShopFollowing_FAIL(t *testing.T) {
+func TestJoinShopFollowingFAIL(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1604,7 +1604,7 @@ func TestGenerateLoginResponse(t *testing.T) {
 
 }
 
-func TestUpdateLastTimeLoggedOut_Success(t *testing.T) {
+func TestUpdateLastTimeLoggedOutSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1625,7 +1625,7 @@ func TestUpdateLastTimeLoggedOut_Success(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestUpdateLastTimeLoggedOut_Failed(t *testing.T) {
+func TestUpdateLastTimeLoggedOutFailed(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1668,7 +1668,7 @@ func TestUpdateAccountAfterVerify(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestUpdateAccountAfterVerify_Fail(t *testing.T) {
+func TestUpdateAccountAfterVerifyFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1715,7 +1715,7 @@ func TestUpdateAccountNewPass(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestUpdateAccountNewPass_Fail(t *testing.T) {
+func TestUpdateAccountNewPassFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -1764,7 +1764,7 @@ func TestUpdateAccountAfterResetPass(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestUpdateAccountAfter_Fail(t *testing.T) {
+func TestUpdateAccountAfterFail(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1789,7 +1789,7 @@ func TestUpdateAccountAfter_Fail(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestCreateNewAccountRecord_Success(t *testing.T) {
+func TestCreateNewAccountRecordSuccess(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -1833,7 +1833,7 @@ func TestCreateNewAccountRecord_Success(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestCreateNewAccountRecord_Fail(t *testing.T) {
+func TestCreateNewAccountRecordFail(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
