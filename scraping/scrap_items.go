@@ -278,3 +278,21 @@ func AddToQueue(SectionID string, pagesCount int, link string, q *queue.Queue) {
 func ShouldProcessItems(shop *models.Shop, hasSalesCategory bool) bool {
 	return (len(shop.ShopMenu.Menu) > 1 && !hasSalesCategory) || (len(shop.ShopMenu.Menu) > 2 && hasSalesCategory)
 }
+
+func FilterUncategorizedItems(shop *models.Shop, allItemCategoryIndex int, listingIdCount map[uint]int) []models.Item {
+	uncategorizedItems := []models.Item{}
+
+	itemsOfCategoryAll := shop.ShopMenu.Menu[allItemCategoryIndex].Items
+	for listingID, amount := range listingIdCount {
+		if amount == 1 {
+			for _, item := range itemsOfCategoryAll {
+				if item.ListingID == listingID {
+					uncategorizedItems = append(uncategorizedItems, item)
+				}
+			}
+		}
+	}
+
+	return uncategorizedItems
+}
+

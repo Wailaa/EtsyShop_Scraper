@@ -682,3 +682,30 @@ func TestShouldProcessItems(t *testing.T) {
 	}
 
 }
+
+func TestFilterUncategorizedItems(t *testing.T) {
+	listingIdCount := map[uint]int{
+		190232:   2,
+		1254345:  2,
+		653443:   1,
+		23456436: 1,
+	}
+	shop := &models.Shop{ShopMenu: models.ShopMenu{
+		Menu: []models.MenuItem{
+			{
+				Category: "All",
+				Items: []models.Item{
+					{ListingID: 653443},
+					{ListingID: 23456436},
+					{ListingID: 1254345},
+					{ListingID: 190232},
+				},
+			},
+		},
+	}}
+	AllItemCategoryIndex := 0
+
+	result := FilterUncategorizedItems(shop, AllItemCategoryIndex, listingIdCount)
+	assert.Equal(t, 2, len(result))
+
+}
