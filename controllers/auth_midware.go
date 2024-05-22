@@ -16,7 +16,6 @@ func AuthMiddleWare(Process utils.UtilsProcess) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		config := initializer.LoadProjConfig(".")
 
-		user := &models.Account{}
 		JwtTokens, err := Process.GetTokens(ctx)
 		if err != nil {
 			HandleResponse(ctx, err, http.StatusUnauthorized, err.Error()+" please login again", nil)
@@ -27,43 +26,29 @@ func AuthMiddleWare(Process utils.UtilsProcess) gin.HandlerFunc {
 		refreshToken, refHasValue := JwtTokens["refresh_token"]
 
 		if accHasValue {
-			userClaims, errClaims := Process.ValidateJWT(accessToken)
-			isBlackListed, err := Process.IsJWTBlackListed(accessToken)
-			if !isBlackListed && err == nil && errClaims == nil {
-
-				if err := initializer.DB.Where("id = ?", userClaims.UserUUID).First(user).Error; err != nil {
-					HandleResponse(ctx, err, http.StatusUnauthorized, err.Error(), nil)
-					return
-				}
-				ctx.Set("currentUserUUID", user.ID)
+			if ok := IsAuthorized(ctx, Process, accessToken); ok {
 				ctx.Next()
 				return
 			}
 		}
+
 		if !refHasValue {
 			HandleResponse(ctx, err, http.StatusUnauthorized, "no refreshToken found", nil)
 			return
 		}
-		accessToken, err = Process.RefreshAccToken(refreshToken)
-		if err != nil {
-			HandleResponse(ctx, err, http.StatusUnauthorized, err.Error(), nil)
-			return
-		}
-		userClaims, errClaims := Process.ValidateJWT(accessToken)
-		if errClaims != nil {
-			HandleResponse(ctx, err, http.StatusUnauthorized, "auth failed because of "+errClaims.Error(), nil)
-			return
-		}
 
-		ctx.SetCookie("access_token", string(*accessToken), int(config.AccTokenExp.Seconds()), "/", "localhost", false, true)
+		if ok := IsAuthorized(ctx, Process, refreshToken); ok {
 
-		if err := initializer.DB.Where("id = ?", userClaims.UserUUID).First(user).Error; err != nil {
-			HandleResponse(ctx, err, http.StatusUnauthorized, err.Error(), nil)
+			accessToken, err = Process.RefreshAccToken(refreshToken)
+			if err != nil {
+				HandleResponse(ctx, err, http.StatusUnauthorized, err.Error(), nil)
+			}
+			ctx.SetCookie("access_token", string(*accessToken), int(config.AccTokenExp.Seconds()), "/", "localhost", false, true)
+			ctx.Next()
 			return
 		}
 
-		ctx.Set("currentUserUUID", user.ID)
-		ctx.Next()
+		HandleResponse(ctx, err, http.StatusUnauthorized, "login required ", nil)
 	}
 }
 

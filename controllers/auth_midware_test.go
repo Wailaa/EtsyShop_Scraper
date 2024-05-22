@@ -145,7 +145,7 @@ func TestAuthMiddleWare_RefreshAccessToken_fail(t *testing.T) {
 	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"refresh_token": refToken}, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, errors.New("not Valid"))
 	MockedUtils.On("IsJWTBlackListed").Return(true, nil)
-	MockedUtils.On("RefreshAccToken").Return(&token, errors.New("failed to refresh access token"))
+	MockedUtils.On("RefreshAccToken").Return(&token, errors.New("login required"))
 
 	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils))
 
@@ -154,7 +154,7 @@ func TestAuthMiddleWare_RefreshAccessToken_fail(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	responseBody := w.Body.String()
-	expectedFailMessage := "failed to refresh access token"
+	expectedFailMessage := "login required"
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Contains(t, responseBody, expectedFailMessage, "response body should contain the expected message")
@@ -170,11 +170,11 @@ func TestAuthMiddleWare_ValidateNewToken(t *testing.T) {
 	refToken := models.NewToken("SomeToken")
 
 	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"refresh_token": refToken}, nil)
-	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, errors.New("not Valid"))
+	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, errors.New("login required"))
 	MockedUtils.On("IsJWTBlackListed").Return(true, nil)
 
 	MockedUtils.On("RefreshAccToken").Return(&token, nil)
-	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, errors.New("not Valid"))
+	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, errors.New("login required"))
 
 	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils))
 
@@ -183,7 +183,7 @@ func TestAuthMiddleWare_ValidateNewToken(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	responseBody := w.Body.String()
-	expectedFailMessage := "auth failed because of not Valid"
+	expectedFailMessage := "login required"
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Contains(t, responseBody, expectedFailMessage, "response body should contain the expected message")
@@ -205,14 +205,13 @@ func TestAuthMiddleWare_NewCookie(t *testing.T) {
 	MockedUtils := &mockUtils{}
 
 	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"refresh_token": &token}, nil)
-	MockedUtils.On("IsJWTBlackListed").Return(true, nil)
-
-	MockedUtils.On("RefreshAccToken").Return(&token, nil)
+	MockedUtils.On("IsJWTBlackListed").Return(false, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{
 		CreatedAt: 12344533,
 		ExpiresAt: 12344533,
 		UserUUID:  user,
 	}, nil)
+	MockedUtils.On("RefreshAccToken").Return(&token, nil)
 
 	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
 		AddRow(user.String(), Now, Now, nil, "Testing", "User", "test@test1242q21.com", "", "free", false, "", false, "", Now, Now)
@@ -223,7 +222,7 @@ func TestAuthMiddleWare_NewCookie(t *testing.T) {
 	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils))
 
 	req := httptest.NewRequest("GET", "/auth", nil)
-	req.Header.Set("Cookie", "access_token=SomeToken1; refresh_token=SomeToken2")
+	req.Header.Set("Cookie", "refresh_token=NoewRefreshedToken")
 	router.ServeHTTP(w, req)
 
 	cookies := w.Result().Cookies()
@@ -254,7 +253,7 @@ func TestAuthMiddleWare_Success_Key_Set(t *testing.T) {
 
 	MockedUtils := &mockUtils{}
 	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"refresh_token": &token}, nil)
-	MockedUtils.On("IsJWTBlackListed").Return(true, nil)
+	MockedUtils.On("IsJWTBlackListed").Return(false, nil)
 	MockedUtils.On("RefreshAccToken").Return(&token, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{
 		CreatedAt: 12344533,
@@ -273,7 +272,7 @@ func TestAuthMiddleWare_Success_Key_Set(t *testing.T) {
 	})
 
 	req := httptest.NewRequest("GET", "/auth", nil)
-	req.Header.Set("Cookie", "access_token=SomeToken1; refresh_token=SomeToken2")
+	req.Header.Set("Cookie", "refresh_token=SomeToken2")
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, user, currentUserUUID)
