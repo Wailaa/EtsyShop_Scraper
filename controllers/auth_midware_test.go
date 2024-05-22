@@ -20,7 +20,7 @@ import (
 	setupMockServer "EtsyScraper/setupTests"
 )
 
-func TestAuthMiddleWare_noCookies(t *testing.T) {
+func TestAuthMiddleWareNoCookies(t *testing.T) {
 
 	ctx, router, w := setupMockServer.SetGinTestMode()
 
@@ -38,7 +38,7 @@ func TestAuthMiddleWare_noCookies(t *testing.T) {
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
-func TestAuthMiddleWare_AccessToken_IsBlackListed(t *testing.T) {
+func TestAuthMiddleWareAccessTokenIsBlackListed(t *testing.T) {
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	userID := uuid.New()
@@ -66,7 +66,7 @@ func TestAuthMiddleWare_AccessToken_IsBlackListed(t *testing.T) {
 	assert.Contains(t, responseBody, expectedFailMessage, "response body should contain the expected message")
 }
 
-func TestAuthMiddleWare_AccessToken_IsBlackListed_False(t *testing.T) {
+func TestAuthMiddleWareAccessTokenIsBlackListedFalse(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -112,7 +112,7 @@ func TestAuthMiddleWare_AccessToken_IsBlackListed_False(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestAuthMiddleWare_RefreshToken_Error(t *testing.T) {
+func TestAuthMiddleWareRefreshTokenError(t *testing.T) {
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
@@ -134,7 +134,7 @@ func TestAuthMiddleWare_RefreshToken_Error(t *testing.T) {
 	assert.Contains(t, responseBody, expectedFailMessage, "response body should contain the expected message")
 }
 
-func TestAuthMiddleWare_RefreshAccessToken_fail(t *testing.T) {
+func TestAuthMiddleWareRefreshAccessTokenFail(t *testing.T) {
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
@@ -160,7 +160,7 @@ func TestAuthMiddleWare_RefreshAccessToken_fail(t *testing.T) {
 	assert.Contains(t, responseBody, expectedFailMessage, "response body should contain the expected message")
 }
 
-func TestAuthMiddleWare_ValidateNewToken(t *testing.T) {
+func TestAuthMiddleWareValidateNewToken(t *testing.T) {
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
@@ -189,7 +189,7 @@ func TestAuthMiddleWare_ValidateNewToken(t *testing.T) {
 	assert.Contains(t, responseBody, expectedFailMessage, "response body should contain the expected message")
 }
 
-func TestAuthMiddleWare_NewCookie(t *testing.T) {
+func TestAuthMiddleWareNewCookie(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -237,7 +237,7 @@ func TestAuthMiddleWare_NewCookie(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 }
-func TestAuthMiddleWare_Success_Key_Set(t *testing.T) {
+func TestAuthMiddleWareSuccessKeySet(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -280,7 +280,7 @@ func TestAuthMiddleWare_Success_Key_Set(t *testing.T) {
 
 }
 
-func TestAuthorization_NoCurrentUser_Panic(t *testing.T) {
+func TestAuthorizationNoCurrentUserPanic(t *testing.T) {
 	_, testDB, _ := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -301,7 +301,7 @@ func TestAuthorization_NoCurrentUser_Panic(t *testing.T) {
 	})
 
 }
-func TestAuthorization_UserNotFound(t *testing.T) {
+func TestAuthorizationUserNotFound(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -326,7 +326,7 @@ func TestAuthorization_UserNotFound(t *testing.T) {
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
-func TestAuthorization_NotVerified(t *testing.T) {
+func TestAuthorizationNotVerified(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -356,7 +356,7 @@ func TestAuthorization_NotVerified(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "email not verified")
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
-func TestAuthorization_Success(t *testing.T) {
+func TestAuthorizationSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -390,7 +390,7 @@ func TestAuthorization_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestIsAccountFollowingShop_Success(t *testing.T) {
+func TestIsAccountFollowingShopSuccess(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -427,7 +427,7 @@ func TestIsAccountFollowingShop_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
-func TestIsAccountFollowingShop_NoShopID(t *testing.T) {
+func TestIsAccountFollowingShopNoShopID(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -451,7 +451,7 @@ func TestIsAccountFollowingShop_NoShopID(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
-func TestIsAccountFollowingShop_DataBaseError(t *testing.T) {
+func TestIsAccountFollowingShopDataBaseError(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
@@ -478,7 +478,7 @@ func TestIsAccountFollowingShop_DataBaseError(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
 
-func TestIsAccountFollowingShop_NotFollowing(t *testing.T) {
+func TestIsAccountFollowingShopNotFollowing(t *testing.T) {
 
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
