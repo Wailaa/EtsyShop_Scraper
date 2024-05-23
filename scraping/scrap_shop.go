@@ -154,14 +154,14 @@ func scrapShopMenu(c *colly.Collector, shop *models.Shop) error {
 			valueToInt, _ := strconv.Atoi(value)
 
 			dataSectionId := h.Attr("data-section-id")
-			dataSectionId_link := Shoplink + shop.Name + "?&section_id=" + dataSectionId
+			dataSectionIdlink := Shoplink + shop.Name + "?&section_id=" + dataSectionId
 
 			if i == 0 {
 				shop.ShopMenu.TotalItemsAmount = valueToInt
 			}
 			Menu = append(Menu, models.MenuItem{
 				Category:  key,
-				Link:      dataSectionId_link,
+				Link:      dataSectionIdlink,
 				Amount:    valueToInt,
 				SectionID: dataSectionId,
 			})
