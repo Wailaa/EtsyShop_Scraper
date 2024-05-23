@@ -69,3 +69,7 @@ func TruncateDate(date time.Time) time.Time {
 	result := date.UTC().Truncate(24 * time.Hour)
 	return result
 }
+
+func StringContains(str, subStr string) bool {
+	return strings.Contains(str, subStr)
+}

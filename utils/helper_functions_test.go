@@ -249,3 +249,40 @@ func TestTruncateDate(t *testing.T) {
 	}
 
 }
+
+func TestStringContains(t *testing.T) {
+	tests := []struct {
+		name     string
+		str      string
+		subStr   string
+		expected bool
+	}{
+		{
+			name:     "one word string",
+			str:      "this is a test",
+			subStr:   "test",
+			expected: true,
+		},
+		{
+			name:     "multiple words string",
+			str:      "this is a test for multiple words",
+			subStr:   "multiple words",
+			expected: true,
+		},
+		{
+			name:     "no match at all",
+			str:      "nothing to see here",
+			subStr:   "again",
+			expected: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := utils.StringContains(tc.str, tc.subStr)
+			if result != tc.expected {
+				t.Errorf("Expected StringContains to have %v but got %v", tc.expected, result)
+			}
+		})
+	}
+}
