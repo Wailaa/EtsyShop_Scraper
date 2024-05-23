@@ -124,7 +124,7 @@ func scrapShopTotalSales(c *colly.Collector, shop *models.Shop) error {
 		shop.TotalSales = TotalSalesToInt
 
 		Href := e.ChildAttr("div.wt-mt-lg-5 a", "href")
-		if strings.Contains(Href, "sold") {
+		if utils.StringContains(Href, "sold") {
 			shop.HasSoldHistory = true
 		}
 	})

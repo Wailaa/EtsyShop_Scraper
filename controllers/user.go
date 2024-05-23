@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -474,7 +473,7 @@ func (s *User) CreateNewAccountRecord(account *RegisterAccount, passwardHashed, 
 	}
 
 	if err := s.DB.Create(newAccount).Error; err != nil {
-		if strings.Contains(err.Error(), "email") {
+		if utils.StringContains(err.Error(), "email") {
 			message := errors.New("this email is already in use")
 			return newAccount, utils.HandleError(message)
 		}

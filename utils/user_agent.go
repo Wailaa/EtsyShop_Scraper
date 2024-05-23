@@ -27,7 +27,7 @@ func (ut *Utils) GetRandomUserAgent() string {
 		matched := false
 
 		for _, sub := range exclude {
-			if strings.Contains(newUserAgentToLower, sub) {
+			if StringContains(newUserAgentToLower, sub) {
 				matched = true
 				break
 			}

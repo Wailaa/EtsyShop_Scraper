@@ -134,7 +134,7 @@ func GetSectionID(link string) (SectionID string) {
 	if len(linkSplit) > 1 {
 		linkSplit = strings.Split(linkSplit[1], "&")
 		for _, param := range linkSplit {
-			if strings.Contains(param, "section_id") {
+			if utils.StringContains(param, "section_id") {
 				SectionID = strings.Split(param, "=")[1]
 				return SectionID
 			}

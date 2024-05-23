@@ -3,7 +3,6 @@ package utils
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -55,7 +54,7 @@ func (ut *Utils) ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, erro
 		return []byte(Config.JwtSecret), nil
 	})
 	if err != nil {
-		if !strings.Contains(err.Error(), "used before issued") {
+		if !StringContains(err.Error(), "used before issued") {
 			err := fmt.Errorf("invalidate token: %w", err)
 			return nil, HandleError(err)
 		}

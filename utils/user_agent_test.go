@@ -12,6 +12,6 @@ import (
 func TestValidUserAgent(t *testing.T) {
 	Utils := &utils.Utils{}
 	userAgent := Utils.GetRandomUserAgent()
-	assert.True(t, strings.Contains(userAgent, "Chrome") || strings.Contains(userAgent, "Firefox") || strings.Contains(userAgent, "Safari") || strings.Contains(userAgent, "Android"))
-	assert.False(t, strings.Contains(strings.ToLower(userAgent), "windows nt") || strings.Contains(strings.ToLower(userAgent), "iphone") || strings.Contains(strings.ToLower(userAgent), "ipad"))
+	assert.True(t, utils.StringContains(userAgent, "Chrome") || utils.StringContains(userAgent, "Firefox") || utils.StringContains(userAgent, "Safari") || utils.StringContains(userAgent, "Android"))
+	assert.False(t, utils.StringContains(strings.ToLower(userAgent), "windows nt") || utils.StringContains(strings.ToLower(userAgent), "iphone") || utils.StringContains(strings.ToLower(userAgent), "ipad"))
 }
