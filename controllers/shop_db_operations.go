@@ -52,7 +52,7 @@ func (s *Shop) UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uin
 
 	now := utils.TruncateDate(time.Now())
 
-	dailyRevenue = RoundToTwoDecimalDigits(dailyRevenue)
+	dailyRevenue = utils.RoundToTwoDecimalDigits(dailyRevenue)
 
 	if err := s.DB.Model(&models.DailyShopSales{}).Where("created_at > ?", now).Where("shop_id = ?", ShopID).Updates(&models.DailyShopSales{DailyRevenue: dailyRevenue}).Error; err != nil {
 		return utils.HandleError(err)
@@ -190,7 +190,7 @@ func (s *Shop) GetAverageItemPrice(ShopID uint) (float64, error) {
 
 		return 0, utils.HandleError(err)
 	}
-	averagePrice = RoundToTwoDecimalDigits(averagePrice)
+	averagePrice = utils.RoundToTwoDecimalDigits(averagePrice)
 
 	return averagePrice, nil
 }

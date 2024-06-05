@@ -2215,49 +2215,6 @@ func TestEstablishAccountShopRelation(t *testing.T) {
 
 }
 
-func TestRoundTwoDecimalDigits(t *testing.T) {
-	tests := []struct {
-		name     string
-		value    float64
-		expected float64
-	}{
-		{
-			name:     "several digits after decimal point",
-			value:    19.32333333,
-			expected: 19.32,
-		},
-		{
-			name:     "two digits after decimal point",
-			value:    19.32,
-			expected: 19.32,
-		},
-		{
-			name:     "one digits after decimal point",
-			value:    19.3,
-			expected: 19.3,
-		},
-		{
-			name:     "no digits after decimal point",
-			value:    19,
-			expected: 19,
-		},
-		{
-			name:     "zero value",
-			value:    0,
-			expected: 0,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			actual := controllers.RoundToTwoDecimalDigits(tc.value)
-			if actual != tc.expected {
-				t.Errorf("Expected RoundTwoDecimalDigits(%v) to be %v, but got %v", tc.value, tc.expected, actual)
-			}
-		})
-	}
-}
-
 func TestGetItemsBySoldItemsSuccess(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()

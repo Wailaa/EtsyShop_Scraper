@@ -73,3 +73,7 @@ func TruncateDate(date time.Time) time.Time {
 func StringContains(str, subStr string) bool {
 	return strings.Contains(str, subStr)
 }
+
+func RoundToTwoDecimalDigits(value float64) float64 {
+	return math.Round(value*100) / 100
+}
