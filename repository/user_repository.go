@@ -21,6 +21,7 @@ type UserRepository interface {
 	UpdateLastTimeLoggedOut(UserID uuid.UUID) error
 	UpdateAccountAfterVerify(Account *models.Account) error
 	UpdateAccountNewPass(Account *models.Account, passwardHashed string) error
+	UpdateAccountAfterResetPass(Account *models.Account, newPasswardHashed string) error
 }
 
 func (d *DataBase) GetAccountByID(ID uuid.UUID) (account *models.Account, err error) {
