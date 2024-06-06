@@ -27,9 +27,6 @@ func NewUserController(DB *gorm.DB, Process utils.UtilsProcess) *User {
 		utils: Process,
 	}
 }
-func NewUserUtilsAccess(Process utils.UtilsProcess) *User {
-	return &User{utils: Process}
-}
 
 type RegisterAccount struct {
 	FirstName        string `json:"first_name" binding:"required"`
