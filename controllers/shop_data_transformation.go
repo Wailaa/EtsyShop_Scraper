@@ -4,7 +4,6 @@ import (
 	"EtsyScraper/models"
 	"EtsyScraper/utils"
 	"log"
-	"math"
 )
 
 func (s *Shop) CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[string]DailySoldStats, error) {
@@ -56,11 +55,8 @@ func CalculateTotalRevenue(soldItems []ResponseSoldItemInfo, AverageItemPrice fl
 		}
 		revenue += ItemPrice * float64(soldItem.SoldQuantity)
 	}
-	revenue = RoundToTwoDecimalDigits(revenue)
+	revenue = utils.RoundToTwoDecimalDigits(revenue)
 	return revenue
-}
-func RoundToTwoDecimalDigits(value float64) float64 {
-	return math.Round(value*100) / 100
 }
 
 func FilterSoldOutItems(scrapSoldItems []models.SoldItems, existingItems []models.Item, FilterSoldItems map[uint]struct{}) []models.Item {

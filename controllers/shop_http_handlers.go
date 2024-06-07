@@ -71,7 +71,7 @@ func (s *Shop) FollowShop(ctx *gin.Context) {
 		HandleResponse(ctx, err, http.StatusBadRequest, "error while processing the request", nil)
 		return
 	}
-	if err := s.EstablishAccountShopRelation(requestedShop, currentUserUUID); err != nil {
+	if err := s.Operations.EstablishAccountShopRelation(requestedShop, currentUserUUID); err != nil {
 		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 	}
 

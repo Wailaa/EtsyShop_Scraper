@@ -4,9 +4,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 
 	"EtsyScraper/models"
+	"EtsyScraper/repository"
 	scrap "EtsyScraper/scraping"
 )
 
@@ -14,6 +16,7 @@ type Shop struct {
 	DB         *gorm.DB
 	Scraper    scrap.ScrapeUpdateProcess
 	Operations ShopOperations
+	User       repository.UserRepository
 }
 
 func NewShopController(implementSHOP Shop) *Shop {
@@ -21,6 +24,7 @@ func NewShopController(implementSHOP Shop) *Shop {
 		DB:         implementSHOP.DB,
 		Scraper:    implementSHOP.Scraper,
 		Operations: &implementSHOP,
+		User:       implementSHOP.User,
 	}
 }
 
@@ -69,6 +73,7 @@ type ShopOperations interface {
 	UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
 	UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
 	CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[string]DailySoldStats, error)
+	EstablishAccountShopRelation(requestedShop *models.Shop, userID uuid.UUID) error
 }
 
 var queueMutex sync.Mutex

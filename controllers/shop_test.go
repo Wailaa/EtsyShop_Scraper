@@ -97,6 +97,10 @@ func (m *MockedShop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSc
 	args := m.Called()
 	return args.Error(0)
 }
+func (m *MockedShop) EstablishAccountShopRelation(requestedShop *models.Shop, userID uuid.UUID) error {
+	args := m.Called()
+	return args.Error(0)
+}
 func (m *MockedShop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error) {
 	args := m.Called()
 	shopInterface := args.Get(0)
@@ -972,7 +976,7 @@ func TestFollowShopGetShopByNameFail(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 }
 func TestFollowShopGetAccountFail(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
@@ -985,9 +989,7 @@ func TestFollowShopGetAccountFail(t *testing.T) {
 
 	ShopExample := models.Shop{}
 	TestShop.On("GetShopByName").Return(&ShopExample, nil)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE ID = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WithArgs(currentUserUUID.String(), 1).WillReturnError(errors.New("Error while getting account"))
+	TestShop.On("EstablishAccountShopRelation").Return(errors.New("Error while getting account"))
 
 	router.POST("/follow_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -1002,17 +1004,17 @@ func TestFollowShopGetAccountFail(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "GetShopByName", 1)
 	assert.Contains(t, w.Body.String(), "Error while getting account")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 
 func TestFollowShopSuccess(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
-	time := time.Now()
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
 	TestShop := &MockedShop{}
@@ -1021,25 +1023,8 @@ func TestFollowShopSuccess(t *testing.T) {
 	ShopExample := models.Shop{}
 	ShopExample.ID = 2
 	TestShop.On("GetShopByName").Return(&ShopExample, nil)
+	TestShop.On("EstablishAccountShopRelation").Return(nil)
 
-	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(currentUserUUID.String(), time, time, time, "Testing", "User", "", "", "free", false, "", false, "", time, time)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE ID = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WithArgs(currentUserUUID.String(), 1).WillReturnRows(Account)
-
-	sqlMock.ExpectBegin()
-
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "created_at"=$1,"updated_at"=$2,"deleted_at"=$3,"first_name"=$4,"last_name"=$5,"email"=$6,"password_hashed"=$7,"subscription_type"=$8,"email_verified"=$9,"email_verification_token"=$10,"request_change_pass"=$11,"account_pass_reset_token"=$12,"last_time_logged_in"=$13,"last_time_logged_out"=$14 WHERE "accounts"."deleted_at" IS NULL AND "id" = $15`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), currentUserUUID.String()).WillReturnResult(sqlmock.NewResult(1, 1))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id","id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT DO NOTHING RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), "00000000-0000-0000-0000-000000000000", ShopExample.ID).WillReturnRows(sqlmock.NewRows([]string{"1"}))
-
-	sqlMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO "account_shop_following" ("account_id","shop_id") VALUES ($1,$2) ON CONFLICT DO NOTHING`)).
-		WithArgs(currentUserUUID.String(), 2).WillReturnResult(sqlmock.NewResult(1, 2))
-
-	sqlMock.ExpectCommit()
 	router.POST("/follow_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
 	}, implShop.FollowShop)
@@ -1053,7 +1038,7 @@ func TestFollowShopSuccess(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "GetShopByName", 1)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 
 func TestUnFollowShopInvalidJson(t *testing.T) {

@@ -163,14 +163,14 @@ func (s *Shop) UpdateAccountShopRelation(requestedShop *models.Shop, UserID uuid
 }
 
 func (s *Shop) EstablishAccountShopRelation(requestedShop *models.Shop, userID uuid.UUID) error {
-	Utils := &utils.Utils{}
-	currentAccount, err := NewUserController(s.DB, Utils).GetAccountByID(userID)
+
+	currentAccount, err := s.User.GetAccountByID(userID)
 	if err != nil {
 		return utils.HandleError(err)
 	}
 
 	currentAccount.ShopsFollowing = append(currentAccount.ShopsFollowing, *requestedShop)
-	if err := s.DB.Save(&currentAccount).Error; err != nil {
+	if err := s.User.SaveAccount(currentAccount); err != nil {
 		return utils.HandleError(err)
 	}
 

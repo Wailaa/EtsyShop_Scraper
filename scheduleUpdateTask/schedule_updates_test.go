@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
@@ -82,6 +83,10 @@ func (m *MockShopUpdater) CreateShopRequest(ShopRequest *models.ShopRequest) err
 func (m *MockShopUpdater) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error) {
 	args := m.Called()
 	return args.Get(0).(float64), args.Error(1)
+}
+func (m *MockShopUpdater) EstablishAccountShopRelation(requestedShop *models.Shop, userID uuid.UUID) error {
+	args := m.Called()
+	return args.Error(0)
 }
 
 func (m *MockShopUpdater) GetSoldItemsByShopID(ID uint) (SoldItemInfos []controllers.ResponseSoldItemInfo, err error) {
