@@ -155,7 +155,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.JoinShopFollowing(result); err != nil {
+	if err := s.User.JoinShopFollowing(result); err != nil {
 		HandleResponse(ctx, err, http.StatusInternalServerError, "internal error", nil)
 		return
 	}
@@ -359,22 +359,6 @@ func (s *User) ResetPass(ctx *gin.Context) {
 	}
 
 	HandleResponse(ctx, nil, http.StatusOK, "Password changed successfully", nil)
-}
-
-func (s *User) JoinShopFollowing(Account *models.Account) error {
-
-	if err := s.DB.Preload("ShopsFollowing").First(Account, Account.ID).Error; err != nil {
-		return utils.HandleError(err)
-	}
-
-	for i := range Account.ShopsFollowing {
-		if err := s.DB.Preload("ShopMenu").Preload("Reviews").Preload("Member").First(&Account.ShopsFollowing[i]).Error; err != nil {
-			return utils.HandleError(err)
-		}
-	}
-
-	return nil
-
 }
 
 func (s *User) GenerateLoginResponse(Account *models.Account, AccessToken, RefreshToken *models.Token) *LoginResponse {

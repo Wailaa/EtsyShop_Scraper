@@ -111,10 +111,6 @@ func (mr *MockedUserRepository) UpdateLastTimeLoggedIn(Account *models.Account) 
 	args := mr.Called()
 	return args.Error(0)
 }
-func (mr *MockedUserRepository) JoinShopFollowing(Account *models.Account) error {
-	args := mr.Called()
-	return args.Error(0)
-}
 func (mr *MockedUserRepository) UpdateLastTimeLoggedOut(UserID uuid.UUID) error {
 	args := mr.Called()
 	return args.Error(0)
@@ -132,6 +128,10 @@ func (mr *MockedUserRepository) UpdateAccountAfterResetPass(Account *models.Acco
 	return args.Error(0)
 }
 func (mr *MockedUserRepository) SaveAccount(Account *models.Account) error {
+	args := mr.Called()
+	return args.Error(0)
+}
+func (mr *MockedUserRepository) JoinShopFollowing(Account *models.Account) error {
 	args := mr.Called()
 	return args.Error(0)
 }
@@ -573,19 +573,10 @@ func TestLoginAccountSuccess(t *testing.T) {
 
 	UserRepo.On("GetAccountByEmail").Return(&models.Account{ID: user, Email: email}, nil)
 	UserRepo.On("UpdateLastTimeLoggedIn").Return(nil)
+	UserRepo.On("JoinShopFollowing").Return(nil)
 	MockedUtils.On("IsPassVerified").Return(true)
 	MockedUtils.On("CreateJwtToken").Return(models.NewToken("Token"), nil)
 	MockedUtils.On("CreateJwtToken").Return(models.NewToken("Token"), nil)
-
-	ShopFollowing := sqlmock.NewRows([]string{"account_id", "shop_id"}).AddRow(user.String(), 1)
-
-	shops := sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "Shop1").AddRow(2, "Shop2")
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE "accounts"."id" = $1 AND "accounts"."deleted_at" IS NULL AND "accounts"."id" = $2 ORDER BY "accounts"."id" LIMIT $3`)).
-		WithArgs(user, user, 1).WillReturnRows(ShopFollowing)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1`)).
-		WithArgs(user.String()).WillReturnRows(shops)
 
 	router.POST("/login", User.LoginAccount)
 
@@ -1401,66 +1392,6 @@ func TestResetPassSuccess(t *testing.T) { //delete this
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-}
-
-func TestJoinShopFollowing(t *testing.T) { //delete this
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	MockedUtils := &mockUtils{}
-
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
-
-	Account := models.Account{}
-	Account.ID = uuid.New()
-	AccountIdtoString := Account.ID.String()
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE "accounts"."id" = $1 AND "accounts"."deleted_at" IS NULL AND "accounts"."id" = $2 ORDER BY "accounts"."id" LIMIT $3`)).
-		WithArgs(AccountIdtoString, AccountIdtoString, 1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(AccountIdtoString))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1`)).
-		WithArgs(AccountIdtoString).WillReturnRows(sqlmock.NewRows([]string{"account_id", "shop_id"}).AddRow(AccountIdtoString, 1))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE "shops"."id" = $1 AND "shops"."deleted_at" IS NULL`)).
-		WithArgs(1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE "shops"."deleted_at" IS NULL AND "shops"."id" = $1 ORDER BY "shops"."id" LIMIT $2`)).
-		WithArgs(1, 1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_members" WHERE "shop_members"."shop_id" = $1 AND "shop_members"."deleted_at" IS NULL`)).
-		WithArgs(1).WillReturnRows(sqlmock.NewRows([]string{"shop_members_id", "shop_id"}).AddRow(1, 1))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "reviews" WHERE "reviews"."shop_id" = $1 AND "reviews"."deleted_at" IS NULL`)).
-		WithArgs(1).WillReturnRows(sqlmock.NewRows([]string{"shop_id"}).AddRow(1))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_menus" WHERE "shop_menus"."shop_id" = $1 AND "shop_menus"."deleted_at" IS NULL`)).
-		WithArgs(1).WillReturnRows(sqlmock.NewRows([]string{"shop_id"}).AddRow(1))
-
-	err := User.JoinShopFollowing(&Account)
-
-	assert.NoError(t, err)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-}
-func TestJoinShopFollowingFAIL(t *testing.T) { //delete this
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	MockedUtils := &mockUtils{}
-
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
-
-	Account := models.Account{}
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE "accounts"."id" = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WithArgs(Account.ID, 1).WillReturnError(errors.New("No User Found"))
-
-	err := User.JoinShopFollowing(&Account)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "No User Found")
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestGenerateLoginResponse(t *testing.T) {
