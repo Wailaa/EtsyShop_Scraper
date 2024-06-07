@@ -116,16 +116,6 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 
 }
 
-func (s *User) GetAccountByEmail(email string) *models.Account {
-	account := &models.Account{}
-
-	if err := s.DB.Where("email = ?", email).First(&account).Error; err != nil {
-		return account
-	}
-
-	return account
-}
-
 func (s *User) LoginAccount(ctx *gin.Context) {
 
 	var loginDetails *LoginRequest
@@ -136,7 +126,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	result := s.GetAccountByEmail(loginDetails.Email)
+	result := s.User.GetAccountByEmail(loginDetails.Email)
 
 	if reflect.DeepEqual(*result, models.Account{}) {
 		HandleResponse(ctx, nil, http.StatusNotFound, "user not found", nil)
@@ -299,7 +289,7 @@ func (s *User) ForgotPassReq(ctx *gin.Context) {
 		return
 	}
 
-	Account := s.GetAccountByEmail(ForgotAccountPass.Email)
+	Account := s.User.GetAccountByEmail(ForgotAccountPass.Email)
 	if reflect.DeepEqual(Account, &models.Account{}) {
 		err := errors.New("reset password request denied , no account associated  ")
 		HandleResponse(ctx, err, http.StatusOK, "", nil)
@@ -314,7 +304,7 @@ func (s *User) ForgotPassReq(ctx *gin.Context) {
 	Account.RequestChangePass = true
 	Account.AccountPassResetToken = ResetPassToken
 
-	if err := s.DB.Save(Account).Error; err != nil {
+	if err := s.User.SaveAccount(Account); err != nil {
 		HandleResponse(ctx, err, http.StatusInternalServerError, "Failed to save account", nil)
 		return
 	}
