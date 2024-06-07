@@ -25,6 +25,7 @@ type UserRepository interface {
 	UpdateAccountAfterResetPass(Account *models.Account, newPasswardHashed string) error
 	SaveAccount(Account *models.Account) error
 	CreateAccount(newAccount *models.Account) (*models.Account, error)
+	InsertTokenForAccount(column, token string, VerifyUser *models.Account) (*models.Account, error)
 }
 
 func (d *DataBase) GetAccountByID(ID uuid.UUID) (account *models.Account, err error) {
@@ -118,4 +119,11 @@ func (s *DataBase) CreateAccount(newAccount *models.Account) (*models.Account, e
 		return newAccount, utils.HandleError(err)
 	}
 	return newAccount, nil
+}
+
+func (s *DataBase) InsertTokenForAccount(column, token string, VerifyUser *models.Account) (*models.Account, error) {
+	if err := s.DB.Where(column, token).Find(VerifyUser).Limit(1).Error; err != nil {
+		return nil, utils.HandleError(err, "something went wrong while resetting password")
+	}
+	return VerifyUser, nil
 }

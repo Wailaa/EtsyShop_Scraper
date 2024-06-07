@@ -436,3 +436,38 @@ func TestCreateAccountFail(t *testing.T) {
 	assert.Error(t, err)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestInsertTokenForAccountEmptyAccount(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	User := repository.DataBase{DB: MockedDataBase}
+
+	emptyAccount := &models.Account{ID: uuid.Nil}
+
+	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
+		AddRow(emptyAccount.ID, emptyAccount.CreatedAt, emptyAccount.UpdatedAt, emptyAccount.FirstName, emptyAccount.LastName, emptyAccount.Email, emptyAccount.PasswordHashed, emptyAccount.SubscriptionType, emptyAccount.EmailVerified, emptyAccount.EmailVerificationToken, emptyAccount.RequestChangePass, emptyAccount.AccountPassResetToken, emptyAccount.LastTimeLoggedIn, emptyAccount.LastTimeLoggedOut)
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE "email_verification_token" = $1 AND "accounts"."deleted_at" IS NULL`)).WillReturnRows(Account)
+
+	User.InsertTokenForAccount("email_verification_token", "", emptyAccount)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+func TestInsertTokenForAccount(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	User := repository.DataBase{DB: MockedDataBase}
+
+	emptyAccount := &models.Account{ID: uuid.New(), EmailVerificationToken: "SomeToken"}
+
+	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
+		AddRow(emptyAccount.ID.String(), emptyAccount.CreatedAt, emptyAccount.UpdatedAt, emptyAccount.FirstName, emptyAccount.LastName, emptyAccount.Email, emptyAccount.PasswordHashed, emptyAccount.SubscriptionType, emptyAccount.EmailVerified, emptyAccount.EmailVerificationToken, emptyAccount.RequestChangePass, emptyAccount.AccountPassResetToken, emptyAccount.LastTimeLoggedIn, emptyAccount.LastTimeLoggedOut)
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE "email_verification_token" = $1 AND "accounts"."deleted_at" IS NULL`)).WillReturnRows(Account)
+
+	User.InsertTokenForAccount("email_verification_token", "SomeToken", emptyAccount)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
