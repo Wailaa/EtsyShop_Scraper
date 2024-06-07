@@ -391,13 +391,9 @@ func (s *User) CreateNewAccountRecord(account *RegisterAccount, passwardHashed, 
 		EmailVerificationToken: EmailVerificationToken,
 	}
 
-	if err := s.DB.Create(newAccount).Error; err != nil {
-		if utils.StringContains(err.Error(), "email") {
-			message := errors.New("this email is already in use")
-			return newAccount, utils.HandleError(message)
-		}
-
-		return newAccount, utils.HandleError(err)
+	newAccount, err := s.User.CreateAccount(newAccount)
+	if err != nil {
+		return nil, utils.HandleError(err)
 	}
 	return newAccount, nil
 }
