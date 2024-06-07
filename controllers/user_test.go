@@ -1353,8 +1353,12 @@ func TestResetPassSuccess(t *testing.T) { //delete this
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
+	UserRepo := &MockedUserRepository{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils, UserRepo)
+
 	MockedUtils.On("HashPass").Return("NewHasshedPass", nil)
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
+	UserRepo.On("UpdateAccountAfterResetPass").Return(nil)
 
 	emptyAccount := models.Account{}
 	user := uuid.New()
@@ -1364,11 +1368,6 @@ func TestResetPassSuccess(t *testing.T) { //delete this
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE account_pass_reset_token = $1 AND "accounts"."deleted_at" IS NULL`)).
 		WithArgs("SomeToken").WillReturnRows(Account)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "account_pass_reset_token"=$1,"password_hashed"=$2,"request_change_pass"=$3,"updated_at"=$4 WHERE "accounts"."deleted_at" IS NULL AND "id" = $5`)).
-		WithArgs("", "NewHasshedPass", false, sqlmock.AnyArg(), user.String()).WillReturnResult(sqlmock.NewResult(1, 5))
-	sqlMock.ExpectCommit()
 
 	router.POST("/resetpassword", User.ResetPass)
 
@@ -1398,56 +1397,6 @@ func TestGenerateLoginResponse(t *testing.T) {
 		assert.Equal(t, Account.ShopsFollowing[i].Name, loginResponse.User.Shops[i].Name, "Shop name are match")
 	}
 
-}
-
-func TestUpdateAccountAfterResetPass(t *testing.T) { //delete this
-
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	MockedUtils := &mockUtils{}
-
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
-
-	HashedPass := "SomeHashedPass"
-	Account := &models.Account{}
-	Account.ID = uuid.New()
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "account_pass_reset_token"=$1,"password_hashed"=$2,"request_change_pass"=$3,"updated_at"=$4 WHERE "accounts"."deleted_at" IS NULL AND "id" = $5`)).
-		WithArgs("", HashedPass, false, sqlmock.AnyArg(), Account.ID).WillReturnResult(sqlmock.NewResult(1, 2))
-	sqlMock.ExpectCommit()
-
-	err := User.UpdateAccountAfterResetPass(Account, HashedPass)
-
-	assert.NoError(t, err)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-}
-
-func TestUpdateAccountAfterFail(t *testing.T) { //delete this
-
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	MockedUtils := &mockUtils{}
-
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
-
-	HashedPass := "SomeHashedPass"
-	Account := &models.Account{}
-	Account.ID = uuid.New()
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "account_pass_reset_token"=$1,"password_hashed"=$2,"request_change_pass"=$3,"updated_at"=$4 WHERE "accounts"."deleted_at" IS NULL AND "id" = $5`)).
-		WithArgs("", HashedPass, false, sqlmock.AnyArg(), Account.ID).WillReturnError(errors.New("error while saving record"))
-	sqlMock.ExpectRollback()
-
-	err := User.UpdateAccountAfterResetPass(Account, HashedPass)
-
-	assert.Contains(t, err.Error(), "error while saving record")
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestCreateNewAccountRecordSuccess(t *testing.T) {

@@ -330,7 +330,7 @@ func (s *User) ResetPass(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.DB.Where("account_pass_reset_token = ?", reqChangePass.RCP).Find(&VerifyUser).Limit(1).Error; err != nil {
+	if err := s.DB.Where("account_pass_reset_token = ?", reqChangePass.RCP).Find(&VerifyUser).Limit(1).Error; err != nil { // create method
 		HandleResponse(ctx, err, http.StatusForbidden, "something went wrong while resetting password", nil)
 		return
 	}
@@ -352,7 +352,7 @@ func (s *User) ResetPass(ctx *gin.Context) {
 		return
 	}
 
-	if err = s.UpdateAccountAfterResetPass(VerifyUser, newPasswardHashed); err != nil {
+	if err = s.User.UpdateAccountAfterResetPass(VerifyUser, newPasswardHashed); err != nil {
 		HandleResponse(ctx, err, http.StatusConflict, "internal error", nil)
 		return
 	}
@@ -376,15 +376,6 @@ func (s *User) GenerateLoginResponse(Account *models.Account, AccessToken, Refre
 	}
 
 	return loginResponse
-}
-
-func (s *User) UpdateAccountAfterResetPass(Account *models.Account, newPasswardHashed string) error {
-
-	err := s.DB.Model(Account).Updates(map[string]interface{}{"request_change_pass": false, "account_pass_reset_token": "", "password_hashed": newPasswardHashed}).Error
-	if err != nil {
-		return utils.HandleError(err)
-	}
-	return nil
 }
 
 func (s *User) CreateNewAccountRecord(account *RegisterAccount, passwardHashed, EmailVerificationToken string) (*models.Account, error) {
