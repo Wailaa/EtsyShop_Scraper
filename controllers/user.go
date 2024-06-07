@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
@@ -17,14 +16,12 @@ import (
 )
 
 type User struct {
-	DB    *gorm.DB
 	utils utils.UtilsProcess
 	User  repository.UserRepository
 }
 
-func NewUserController(DB *gorm.DB, Process utils.UtilsProcess, UserDB repository.UserRepository) *User {
+func NewUserController(Process utils.UtilsProcess, UserDB repository.UserRepository) *User {
 	return &User{
-		DB:    DB,
 		utils: Process,
 		User:  UserDB,
 	}
