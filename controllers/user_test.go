@@ -572,6 +572,7 @@ func TestLoginAccountSuccess(t *testing.T) {
 	User := controllers.NewUserController(MockedDataBase, MockedUtils, UserRepo)
 
 	UserRepo.On("GetAccountByEmail").Return(&models.Account{ID: user, Email: email}, nil)
+	UserRepo.On("UpdateLastTimeLoggedIn").Return(nil)
 	MockedUtils.On("IsPassVerified").Return(true)
 	MockedUtils.On("CreateJwtToken").Return(models.NewToken("Token"), nil)
 	MockedUtils.On("CreateJwtToken").Return(models.NewToken("Token"), nil)
@@ -579,11 +580,6 @@ func TestLoginAccountSuccess(t *testing.T) {
 	ShopFollowing := sqlmock.NewRows([]string{"account_id", "shop_id"}).AddRow(user.String(), 1)
 
 	shops := sqlmock.NewRows([]string{"id", "name"}).AddRow(1, "Shop1").AddRow(2, "Shop2")
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_in"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL AND "id" = $4`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), user, user).WillReturnResult(sqlmock.NewResult(1, 1))
-	sqlMock.ExpectCommit()
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE "accounts"."id" = $1 AND "accounts"."deleted_at" IS NULL AND "accounts"."id" = $2 ORDER BY "accounts"."id" LIMIT $3`)).
 		WithArgs(user, user, 1).WillReturnRows(ShopFollowing)
@@ -1405,46 +1401,6 @@ func TestResetPassSuccess(t *testing.T) { //delete this
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-}
-func TestUpdateLastTimeLoggedIn(t *testing.T) { //delete this
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	MockedUtils := &mockUtils{}
-
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
-
-	Account := models.Account{}
-	Account.ID = uuid.New()
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_in"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL AND "id" = $4`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), Account.ID, Account.ID).WillReturnResult(sqlmock.NewResult(1, 2))
-	sqlMock.ExpectCommit()
-
-	User.UpdateLastTimeLoggedIn(&Account)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-}
-
-func TestUpdateLastTimeLoggedInFailed(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	MockedUtils := &mockUtils{}
-
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
-
-	Account := models.Account{}
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_in"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL`)).WillReturnError(errors.New(("user not found")))
-	sqlMock.ExpectRollback()
-
-	err := User.UpdateLastTimeLoggedIn(&Account)
-	assert.Contains(t, err.Error(), "user not found")
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestJoinShopFollowing(t *testing.T) { //delete this

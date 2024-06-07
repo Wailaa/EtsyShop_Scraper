@@ -150,7 +150,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	if err = s.UpdateLastTimeLoggedIn(result); err != nil {
+	if err = s.User.UpdateLastTimeLoggedIn(result); err != nil {
 		HandleResponse(ctx, err, http.StatusInternalServerError, "internal error", nil)
 		return
 	}
@@ -359,14 +359,6 @@ func (s *User) ResetPass(ctx *gin.Context) {
 	}
 
 	HandleResponse(ctx, nil, http.StatusOK, "Password changed successfully", nil)
-}
-
-func (s *User) UpdateLastTimeLoggedIn(Account *models.Account) error {
-	now := time.Now()
-	if err := s.DB.Model(Account).Where("id = ?", Account.ID).Update("last_time_logged_in", now).Error; err != nil {
-		return utils.HandleError(err)
-	}
-	return nil
 }
 
 func (s *User) JoinShopFollowing(Account *models.Account) error {
