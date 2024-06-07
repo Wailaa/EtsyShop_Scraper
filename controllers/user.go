@@ -210,7 +210,7 @@ func (s *User) VerifyAccount(ctx *gin.Context) {
 
 	VerifyUser := &models.Account{}
 
-	if err := s.DB.Where("email_verification_token = ?", TranID).Find(&VerifyUser).Limit(1).Error; err != nil {
+	if err := s.DB.Where("email_verification_token = ?", TranID).Find(&VerifyUser).Limit(1).Error; err != nil { //create method
 		HandleResponse(ctx, err, http.StatusForbidden, "something went wrong while verifying email", nil)
 		return
 	}
@@ -225,7 +225,7 @@ func (s *User) VerifyAccount(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.UpdateAccountAfterVerify(VerifyUser); err != nil {
+	if err := s.User.UpdateAccountAfterVerify(VerifyUser); err != nil {
 		HandleResponse(ctx, err, http.StatusInternalServerError, "internal error", nil)
 		return
 	}
@@ -376,15 +376,6 @@ func (s *User) GenerateLoginResponse(Account *models.Account, AccessToken, Refre
 	}
 
 	return loginResponse
-}
-
-func (s *User) UpdateAccountAfterVerify(Account *models.Account) error {
-
-	err := s.DB.Model(Account).Updates(map[string]interface{}{"email_verified": true, "email_verification_token": ""}).Error
-	if err != nil {
-		return utils.HandleError(err)
-	}
-	return nil
 }
 
 func (s *User) UpdateAccountNewPass(Account *models.Account, passwardHashed string) error {

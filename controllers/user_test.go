@@ -858,7 +858,10 @@ func TestVerifyAccountSuccess(t *testing.T) {
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
+	UserRepo := &MockedUserRepository{}
+	User := controllers.NewUserController(MockedDataBase, MockedUtils, UserRepo)
+
+	UserRepo.On("UpdateAccountAfterVerify").Return(nil)
 
 	emptyAccount := &models.Account{}
 
@@ -868,10 +871,6 @@ func TestVerifyAccountSuccess(t *testing.T) {
 		AddRow(userID.String(), time, time, nil, "test", "Example", emptyAccount.PasswordHashed, emptyAccount.SubscriptionType, false, "asdfsdgsdgdsfsafads", emptyAccount.RequestChangePass, emptyAccount.AccountPassResetToken, emptyAccount.LastTimeLoggedIn, emptyAccount.LastTimeLoggedOut)
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE email_verification_token = $1 AND "accounts"."deleted_at" IS NULL`)).WillReturnRows(Account)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "email_verification_token"=$1,"email_verified"=$2,"updated_at"=$3 WHERE "accounts"."deleted_at" IS NULL AND "id" = $4`)).WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(1, 3))
-	sqlMock.ExpectCommit()
 
 	router.GET("/verifyaccount", User.VerifyAccount)
 
@@ -1404,51 +1403,6 @@ func TestGenerateLoginResponse(t *testing.T) {
 		assert.Equal(t, Account.ShopsFollowing[i].Name, loginResponse.User.Shops[i].Name, "Shop name are match")
 	}
 
-}
-
-func TestUpdateAccountAfterVerify(t *testing.T) { //delete this
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	MockedUtils := &mockUtils{}
-
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
-
-	Account := &models.Account{}
-	Account.ID = uuid.New()
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "email_verification_token"=$1,"email_verified"=$2,"updated_at"=$3 WHERE "accounts"."deleted_at" IS NULL AND "id" = $4`)).
-		WithArgs("", true, sqlmock.AnyArg(), Account.ID).WillReturnResult(sqlmock.NewResult(1, 3))
-	sqlMock.ExpectCommit()
-
-	err := User.UpdateAccountAfterVerify(Account)
-	assert.NoError(t, err)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-}
-
-func TestUpdateAccountAfterVerifyFail(t *testing.T) { //delete this
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	MockedUtils := &mockUtils{}
-
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
-
-	Account := &models.Account{}
-	Account.ID = uuid.New()
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "email_verification_token"=$1,"email_verified"=$2,"updated_at"=$3 WHERE "accounts"."deleted_at" IS NULL AND "id" = $4`)).
-		WithArgs("", true, sqlmock.AnyArg(), Account.ID).WillReturnError(errors.New("error while changing data"))
-	sqlMock.ExpectRollback()
-
-	err := User.UpdateAccountAfterVerify(Account)
-
-	assert.Contains(t, err.Error(), "error while changing data")
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestUpdateAccountNewPass(t *testing.T) { //delete this
