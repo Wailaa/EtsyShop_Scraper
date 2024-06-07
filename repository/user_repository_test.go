@@ -336,3 +336,44 @@ func TestUpdateAccountAfterResetFail(t *testing.T) {
 	assert.Contains(t, err.Error(), "error while saving record")
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestSaveAccount(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	Account := &models.Account{}
+	Account.ID = uuid.New()
+
+	User := repository.DataBase{DB: MockedDataBase}
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "created_at"=$1,"updated_at"=$2,"deleted_at"=$3,"first_name"=$4,"last_name"=$5,"email"=$6,"password_hashed"=$7,"subscription_type"=$8,"email_verified"=$9,"email_verification_token"=$10,"request_change_pass"=$11,"account_pass_reset_token"=$12,"last_time_logged_in"=$13,"last_time_logged_out"=$14 WHERE "accounts"."deleted_at" IS NULL AND "id" = $15`)).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	sqlMock.ExpectCommit()
+
+	err := User.SaveAccount(Account)
+
+	assert.NoError(t, err)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+func TestSaveAccountFail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	Account := &models.Account{}
+	Account.ID = uuid.New()
+
+	User := repository.DataBase{DB: MockedDataBase}
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "created_at"=$1,"updated_at"=$2,"deleted_at"=$3,"first_name"=$4,"last_name"=$5,"email"=$6,"password_hashed"=$7,"subscription_type"=$8,"email_verified"=$9,"email_verification_token"=$10,"request_change_pass"=$11,"account_pass_reset_token"=$12,"last_time_logged_in"=$13,"last_time_logged_out"=$14 WHERE "accounts"."deleted_at" IS NULL AND "id" = $15`)).
+		WillReturnError(errors.New("error while saving to database"))
+	sqlMock.ExpectRollback()
+
+	err := User.SaveAccount(Account)
+
+	assert.Error(t, err)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
