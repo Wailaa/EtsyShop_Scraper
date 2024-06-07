@@ -22,6 +22,7 @@ type UserRepository interface {
 	UpdateAccountAfterVerify(Account *models.Account) error
 	UpdateAccountNewPass(Account *models.Account, passwardHashed string) error
 	UpdateAccountAfterResetPass(Account *models.Account, newPasswardHashed string) error
+	SaveAccount(Account *models.Account) error
 }
 
 func (d *DataBase) GetAccountByID(ID uuid.UUID) (account *models.Account, err error) {
@@ -94,6 +95,13 @@ func (s *DataBase) UpdateAccountAfterResetPass(Account *models.Account, newPassw
 
 	err := s.DB.Model(Account).Updates(map[string]interface{}{"request_change_pass": false, "account_pass_reset_token": "", "password_hashed": newPasswardHashed}).Error
 	if err != nil {
+		return utils.HandleError(err)
+	}
+	return nil
+}
+
+func (s *DataBase) SaveAccount(Account *models.Account) error {
+	if err := s.DB.Save(Account).Error; err != nil {
 		return utils.HandleError(err)
 	}
 	return nil
