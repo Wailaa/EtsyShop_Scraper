@@ -3,6 +3,7 @@ package repository
 import (
 	"EtsyScraper/models"
 	"EtsyScraper/utils"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,6 +24,7 @@ type UserRepository interface {
 	UpdateAccountNewPass(Account *models.Account, passwardHashed string) error
 	UpdateAccountAfterResetPass(Account *models.Account, newPasswardHashed string) error
 	SaveAccount(Account *models.Account) error
+	CreateAccount(newAccount *models.Account) (*models.Account, error)
 }
 
 func (d *DataBase) GetAccountByID(ID uuid.UUID) (account *models.Account, err error) {
@@ -105,4 +107,15 @@ func (s *DataBase) SaveAccount(Account *models.Account) error {
 		return utils.HandleError(err)
 	}
 	return nil
+}
+
+func (s *DataBase) CreateAccount(newAccount *models.Account) (*models.Account, error) {
+	if err := s.DB.Create(newAccount).Error; err != nil {
+		if utils.StringContains(err.Error(), "email") {
+			message := errors.New("this email is already in use")
+			return newAccount, utils.HandleError(message)
+		}
+		return newAccount, utils.HandleError(err)
+	}
+	return newAccount, nil
 }

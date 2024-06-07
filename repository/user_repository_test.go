@@ -377,3 +377,62 @@ func TestSaveAccountFail(t *testing.T) {
 	assert.Error(t, err)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestCreateAccount(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	newUUID := uuid.New()
+
+	newAccount := &models.Account{
+		ID:                     newUUID,
+		FirstName:              "Example",
+		LastName:               "Test",
+		Email:                  "Example@Exampleemail.com",
+		PasswordHashed:         "asdasdasd",
+		SubscriptionType:       "free",
+		EmailVerificationToken: "JustAnotherToken",
+	}
+
+	User := repository.DataBase{DB: MockedDataBase}
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "accounts" ("id","created_at","updated_at","deleted_at","first_name","last_name","email","password_hashed","subscription_type","email_verified","email_verification_token","request_change_pass","account_pass_reset_token","last_time_logged_in","last_time_logged_out") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING "id"`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), "Example", "Test", "Example@Exampleemail.com", "asdasdasd", "free", false, "JustAnotherToken", false, "", sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"1", "15"}))
+	sqlMock.ExpectCommit()
+
+	_, err := User.CreateAccount(newAccount)
+
+	assert.NoError(t, err)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+func TestCreateAccountFail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	newUUID := uuid.New()
+
+	newAccount := &models.Account{
+		ID:                     newUUID,
+		FirstName:              "Example",
+		LastName:               "Test",
+		Email:                  "Example@Exampleemail.com",
+		PasswordHashed:         "asdasdasd",
+		SubscriptionType:       "free",
+		EmailVerificationToken: "JustAnotherToken",
+	}
+
+	User := repository.DataBase{DB: MockedDataBase}
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "accounts" ("id","created_at","updated_at","deleted_at","first_name","last_name","email","password_hashed","subscription_type","email_verified","email_verification_token","request_change_pass","account_pass_reset_token","last_time_logged_in","last_time_logged_out") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING "id"`)).
+		WillReturnError(errors.New("error while creating account"))
+	sqlMock.ExpectRollback()
+
+	_, err := User.CreateAccount(newAccount)
+
+	assert.Error(t, err)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
