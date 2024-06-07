@@ -271,7 +271,7 @@ func (s *User) ChangePass(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.UpdateAccountNewPass(Account, passwardHashed); err != nil {
+	if err := s.User.UpdateAccountNewPass(Account, passwardHashed); err != nil {
 		HandleResponse(ctx, err, http.StatusInternalServerError, "internal error", nil)
 		return
 	}
@@ -376,15 +376,6 @@ func (s *User) GenerateLoginResponse(Account *models.Account, AccessToken, Refre
 	}
 
 	return loginResponse
-}
-
-func (s *User) UpdateAccountNewPass(Account *models.Account, passwardHashed string) error {
-
-	err := s.DB.Model(Account).Update("password_hashed", passwardHashed).Error
-	if err != nil {
-		return utils.HandleError(err)
-	}
-	return nil
 }
 
 func (s *User) UpdateAccountAfterResetPass(Account *models.Account, newPasswardHashed string) error {

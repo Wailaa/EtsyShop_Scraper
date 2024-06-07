@@ -1080,7 +1080,7 @@ func TestChangePassPassNotConfirmed(t *testing.T) {
 }
 func TestChangePassSuccess(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
@@ -1098,16 +1098,12 @@ func TestChangePassSuccess(t *testing.T) {
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, nil)
 	MockedUtils.On("GetTokens").Return(map[string]*models.Token{}, nil)
 	MockedUtils.On("HashPass").Return("SomePass", nil)
+	UserRepo.On("UpdateAccountNewPass").Return(nil)
 
 	router.POST("/changepassword", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
 
 	}, User.ChangePass)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "password_hashed"=$1,"updated_at"=$2 WHERE "accounts"."deleted_at" IS NULL AND "id" = $3`)).
-		WithArgs("SomePass", sqlmock.AnyArg(), currentUserUUID.String()).WillReturnResult(sqlmock.NewResult(1, 2))
-	sqlMock.ExpectCommit()
 
 	c.Request, _ = http.NewRequest("POST", "/changepassword", bytes.NewBuffer([]byte(`{
 		"current_password":"qqqq1111",
@@ -1118,7 +1114,6 @@ func TestChangePassSuccess(t *testing.T) {
 	router.ServeHTTP(w, c.Request)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestForgotPassReqFailedBindJson(t *testing.T) {
@@ -1403,54 +1398,6 @@ func TestGenerateLoginResponse(t *testing.T) {
 		assert.Equal(t, Account.ShopsFollowing[i].Name, loginResponse.User.Shops[i].Name, "Shop name are match")
 	}
 
-}
-
-func TestUpdateAccountNewPass(t *testing.T) { //delete this
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	MockedUtils := &mockUtils{}
-
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
-
-	HashedPass := "SomeHashedPass"
-	Account := &models.Account{}
-	Account.ID = uuid.New()
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "password_hashed"=$1,"updated_at"=$2 WHERE "accounts"."deleted_at" IS NULL AND "id" = $3`)).
-		WithArgs(HashedPass, sqlmock.AnyArg(), Account.ID).WillReturnResult(sqlmock.NewResult(1, 2))
-	sqlMock.ExpectCommit()
-
-	err := User.UpdateAccountNewPass(Account, HashedPass)
-
-	assert.NoError(t, err)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-}
-
-func TestUpdateAccountNewPassFail(t *testing.T) { //delete this
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	MockedUtils := &mockUtils{}
-
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
-
-	HashedPass := "SomeHashedPass"
-	Account := &models.Account{}
-	Account.ID = uuid.New()
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "password_hashed"=$1,"updated_at"=$2 WHERE "accounts"."deleted_at" IS NULL AND "id" = $3`)).
-		WithArgs(HashedPass, sqlmock.AnyArg(), Account.ID).WillReturnError(errors.New("error while changing data"))
-	sqlMock.ExpectRollback()
-
-	err := User.UpdateAccountNewPass(Account, HashedPass)
-
-	assert.Contains(t, err.Error(), "error while changing data")
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestUpdateAccountAfterResetPass(t *testing.T) { //delete this
