@@ -633,14 +633,16 @@ func TestLogOutAccountSuccessNoCookie(t *testing.T) {
 }
 
 func TestLogOutAccountSuccessWithCookies(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
 	ctx, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
+	UserRepo := &MockedUserRepository{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils, UserRepo)
 	token1 := models.Token("access_token_value")
 	token2 := models.Token("refresh_token_value")
 	account := uuid.New()
@@ -651,13 +653,8 @@ func TestLogOutAccountSuccessWithCookies(t *testing.T) {
 		ExpiresAt: 12344533,
 		UserUUID:  account,
 	}, nil)
-
+	UserRepo.On("UpdateLastTimeLoggedOut").Return(nil)
 	MockedUtils.On("BlacklistJWT").Return(nil)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_out"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), account).WillReturnResult(sqlmock.NewResult(1, 1))
-	sqlMock.ExpectCommit()
 
 	router.GET("/logout", User.LogOutAccount)
 
@@ -686,19 +683,20 @@ func TestLogOutAccountSuccessWithCookies(t *testing.T) {
 	}
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 	MockedUtils.AssertCalled(t, "BlacklistJWT")
 }
 
 func TestLogOutAccountUserNotFound(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
 	ctx, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
+	UserRepo := &MockedUserRepository{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils, UserRepo)
 
 	account := uuid.New()
 	token1 := models.Token("access_token_value")
@@ -710,11 +708,7 @@ func TestLogOutAccountUserNotFound(t *testing.T) {
 		ExpiresAt: 12344533,
 		UserUUID:  account,
 	}, nil)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_out"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), account).WillReturnError(errors.New("User Not Found"))
-	sqlMock.ExpectRollback()
+	UserRepo.On("UpdateLastTimeLoggedOut").Return(errors.New("Account was not found"))
 
 	router.GET("/logout", User.LogOutAccount)
 
@@ -728,18 +722,19 @@ func TestLogOutAccountUserNotFound(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestLogOutAccount(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
 	ctx, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
+	UserRepo := &MockedUserRepository{}
+
+	User := controllers.NewUserController(MockedDataBase, MockedUtils, UserRepo)
 
 	account := uuid.New()
 	token1 := models.Token("access_token_value")
@@ -751,11 +746,9 @@ func TestLogOutAccount(t *testing.T) {
 		ExpiresAt: 12344533,
 		UserUUID:  account,
 	}, nil)
+	UserRepo.On("UpdateLastTimeLoggedOut").Return(nil)
+
 	MockedUtils.On("BlacklistJWT").Return(nil)
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_out"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), account).WillReturnResult(sqlmock.NewResult(1, 1))
-	sqlMock.ExpectCommit()
 
 	router.GET("/logout", User.LogOutAccount)
 
@@ -769,7 +762,7 @@ func TestLogOutAccount(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 
 func TestVerifyAccountNoTranID(t *testing.T) {
@@ -1411,48 +1404,6 @@ func TestGenerateLoginResponse(t *testing.T) {
 		assert.Equal(t, Account.ShopsFollowing[i].Name, loginResponse.User.Shops[i].Name, "Shop name are match")
 	}
 
-}
-
-func TestUpdateLastTimeLoggedOutSuccess(t *testing.T) { //delete this
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	MockedUtils := &mockUtils{}
-
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
-
-	Account := models.Account{}
-	Account.ID = uuid.New()
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_out"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), Account.ID).WillReturnResult(sqlmock.NewResult(1, 2))
-	sqlMock.ExpectCommit()
-
-	User.UpdateLastTimeLoggedOut(Account.ID)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-}
-
-func TestUpdateLastTimeLoggedOutFailed(t *testing.T) { //delete this
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	MockedUtils := &mockUtils{}
-
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
-
-	Account := models.Account{}
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "accounts" SET "last_time_logged_out"=$1,"updated_at"=$2 WHERE id = $3 AND "accounts"."deleted_at" IS NULL`)).WillReturnError(errors.New(("user not found")))
-	sqlMock.ExpectRollback()
-
-	err := User.UpdateLastTimeLoggedOut(Account.ID)
-
-	assert.Contains(t, err.Error(), "user not found")
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestUpdateAccountAfterVerify(t *testing.T) { //delete this

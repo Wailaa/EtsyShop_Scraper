@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"reflect"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -188,7 +187,7 @@ func (s *User) LogOutAccount(ctx *gin.Context) {
 
 			userUUID = tokenClaims.UserUUID
 
-			if err = s.UpdateLastTimeLoggedOut(userUUID); err != nil {
+			if err = s.User.UpdateLastTimeLoggedOut(userUUID); err != nil {
 				HandleResponse(ctx, err, http.StatusForbidden, "failed to update logout details", nil)
 				return
 			}
@@ -377,14 +376,6 @@ func (s *User) GenerateLoginResponse(Account *models.Account, AccessToken, Refre
 	}
 
 	return loginResponse
-}
-
-func (s *User) UpdateLastTimeLoggedOut(UserID uuid.UUID) error {
-	now := time.Now()
-	if err := s.DB.Model(&models.Account{}).Where("id = ?", UserID).Update("last_time_logged_out", now).Error; err != nil {
-		return utils.HandleError(err)
-	}
-	return nil
 }
 
 func (s *User) UpdateAccountAfterVerify(Account *models.Account) error {
