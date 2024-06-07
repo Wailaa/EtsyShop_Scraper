@@ -13,18 +13,21 @@ import (
 
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
+	"EtsyScraper/repository"
 	"EtsyScraper/utils"
 )
 
 type User struct {
 	DB    *gorm.DB
 	utils utils.UtilsProcess
+	User  repository.UserRepository
 }
 
-func NewUserController(DB *gorm.DB, Process utils.UtilsProcess) *User {
+func NewUserController(DB *gorm.DB, Process utils.UtilsProcess, UserDB repository.UserRepository) *User {
 	return &User{
 		DB:    DB,
 		utils: Process,
+		User:  UserDB,
 	}
 }
 
@@ -70,9 +73,6 @@ type UserReqPassChange struct {
 type UserReqForgotPassword struct {
 	Email string `json:"email_account"`
 }
-type UserController interface {
-	GetAccountByID(ID uuid.UUID) (account *models.Account, err error)
-}
 
 func (s *User) RegisterUser(ctx *gin.Context) {
 
@@ -114,14 +114,6 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 
 	HandleResponse(ctx, nil, http.StatusOK, "thank you for registering, please check your email inbox", nil)
 
-}
-
-func (s *User) GetAccountByID(ID uuid.UUID) (account *models.Account, err error) {
-
-	if err := s.DB.Where("ID = ?", ID).First(&account).Error; err != nil {
-		return nil, utils.HandleError(err, "no account was Found ")
-	}
-	return
 }
 
 func (s *User) GetAccountByEmail(email string) *models.Account {
@@ -262,7 +254,7 @@ func (s *User) ChangePass(ctx *gin.Context) {
 		HandleResponse(ctx, err, http.StatusNotFound, "failed to fetch change password request", nil)
 	}
 
-	Account, err := s.GetAccountByID(currentUserUUID)
+	Account, err := s.User.GetAccountByID(currentUserUUID)
 	if err != nil {
 		HandleResponse(ctx, err, http.StatusNotFound, "failed to fetch change password request", nil)
 		return

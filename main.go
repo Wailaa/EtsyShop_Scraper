@@ -11,6 +11,7 @@ import (
 	"EtsyScraper/controllers"
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
+	"EtsyScraper/repository"
 	"EtsyScraper/routes"
 	scheduleUpdates "EtsyScraper/scheduleUpdateTask"
 	scrap "EtsyScraper/scraping"
@@ -42,10 +43,11 @@ func main() {
 
 	utils := &utils.Utils{}
 	Scraper := &scrap.Scraper{}
-	implShop := controllers.Shop{DB: initializer.DB, Scraper: Scraper}
+	Repository := &repository.DataBase{DB: initializer.DB}
+	implShop := controllers.Shop{DB: initializer.DB, Scraper: Scraper, User: Repository}
 	implShop.Operations = &implShop
 
-	userRoutes := routes.NewUserRouteController(controllers.NewUserController(initializer.DB, utils))
+	userRoutes := routes.NewUserRouteController(controllers.NewUserController(initializer.DB, utils, Repository))
 	userRoutes.GeneraluserRoutes(server, controllers.AuthMiddleWare(utils), controllers.Authorization())
 
 	shopRoutes := routes.NewShopRouteController(&implShop)
