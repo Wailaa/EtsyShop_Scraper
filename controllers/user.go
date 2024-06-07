@@ -210,7 +210,8 @@ func (s *User) VerifyAccount(ctx *gin.Context) {
 
 	VerifyUser := &models.Account{}
 
-	if err := s.DB.Where("email_verification_token = ?", TranID).Find(&VerifyUser).Limit(1).Error; err != nil { //create method
+	VerifyUser, err := s.User.InsertTokenForAccount("email_verification_token = ?", TranID, VerifyUser)
+	if err != nil {
 		HandleResponse(ctx, err, http.StatusForbidden, "something went wrong while verifying email", nil)
 		return
 	}
@@ -329,8 +330,8 @@ func (s *User) ResetPass(ctx *gin.Context) {
 		HandleResponse(ctx, err, http.StatusForbidden, err.Error(), nil)
 		return
 	}
-
-	if err := s.DB.Where("account_pass_reset_token = ?", reqChangePass.RCP).Find(&VerifyUser).Limit(1).Error; err != nil { // create method
+	VerifyUser, err := s.User.InsertTokenForAccount("account_pass_reset_token = ?", reqChangePass.RCP, VerifyUser)
+	if err != nil {
 		HandleResponse(ctx, err, http.StatusForbidden, "something went wrong while resetting password", nil)
 		return
 	}

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
 	"testing"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 
 	"EtsyScraper/controllers"
 	"EtsyScraper/models"
@@ -131,6 +129,16 @@ func (mr *MockedUserRepository) SaveAccount(Account *models.Account) error {
 	args := mr.Called()
 	return args.Error(0)
 }
+func (mr *MockedUserRepository) InsertTokenForAccount(column, token string, VerifyUser *models.Account) (*models.Account, error) {
+	args := mr.Called()
+	UserRepo := args.Get(0)
+	var Account *models.Account
+	if UserRepo != nil {
+		Account = UserRepo.(*models.Account)
+	}
+	return Account, args.Error(1)
+}
+
 func (mr *MockedUserRepository) CreateAccount(account *models.Account) (*models.Account, error) {
 
 	args := mr.Called()
@@ -768,16 +776,17 @@ func TestLogOutAccount(t *testing.T) {
 }
 
 func TestVerifyAccountNoTranID(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
+	UserRepo := &MockedUserRepository{}
+	User := controllers.NewUserController(MockedDataBase, MockedUtils, UserRepo)
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE email_verification_token = $1 AND "accounts"."deleted_at" IS NULL`)).WillReturnError(errors.New("TransID is not found"))
+	UserRepo.On("InsertTokenForAccount").Return(nil, errors.New("no TranID"))
 
 	router.GET("/verifyaccount", User.VerifyAccount)
 
@@ -788,27 +797,20 @@ func TestVerifyAccountNoTranID(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 
 }
 func TestVerifyAccountEmptyAccount(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
+	UserRepo := &MockedUserRepository{}
+	User := controllers.NewUserController(MockedDataBase, MockedUtils, UserRepo)
 
-	emptyAccount := &models.Account{}
-
-	userID := uuid.Nil
-	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(userID.String(), emptyAccount.CreatedAt, emptyAccount.UpdatedAt, emptyAccount.FirstName, emptyAccount.LastName, emptyAccount.Email, emptyAccount.PasswordHashed, emptyAccount.SubscriptionType, emptyAccount.EmailVerified, emptyAccount.EmailVerificationToken, emptyAccount.RequestChangePass, emptyAccount.AccountPassResetToken, emptyAccount.LastTimeLoggedIn, emptyAccount.LastTimeLoggedOut)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE email_verification_token = $1 AND "accounts"."deleted_at" IS NULL`)).WillReturnRows(Account)
-
+	UserRepo.On("InsertTokenForAccount").Return(&models.Account{}, nil)
 	router.GET("/verifyaccount", User.VerifyAccount)
 
 	req, _ := http.NewRequest("GET", "/verifyaccount", bytes.NewBuffer([]byte{}))
@@ -818,27 +820,22 @@ func TestVerifyAccountEmptyAccount(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 
 }
 
 func TestVerifyAccountAlreadyVerified(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
+	UserRepo := &MockedUserRepository{}
+	User := controllers.NewUserController(MockedDataBase, MockedUtils, UserRepo)
 
-	emptyAccount := &models.Account{}
-
-	userID := uuid.Nil
-	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(userID.String(), emptyAccount.CreatedAt, emptyAccount.UpdatedAt, emptyAccount.FirstName, emptyAccount.LastName, emptyAccount.Email, emptyAccount.PasswordHashed, emptyAccount.SubscriptionType, true, emptyAccount.EmailVerificationToken, emptyAccount.RequestChangePass, emptyAccount.AccountPassResetToken, emptyAccount.LastTimeLoggedIn, emptyAccount.LastTimeLoggedOut)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE email_verification_token = $1 AND "accounts"."deleted_at" IS NULL`)).WillReturnRows(Account)
+	emptyAccount := &models.Account{EmailVerified: true}
+	UserRepo.On("InsertTokenForAccount").Return(emptyAccount, nil)
 
 	router.GET("/verifyaccount", User.VerifyAccount)
 
@@ -849,7 +846,6 @@ func TestVerifyAccountAlreadyVerified(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 
 }
 func TestVerifyAccountSuccess(t *testing.T) {
@@ -863,16 +859,8 @@ func TestVerifyAccountSuccess(t *testing.T) {
 	UserRepo := &MockedUserRepository{}
 	User := controllers.NewUserController(MockedDataBase, MockedUtils, UserRepo)
 
+	UserRepo.On("InsertTokenForAccount").Return(&models.Account{ID: uuid.New(), EmailVerified: false}, nil)
 	UserRepo.On("UpdateAccountAfterVerify").Return(nil)
-
-	emptyAccount := &models.Account{}
-
-	userID := uuid.New()
-	time := time.Now()
-	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(userID.String(), time, time, nil, "test", "Example", emptyAccount.PasswordHashed, emptyAccount.SubscriptionType, false, "asdfsdgsdgdsfsafads", emptyAccount.RequestChangePass, emptyAccount.AccountPassResetToken, emptyAccount.LastTimeLoggedIn, emptyAccount.LastTimeLoggedOut)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE email_verification_token = $1 AND "accounts"."deleted_at" IS NULL`)).WillReturnRows(Account)
 
 	router.GET("/verifyaccount", User.VerifyAccount)
 
@@ -1265,17 +1253,17 @@ func TestResetPassPassNoMachs(t *testing.T) {
 
 func TestResetPassUserNotFound(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
+	UserRepo := &MockedUserRepository{}
+	User := controllers.NewUserController(MockedDataBase, MockedUtils, UserRepo)
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE account_pass_reset_token = $1 AND "accounts"."deleted_at" IS NULL`)).
-		WithArgs("SomeToken").WillReturnError(errors.New("user not found"))
+	UserRepo.On("InsertTokenForAccount").Return(nil, errors.New("user not found"))
 
 	router.POST("/resetpassword", User.ResetPass)
 
@@ -1289,22 +1277,19 @@ func TestResetPassUserNotFound(t *testing.T) {
 }
 func TestResetPassEmptyAccount(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
+	UserRepo := &MockedUserRepository{}
+	User := controllers.NewUserController(MockedDataBase, MockedUtils, UserRepo)
 
-	emptyAccount := models.Account{}
+	emptyAccount := &models.Account{}
 
-	Account := sqlmock.NewRows([]string{"created_at", "updated_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(emptyAccount.CreatedAt, emptyAccount.UpdatedAt, emptyAccount.FirstName, emptyAccount.LastName, emptyAccount.Email, emptyAccount.PasswordHashed, emptyAccount.SubscriptionType, emptyAccount.EmailVerified, emptyAccount.EmailVerificationToken, emptyAccount.RequestChangePass, emptyAccount.AccountPassResetToken, emptyAccount.LastTimeLoggedIn, emptyAccount.LastTimeLoggedOut)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE account_pass_reset_token = $1 AND "accounts"."deleted_at" IS NULL`)).
-		WithArgs("SomeToken").WillReturnRows(Account)
+	UserRepo.On("InsertTokenForAccount").Return(emptyAccount, nil)
 
 	router.POST("/resetpassword", User.ResetPass)
 
@@ -1318,27 +1303,22 @@ func TestResetPassEmptyAccount(t *testing.T) {
 }
 func TestResetPassRCPTokenNoMatch(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
-	User := controllers.NewUserController(MockedDataBase, MockedUtils, nil)
+	UserRepo := &MockedUserRepository{}
+	User := controllers.NewUserController(MockedDataBase, MockedUtils, UserRepo)
 
-	emptyAccount := models.Account{}
-	user := uuid.New()
-
-	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(user.String(), emptyAccount.CreatedAt, emptyAccount.UpdatedAt, emptyAccount.FirstName, emptyAccount.LastName, emptyAccount.Email, emptyAccount.PasswordHashed, emptyAccount.SubscriptionType, emptyAccount.EmailVerified, emptyAccount.EmailVerificationToken, emptyAccount.RequestChangePass, "", emptyAccount.LastTimeLoggedIn, emptyAccount.LastTimeLoggedOut)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE account_pass_reset_token = $1 AND "accounts"."deleted_at" IS NULL`)).
-		WithArgs("").WillReturnRows(Account)
+	emptyAccount := &models.Account{AccountPassResetToken: "NoMAtch"}
+	UserRepo.On("InsertTokenForAccount").Return(emptyAccount, nil)
 
 	router.POST("/resetpassword", User.ResetPass)
 
-	body := []byte(`{"rcp":"","new_password":"1234qwer","confirm_password":"1234qwer"}`)
+	body := []byte(`{"rcp":"SomeToken","new_password":"1234qwer","confirm_password":"1234qwer"}`)
 	req, _ := http.NewRequest("POST", "/resetpassword", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -1348,7 +1328,7 @@ func TestResetPassRCPTokenNoMatch(t *testing.T) {
 }
 func TestResetPassSuccess(t *testing.T) { //delete this
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
 
@@ -1356,20 +1336,13 @@ func TestResetPassSuccess(t *testing.T) { //delete this
 
 	MockedUtils := &mockUtils{}
 	UserRepo := &MockedUserRepository{}
-
 	User := controllers.NewUserController(MockedDataBase, MockedUtils, UserRepo)
 
+	emptyAccount := &models.Account{ID: uuid.New(), AccountPassResetToken: "SomeToken"}
+
 	MockedUtils.On("HashPass").Return("NewHasshedPass", nil)
+	UserRepo.On("InsertTokenForAccount").Return(emptyAccount, nil)
 	UserRepo.On("UpdateAccountAfterResetPass").Return(nil)
-
-	emptyAccount := models.Account{}
-	user := uuid.New()
-
-	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(user.String(), emptyAccount.CreatedAt, emptyAccount.UpdatedAt, emptyAccount.FirstName, emptyAccount.LastName, emptyAccount.Email, emptyAccount.PasswordHashed, emptyAccount.SubscriptionType, emptyAccount.EmailVerified, emptyAccount.EmailVerificationToken, emptyAccount.RequestChangePass, "SomeToken", emptyAccount.LastTimeLoggedIn, emptyAccount.LastTimeLoggedOut)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE account_pass_reset_token = $1 AND "accounts"."deleted_at" IS NULL`)).
-		WithArgs("SomeToken").WillReturnRows(Account)
 
 	router.POST("/resetpassword", User.ResetPass)
 
