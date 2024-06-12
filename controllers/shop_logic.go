@@ -83,7 +83,7 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 
 	if Task.UpdateSoldItems > 0 {
 
-		if err = s.UpdateDailySales(ScrappedSoldItems, Shop.ID, dailyRevenue); err != nil {
+		if err = s.Shop.UpdateDailySales(ScrappedSoldItems, Shop.ID, dailyRevenue); err != nil {
 			return utils.HandleError(err)
 		}
 	}

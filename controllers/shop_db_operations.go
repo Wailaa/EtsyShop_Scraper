@@ -39,20 +39,6 @@ func (s *Shop) UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopReq
 	return nil
 }
 
-
-func (s *Shop) UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uint, dailyRevenue float64) error {
-
-	now := utils.TruncateDate(time.Now())
-
-	dailyRevenue = utils.RoundToTwoDecimalDigits(dailyRevenue)
-
-	if err := s.DB.Model(&models.DailyShopSales{}).Where("created_at > ?", now).Where("shop_id = ?", ShopID).Updates(&models.DailyShopSales{DailyRevenue: dailyRevenue}).Error; err != nil {
-		return utils.HandleError(err)
-	}
-
-	return nil
-}
-
 func (s *Shop) CheckAndUpdateOutOfProdMenu(AllMenus []models.MenuItem, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) (bool, error) {
 	isOutOfProduction := false
 	for index, menu := range AllMenus {
