@@ -2415,43 +2415,34 @@ func TestCreateShopRequestTypeShopFailNoAccount(t *testing.T) {
 }
 func TestCreateShopRequestTypeShopFailSaveData(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-	implShop := controllers.Shop{DB: MockedDataBase}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Shop: ShopRepo}
 
 	ShopRequest := &models.ShopRequest{
 		AccountID: uuid.New(),
 		ShopName:  "exampleShop",
 		Status:    "Pending",
 	}
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shop_requests" ("created_at","updated_at","deleted_at","account_id","shop_name","status") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "id"`)).WillReturnError(errors.New("Failed to save ShopRequest"))
-	sqlMock.ExpectRollback()
+	ShopRepo.On("SaveShopRequestToDB").Return(errors.New("Failed to save ShopRequest"))
 
 	err := implShop.CreateShopRequest(ShopRequest)
 
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 	assert.Contains(t, err.Error(), "Failed to save ShopRequest")
 }
 func TestCreateShopRequestTypeShopSuccess(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-	implShop := controllers.Shop{DB: MockedDataBase}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Shop: ShopRepo}
 
 	ShopRequest := &models.ShopRequest{
 		AccountID: uuid.New(),
 		ShopName:  "exampleShop",
 		Status:    "Pending",
 	}
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shop_requests" ("created_at","updated_at","deleted_at","account_id","shop_name","status") VALUES ($1,$2,$3,$4,$5,$6) RETURNING "id"`)).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-	sqlMock.ExpectCommit()
-	implShop.CreateShopRequest(ShopRequest)
+	ShopRepo.On("SaveShopRequestToDB").Return(nil)
+	err := implShop.CreateShopRequest(ShopRequest)
 
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+	assert.NoError(t, err)
 
 }
 

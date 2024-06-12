@@ -149,7 +149,7 @@ func (s *Shop) CreateShopRequest(ShopRequest *models.ShopRequest) error {
 		return utils.HandleError(err)
 	}
 
-	if err := s.DB.Save(ShopRequest).Error; err != nil {
+	if err := s.Shop.SaveShopRequestToDB(ShopRequest); err != nil {
 		return utils.HandleError(err)
 	}
 
