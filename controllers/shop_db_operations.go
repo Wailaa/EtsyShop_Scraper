@@ -157,8 +157,8 @@ func (s *Shop) CreateShopRequest(ShopRequest *models.ShopRequest) error {
 }
 
 func (s *Shop) GetItemsByShopID(ID uint) (items []models.Item, err error) {
-	shop := &models.Shop{}
-	if err := s.DB.Preload("ShopMenu.Menu.Items").Where("id = ?", ID).First(shop).Error; err != nil {
+	shop, err := s.Shop.GetShopWithItemsByShopID(ID)
+	if err != nil {
 		return nil, utils.HandleError(err, "no Shop was Found")
 	}
 
