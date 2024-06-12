@@ -80,10 +80,6 @@ func (m *MockShopUpdater) CreateSoldStats(dailyShopSales []models.DailyShopSales
 	return args.Get(0).(map[string]controllers.DailySoldStats), args.Error(1)
 }
 
-func (m *MockShopUpdater) GetAverageItemPrice(ShopID uint) (float64, error) {
-	args := m.Called()
-	return args.Get(0).(float64), args.Error(1)
-}
 func (m *MockShopUpdater) CreateOutOfProdMenu(Shop *models.Shop, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) error {
 	args := m.Called()
 	return args.Error(0)

@@ -68,7 +68,6 @@ type ShopOperations interface {
 	GetShopByID(ID uint) (*models.Shop, error)
 	CreateNewShop(ShopRequest *models.ShopRequest) error
 	GetItemsByShopID(ID uint) ([]models.Item, error)
-	GetAverageItemPrice(ShopID uint) (float64, error)
 	CreateShopRequest(ShopRequest *models.ShopRequest) error
 	GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error)
 	GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error)

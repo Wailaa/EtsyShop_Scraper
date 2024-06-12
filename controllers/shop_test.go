@@ -69,11 +69,6 @@ func (m *MockedShop) GetItemsByShopID(ID uint) ([]models.Item, error) {
 	return Items, args.Error(1)
 }
 
-func (m *MockedShop) GetAverageItemPrice(ShopID uint) (float64, error) {
-	args := m.Called()
-	return args.Get(0).(float64), args.Error(1)
-}
-
 func (m *MockedShop) CreateShopRequest(ShopRequest *models.ShopRequest) error {
 	args := m.Called()
 	return args.Error(0)
@@ -1267,15 +1262,14 @@ func TestUnFollowShopSuccess(t *testing.T) {
 
 func TestGetShopByIDAveragePriceFail(t *testing.T) {
 
-	TestShop := &MockedShop{}
 	ShopRepo := &MockedShopRepository{}
-	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
+	implShop := controllers.Shop{Shop: ShopRepo}
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
 
 	ShopRepo.On("FetchShopByID").Return(&ShopExample, nil)
-	TestShop.On("GetAverageItemPrice").Return(float64(0), errors.New("error getting Item average price"))
+	ShopRepo.On("GetAverageItemPrice").Return(float64(0), errors.New("error getting Item average price"))
 
 	_, err := implShop.GetShopByID(ShopExample.ID)
 
@@ -1293,7 +1287,7 @@ func TestGetShopByIDRevenueFail(t *testing.T) {
 	ShopExample.ID = uint(2)
 
 	ShopRepo.On("FetchShopByID").Return(&ShopExample, nil)
-	TestShop.On("GetAverageItemPrice").Return(float64(15.5), nil)
+	ShopRepo.On("GetAverageItemPrice").Return(float64(15.5), nil)
 	TestShop.On("GetTotalRevenue").Return(float64(0), errors.New("error while getting Total revenue"))
 
 	_, err := implShop.GetShopByID(ShopExample.ID)
@@ -1309,7 +1303,7 @@ func TestGetShopByIDSuccess(t *testing.T) {
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	TestShop.On("GetAverageItemPrice").Return(float64(15.5), nil)
+	ShopRepo.On("GetAverageItemPrice").Return(float64(15.5), nil)
 	TestShop.On("GetTotalRevenue").Return(float64(120), nil)
 	ShopRepo.On("FetchShopByID").Return(&ShopExample, nil)
 
@@ -2400,47 +2394,6 @@ func TestCreateSoldStatsSuccesswithNoItems(t *testing.T) {
 	assert.Equal(t, len(dailyShopSales), len(stats))
 	assert.NoError(t, err)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
-}
-
-func TestGetAverageItemPriceShopSuccess(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
-
-	ShopExample := models.Shop{Name: "ExampleShop"}
-	ShopExample.ID = uint(2)
-
-	rows := sqlmock.NewRows([]string{"average_price"}).AddRow(10.5)
-	sqlMock.ExpectQuery("SELECT AVG\\(items.original_price\\) as average_price").
-		WithArgs(2).WillReturnRows(rows)
-
-	Average, err := implShop.GetAverageItemPrice(ShopExample.ID)
-
-	assert.Equal(t, 10.5, Average)
-	assert.NoError(t, err)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-
-}
-func TestGetAverageItemPriceShopFail(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
-
-	ShopExample := models.Shop{Name: "ExampleShop"}
-	ShopExample.ID = uint(2)
-
-	sqlMock.ExpectQuery("SELECT AVG\\(items.original_price\\) as average_price").
-		WithArgs(2).WillReturnError(errors.New("Error generateing average price"))
-
-	_, err := implShop.GetAverageItemPrice(ShopExample.ID)
-
-	assert.Contains(t, err.Error(), "Error generateing average price")
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-
 }
 
 func TestCreateShopRequestTypeShopFailNoAccount(t *testing.T) {

@@ -85,7 +85,7 @@ func (s *Shop) GetShopByID(ID uint) (*models.Shop, error) {
 
 	}
 
-	shop.AverageItemsPrice, err = s.Operations.GetAverageItemPrice(shop.ID)
+	shop.AverageItemsPrice, err = s.Shop.GetAverageItemPrice(shop.ID)
 	if err != nil {
 		return nil, utils.HandleError(err, "error while calculating item avearage price")
 	}
@@ -141,24 +141,6 @@ func (s *Shop) EstablishAccountShopRelation(requestedShop *models.Shop, userID u
 	}
 
 	return nil
-}
-
-func (s *Shop) GetAverageItemPrice(ShopID uint) (float64, error) {
-	var averagePrice float64
-
-	if err := s.DB.Table("items").
-		Joins("JOIN menu_items ON items.menu_item_id = menu_items.id").
-		Joins("JOIN shop_menus ON menu_items.shop_menu_id = shop_menus.id").
-		Joins("JOIN shops ON shop_menus.shop_id = shops.id").
-		Where("shops.id = ? AND items.original_price > 0 ", ShopID).
-		Select("AVG(items.original_price) as average_price").
-		Row().Scan(&averagePrice); err != nil {
-
-		return 0, utils.HandleError(err)
-	}
-	averagePrice = utils.RoundToTwoDecimalDigits(averagePrice)
-
-	return averagePrice, nil
 }
 
 func (s *Shop) CreateShopRequest(ShopRequest *models.ShopRequest) error {
