@@ -64,7 +64,6 @@ type itemsCount struct {
 }
 
 type ShopOperations interface {
-	GetShopByName(ShopName string) (shop *models.Shop, err error)
 	GetShopByID(ID uint) (*models.Shop, error)
 	CreateNewShop(ShopRequest *models.ShopRequest) error
 	GetItemsByShopID(ID uint) ([]models.Item, error)

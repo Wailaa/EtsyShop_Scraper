@@ -27,17 +27,6 @@ type MockedShop struct {
 	mock.Mock
 }
 
-func (m *MockedShop) GetShopByName(ShopName string) (*models.Shop, error) {
-
-	args := m.Called()
-	shopInterface := args.Get(0)
-	var shop *models.Shop
-	if shopInterface != nil {
-		shop = shopInterface.(*models.Shop)
-	}
-	return shop, args.Error(1)
-}
-
 func (m *MockedShop) GetShopByID(ID uint) (*models.Shop, error) {
 
 	args := m.Called()
@@ -323,18 +312,15 @@ func TestCreateNewShopRequestInvalidJson(t *testing.T) {
 }
 func TestCreateNewShopRequestGetShopError(t *testing.T) {
 
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop, Shop: ShopRepo}
 
-	TestShop.On("GetShopByName").Return(nil, errors.New("Error"))
+	ShopRepo.On("GetShopByName").Return(nil, errors.New("Error"))
 	TestShop.On("CreateShopRequest").Return(errors.New("SecondError"))
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
@@ -354,18 +340,15 @@ func TestCreateNewShopRequestGetShopError(t *testing.T) {
 }
 func TestCreateNewShopRequestShopExists(t *testing.T) {
 
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	TestShop := &MockedShop{}
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop, Shop: ShopRepo}
 
-	TestShop.On("GetShopByName").Return(&models.Shop{Name: "ShopExample"}, nil)
+	ShopRepo.On("GetShopByName").Return(&models.Shop{Name: "ShopExample"}, nil)
 	TestShop.On("CreateShopRequest").Return(errors.New("SecondError"))
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
@@ -394,9 +377,10 @@ func TestCreateNewShopRequestSuccess(t *testing.T) {
 	currentUserUUID := uuid.New()
 	TestShop := &MockedShop{}
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop, Shop: ShopRepo}
 
-	TestShop.On("GetShopByName").Return(nil, errors.New("no Shop was Found ,error: record not found"))
+	ShopRepo.On("GetShopByName").Return(nil, errors.New("no Shop was Found ,error: record not found"))
 	TestShop.On("CreateShopRequest").Return(nil)
 	TestShop.On("CreateNewShop").Return(nil)
 
@@ -970,18 +954,15 @@ func TestFollowShopPanic(t *testing.T) {
 }
 
 func TestFollowShopShopNotFound(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
-	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Scraper: Scraper, Shop: ShopRepo}
 
-	TestShop.On("GetShopByName").Return(nil, errors.New("record not found"))
+	ShopRepo.On("GetShopByName").Return(nil, errors.New("record not found"))
 
 	router.POST("/follow_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -993,23 +974,20 @@ func TestFollowShopShopNotFound(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertCalled(t, "GetShopByName")
+	ShopRepo.AssertCalled(t, "GetShopByName")
 	assert.Contains(t, w.Body.String(), "shop not found")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 }
 func TestFollowShopGetShopByNameFail(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
-	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Scraper: Scraper, Shop: ShopRepo}
 
-	TestShop.On("GetShopByName").Return(nil, errors.New("Error getting Shop"))
+	ShopRepo.On("GetShopByName").Return(nil, errors.New("Error getting Shop"))
 
 	router.POST("/follow_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -1021,24 +999,21 @@ func TestFollowShopGetShopByNameFail(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertNumberOfCalls(t, "GetShopByName", 1)
+	ShopRepo.AssertNumberOfCalls(t, "GetShopByName", 1)
 	assert.Contains(t, w.Body.String(), "error while processing the request")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 }
 func TestFollowShopGetAccountFail(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop, Shop: ShopRepo}
 
 	ShopExample := models.Shop{}
-	TestShop.On("GetShopByName").Return(&ShopExample, nil)
+	ShopRepo.On("GetShopByName").Return(&ShopExample, nil)
 	TestShop.On("EstablishAccountShopRelation").Return(errors.New("Error while getting account"))
 
 	router.POST("/follow_shop", func(ctx *gin.Context) {
@@ -1051,28 +1026,24 @@ func TestFollowShopGetAccountFail(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertNumberOfCalls(t, "GetShopByName", 1)
+	ShopRepo.AssertNumberOfCalls(t, "GetShopByName", 1)
 	assert.Contains(t, w.Body.String(), "Error while getting account")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 
 }
 
 func TestFollowShopSuccess(t *testing.T) {
-
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop, Shop: ShopRepo}
 
 	ShopExample := models.Shop{}
 	ShopExample.ID = 2
-	TestShop.On("GetShopByName").Return(&ShopExample, nil)
+	ShopRepo.On("GetShopByName").Return(&ShopExample, nil)
 	TestShop.On("EstablishAccountShopRelation").Return(nil)
 
 	router.POST("/follow_shop", func(ctx *gin.Context) {
@@ -1085,7 +1056,7 @@ func TestFollowShopSuccess(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertNumberOfCalls(t, "GetShopByName", 1)
+	ShopRepo.AssertNumberOfCalls(t, "GetShopByName", 1)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -1143,18 +1114,15 @@ func TestUnFollowShopPanic(t *testing.T) {
 }
 
 func TestUnFollowShopShopNotFound(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
-	Scraper := &scrap.Scraper{}
-	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
 
-	TestShop.On("GetShopByName").Return(nil, errors.New("record not found"))
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Shop: ShopRepo}
+
+	ShopRepo.On("GetShopByName").Return(nil, errors.New("record not found"))
 
 	router.POST("/unfollow_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -1166,23 +1134,19 @@ func TestUnFollowShopShopNotFound(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertCalled(t, "GetShopByName")
+	ShopRepo.AssertCalled(t, "GetShopByName")
 	assert.Contains(t, w.Body.String(), "shop not found")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 }
 func TestUnFollowShopGetShopByNameFail(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
-	Scraper := &scrap.Scraper{}
-	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Shop: ShopRepo}
 
-	TestShop.On("GetShopByName").Return(nil, errors.New("Error getting Shop"))
+	ShopRepo.On("GetShopByName").Return(nil, errors.New("Error getting Shop"))
 
 	router.POST("/unfollow_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -1194,7 +1158,7 @@ func TestUnFollowShopGetShopByNameFail(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertNumberOfCalls(t, "GetShopByName", 1)
+	ShopRepo.AssertNumberOfCalls(t, "GetShopByName", 1)
 	assert.Contains(t, w.Body.String(), "Error getting Shop")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 }
@@ -1203,13 +1167,12 @@ func TestUnFollowShopGetAccountFail(t *testing.T) {
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
-	Scraper := &scrap.Scraper{}
-	TestShop := &MockedShop{}
+
 	ShopRepo := &MockedShopRepository{}
-	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop, Shop: ShopRepo}
+	implShop := controllers.Shop{Shop: ShopRepo}
 
 	ShopExample := models.Shop{}
-	TestShop.On("GetShopByName").Return(&ShopExample, nil)
+	ShopRepo.On("GetShopByName").Return(&ShopExample, nil)
 	ShopRepo.On("UpdateAccountShopRelation").Return(errors.New("Error while getting account"))
 
 	router.POST("/unfollow_shop", func(ctx *gin.Context) {
@@ -1222,7 +1185,7 @@ func TestUnFollowShopGetAccountFail(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertNumberOfCalls(t, "GetShopByName", 1)
+	ShopRepo.AssertNumberOfCalls(t, "GetShopByName", 1)
 	assert.Contains(t, w.Body.String(), "Error while getting account")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 
@@ -1233,14 +1196,12 @@ func TestUnFollowShopSuccess(t *testing.T) {
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
-	Scraper := &scrap.Scraper{}
-	TestShop := &MockedShop{}
 	ShopRepo := &MockedShopRepository{}
-	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop, Shop: ShopRepo}
+	implShop := controllers.Shop{Shop: ShopRepo}
 
 	ShopExample := models.Shop{}
 	ShopExample.ID = 2
-	TestShop.On("GetShopByName").Return(&ShopExample, nil)
+	ShopRepo.On("GetShopByName").Return(&ShopExample, nil)
 	ShopRepo.On("UpdateAccountShopRelation").Return(nil)
 
 	router.POST("/unfollow_shop", func(ctx *gin.Context) {
@@ -1253,7 +1214,7 @@ func TestUnFollowShopSuccess(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	TestShop.AssertNumberOfCalls(t, "GetShopByName", 1)
+	ShopRepo.AssertNumberOfCalls(t, "GetShopByName", 1)
 	ShopRepo.AssertNumberOfCalls(t, "UpdateAccountShopRelation", 1)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -2475,60 +2436,4 @@ func TestGetItemsByShopIDTypeShopFail(t *testing.T) {
 
 	assert.Contains(t, err.Error(), "error while getting shop from DB")
 
-}
-
-func TestGetShopByNameTypeShopSuccess(t *testing.T) {
-
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
-
-	ShopExample := models.Shop{Name: "ExampleShop"}
-	ShopExample.ID = uint(2)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE name = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
-		WithArgs(ShopExample.Name, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(ShopExample.ID, ShopExample.Name))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_members" WHERE "shop_members"."shop_id" = $1 AND "shop_members"."deleted_at" IS NULL`)).
-		WithArgs(ShopExample.ID).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopID", "name"}).AddRow(10, ShopExample.ID, "Owner"))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "reviews" WHERE "reviews"."shop_id" = $1 AND "reviews"."deleted_at" IS NULL`)).
-		WithArgs(ShopExample.ID).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopID", "ShopRating"}).AddRow(5, ShopExample.ID, 4.4))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "reviews_topics" WHERE "reviews_topics"."reviews_id"`)).
-		WithArgs(5).WillReturnRows(sqlmock.NewRows([]string{"id", "ReviewsID", "Keyword"}).AddRow(5, 5, "Test1").AddRow(7, 5, "Test2"))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_menus" WHERE "shop_menus"."shop_id" = $1 AND "shop_menus"."deleted_at" IS NULL`)).
-		WithArgs(ShopExample.ID).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopID", "TotalItemsAmount"}).AddRow(9, ShopExample.ID, 5).AddRow(11, ShopExample.ID, 10))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "menu_items" WHERE "menu_items"."shop_menu_id" IN ($1,$2) AND "menu_items"."deleted_at" IS NULL`)).
-		WithArgs().WillReturnRows(sqlmock.NewRows([]string{"id", "ShopMenuID", "SectionID"}).AddRow(8, 9, "SelectionID"))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "items" WHERE "items"."menu_item_id" = $1 AND "items"."deleted_at" IS NULL`)).
-		WithArgs(8).WillReturnRows(sqlmock.NewRows([]string{"id", "Name", "Available", "MenuItemID"}).AddRow(8, "ItemName", true, 8))
-
-	implShop.GetShopByName("ExampleShop")
-
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-}
-func TestGetShopByNameTypeShopfail(t *testing.T) {
-
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
-
-	ShopExample := models.Shop{Name: "ExampleShop"}
-	ShopExample.ID = uint(2)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE name = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
-		WithArgs(ShopExample.Name, 1).WillReturnError(errors.New("Error getting shop data"))
-
-	_, err := implShop.GetShopByName("ExampleShop")
-
-	assert.Contains(t, err.Error(), "Error getting shop data")
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }

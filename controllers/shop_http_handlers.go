@@ -25,7 +25,7 @@ func (s *Shop) CreateNewShopRequest(ctx *gin.Context) {
 	ShopRequest.AccountID = currentUserUUID
 	ShopRequest.ShopName = shop.ShopName
 
-	existedShop, err := s.Operations.GetShopByName(shop.ShopName)
+	existedShop, err := s.Shop.GetShopByName(shop.ShopName)
 	if err != nil && err.Error() != "no Shop was Found ,error: record not found" {
 		HandleResponse(ctx, err, http.StatusBadRequest, "internal error", nil)
 
@@ -62,7 +62,7 @@ func (s *Shop) FollowShop(ctx *gin.Context) {
 
 	currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 
-	requestedShop, err := s.Operations.GetShopByName(shopToFollow.FollowShopName)
+	requestedShop, err := s.Shop.GetShopByName(shopToFollow.FollowShopName)
 	if err != nil {
 		if err.Error() == "record not found" {
 			HandleResponse(ctx, err, http.StatusBadRequest, "shop not found", nil)
@@ -89,7 +89,7 @@ func (s *Shop) UnFollowShop(ctx *gin.Context) {
 
 	currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 
-	requestedShop, err := s.Operations.GetShopByName(unFollowShop.UnFollowShopName)
+	requestedShop, err := s.Shop.GetShopByName(unFollowShop.UnFollowShopName)
 	if err != nil {
 		if err.Error() == "record not found" {
 			HandleResponse(ctx, err, http.StatusBadRequest, "shop not found", nil)

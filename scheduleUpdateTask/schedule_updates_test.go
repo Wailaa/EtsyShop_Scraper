@@ -38,16 +38,6 @@ type MockShopUpdater struct {
 	mock.Mock
 }
 
-func (m *MockShopUpdater) GetShopByName(ShopName string) (*models.Shop, error) {
-
-	args := m.Called()
-	shopInterface := args.Get(0)
-	var shop *models.Shop
-	if shopInterface != nil {
-		shop = shopInterface.(*models.Shop)
-	}
-	return shop, args.Error(1)
-}
 func (m *MockShopUpdater) GetShopByID(ID uint) (*models.Shop, error) {
 
 	args := m.Called()
