@@ -74,6 +74,8 @@ type ShopOperations interface {
 	UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
 	CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[string]DailySoldStats, error)
 	EstablishAccountShopRelation(requestedShop *models.Shop, userID uuid.UUID) error
+	SaveShopToDB(scrappedShop *models.Shop, ShopRequest *models.ShopRequest) error
+	UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopRequest) error
 }
 
 var queueMutex sync.Mutex

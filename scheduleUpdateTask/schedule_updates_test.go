@@ -123,6 +123,15 @@ func (m *MockShopUpdater) UpdateDiscontinuedItems(Shop *models.Shop, Task *model
 	return soldItems, args.Error(1)
 }
 
+func (m *MockShopUpdater) SaveShopToDB(scrappedShop *models.Shop, ShopRequest *models.ShopRequest) error {
+	args := m.Called()
+	return args.Error(0)
+}
+func (m *MockShopUpdater) UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopRequest) error {
+	args := m.Called()
+	return args.Error(0)
+}
+
 func TestScheduleScrapUpdateSchedulesCronJob(t *testing.T) {
 
 	cronJob := &MockCronJob{}

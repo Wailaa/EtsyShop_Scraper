@@ -68,6 +68,15 @@ func (m *MockedShop) CreateShopRequest(ShopRequest *models.ShopRequest) error {
 	return args.Error(0)
 }
 
+func (m *MockedShop) SaveShopToDB(scrappedShop *models.Shop, ShopRequest *models.ShopRequest) error {
+	args := m.Called()
+	return args.Error(0)
+}
+func (m *MockedShop) UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopRequest) error {
+	args := m.Called()
+	return args.Error(0)
+}
+
 func (m *MockedShop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error) {
 	args := m.Called()
 	return args.Get(0).(float64), args.Error(1)
@@ -334,17 +343,12 @@ func TestCreateNewShopFailedSaveShopToDB(t *testing.T) {
 
 	Scraper.On("ScrapShop").Return(ShopExample, nil)
 	TestShop.On("CreateShopRequest").Return(nil)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnError(errors.New("Failed to save shop"))
-	sqlMock.ExpectRollback()
+	TestShop.On("SaveShopToDB").Return(errors.New("Failed to save shop"))
 
 	err := implShop.CreateNewShop(ShopRequest)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Failed to save shop")
-	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 func TestCreateNewShopSaveMenuToDBFail(t *testing.T) {
@@ -367,24 +371,14 @@ func TestCreateNewShopSaveMenuToDBFail(t *testing.T) {
 	}
 
 	TestShop.On("CreateShopRequest").Return(nil)
-
+	TestShop.On("SaveShopToDB").Return(nil)
+	TestShop.On("UpdateShopMenuToDB").Return(errors.New("failed to save new record"))
 	Scraper.On("ScrapShop").Return(ShopExample, nil)
 	Scraper.On("ScrapAllMenuItems").Return(ShopExample)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{userID.String()}))
-	sqlMock.ExpectCommit()
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnError(errors.New("failed to save new record"))
-	sqlMock.ExpectRollback()
 
 	err := implShop.CreateNewShop(ShopRequest)
 
 	assert.Error(t, err)
-	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 func TestCreateNewShopSaveMenuToDBSuccess(t *testing.T) {
@@ -407,24 +401,15 @@ func TestCreateNewShopSaveMenuToDBSuccess(t *testing.T) {
 	}
 
 	TestShop.On("CreateShopRequest").Return(nil)
-
+	TestShop.On("SaveShopToDB").Return(nil)
+	TestShop.On("UpdateShopMenuToDB").Return(nil)
 	Scraper.On("ScrapShop").Return(ShopExample, nil)
 	Scraper.On("ScrapAllMenuItems").Return(ShopExample)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{userID.String()}))
-	sqlMock.ExpectCommit()
-	sqlMock.ExpectBegin()
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{userID.String()}))
-	sqlMock.ExpectCommit()
 
 	err := implShop.CreateNewShop(ShopRequest)
 
 	assert.NoError(t, err)
-	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 2)
+	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 func TestCreateNewShopHasSoldHistory(t *testing.T) {
@@ -448,26 +433,15 @@ func TestCreateNewShopHasSoldHistory(t *testing.T) {
 		HasSoldHistory: true,
 	}
 
-	TestShop.On("CreateShopRequest").Return(nil)
-
+	TestShop.On("SaveShopToDB").Return(nil)
+	TestShop.On("UpdateShopMenuToDB").Return(nil)
 	Scraper.On("ScrapShop").Return(ShopExample, nil)
 	Scraper.On("ScrapAllMenuItems").Return(ShopExample)
 	TestShop.On("UpdateSellingHistory").Return(nil)
 
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), 10, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), true, sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{userID.String()}))
-	sqlMock.ExpectCommit()
-	sqlMock.ExpectBegin()
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), 10, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), true, sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{userID.String()}))
-	sqlMock.ExpectCommit()
-
 	err := implShop.CreateNewShop(ShopRequest)
 
 	assert.NoError(t, err)
-	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
 	TestShop.AssertNumberOfCalls(t, "UpdateSellingHistory", 1)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
