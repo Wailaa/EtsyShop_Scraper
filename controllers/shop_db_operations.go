@@ -47,7 +47,7 @@ func (s *Shop) CheckAndUpdateOutOfProdMenu(AllMenus []models.MenuItem, SoldOutIt
 			AllMenus[index].Amount = AllMenus[index].Amount + len(SoldOutItems)
 			AllMenus[index].Items = append(menu.Items, SoldOutItems...)
 
-			if err := s.DB.Save(&AllMenus[index]).Error; err != nil {
+			if err := s.Shop.SaveMenu(AllMenus[index]); err != nil {
 				return false, utils.HandleError(err)
 			}
 			ShopRequest.Status = "OutOfProduction Successfully updated"
