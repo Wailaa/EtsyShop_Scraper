@@ -664,13 +664,10 @@ func TestUpdateSellingHistoryGetItemsFail(t *testing.T) {
 
 }
 func TestUpdateSellingHistoryInsertIntoDBFail(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
 	userID := uuid.New()
 	Task := &models.TaskSchedule{
@@ -693,27 +690,20 @@ func TestUpdateSellingHistoryInsertIntoDBFail(t *testing.T) {
 
 	TestShop.On("UpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}}, nil)
 	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}, {}}, nil)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "sold_items" ("created_at","updated_at","deleted_at","item_id","listing_id","data_shop_id") VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnError(errors.New("failed to insert data to DB"))
-	sqlMock.ExpectRollback()
+	ShopRepo.On("SaveSoldItemsToDB").Return(errors.New("failed to insert data to DB"))
 
 	err := implShop.UpdateSellingHistory(ShopExample, Task, ShopRequest)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to insert data to DB")
 	TestShop.AssertNumberOfCalls(t, "UpdateDiscontinuedItems", 1)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 func TestUpdateSellingHistoryInsertIntoDB(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
 	userID := uuid.New()
 	Task := &models.TaskSchedule{
@@ -737,18 +727,14 @@ func TestUpdateSellingHistoryInsertIntoDB(t *testing.T) {
 	TestShop.On("UpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}}, nil)
 	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}, {}}, nil)
 	TestShop.On("CreateShopRequest").Return(nil)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "sold_items" ("created_at","updated_at","deleted_at","item_id","listing_id","data_shop_id") VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"1"}))
-	sqlMock.ExpectCommit()
+	ShopRepo.On("SaveSoldItemsToDB").Return(nil)
 
 	err := implShop.UpdateSellingHistory(ShopExample, Task, ShopRequest)
 
 	assert.NoError(t, err)
 	TestShop.AssertNumberOfCalls(t, "UpdateDiscontinuedItems", 1)
 	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 func TestUpdateSellingHistoryTaskSoldItem(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
@@ -756,8 +742,8 @@ func TestUpdateSellingHistoryTaskSoldItem(t *testing.T) {
 	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop, Shop: ShopRepo}
 
 	userID := uuid.New()
 	Task := &models.TaskSchedule{
@@ -781,11 +767,7 @@ func TestUpdateSellingHistoryTaskSoldItem(t *testing.T) {
 	TestShop.On("UpdateDiscontinuedItems").Return([]models.SoldItems{{}, {}}, nil)
 	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}, {}}, nil)
 	TestShop.On("CreateShopRequest").Return(nil)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "sold_items" ("created_at","updated_at","deleted_at","item_id","listing_id","data_shop_id") VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"1"}))
-	sqlMock.ExpectCommit()
+	ShopRepo.On("SaveSoldItemsToDB").Return(nil)
 
 	sqlMock.ExpectBegin()
 	sqlMock.ExpectExec(regexp.QuoteMeta(`updated_at"=$1 WHERE created_at > $2 AND shop_id = $3 AND "daily_shop_sales"."deleted_at" IS NULL`)).
@@ -1806,7 +1788,8 @@ func TestUpdateShopMenuToDB(t *testing.T) {
 	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop, Shop: ShopRepo}
 
 	userID := uuid.New()
 	ShopRequest := &models.ShopRequest{
@@ -1829,18 +1812,7 @@ func TestUpdateShopMenuToDB(t *testing.T) {
 	}
 
 	TestShop.On("CreateShopRequest").Return(nil)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), ShopExample.Name, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shop_menus" ("created_at","updated_at","deleted_at","shop_id","total_items_amount") VALUES ($1,$2,$3,$4,$5) ON CONFLICT ("id") DO UPDATE SET "shop_id"="excluded"."shop_id" RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), 1, 0).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "menu_items" ("created_at","updated_at","deleted_at","shop_menu_id","category","section_id","link","amount") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT ("id") DO UPDATE SET "shop_menu_id"="excluded"."shop_menu_id" RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), 1, "All", "1191", "wwww.ExampleLink", 19).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-
-	sqlMock.ExpectCommit()
+	ShopRepo.On("SaveShop").Return(nil)
 	err := implShop.UpdateShopMenuToDB(ShopExample, ShopRequest)
 
 	assert.NoError(t, err)
@@ -1851,12 +1823,9 @@ func TestUpdateShopMenuToDB(t *testing.T) {
 
 func TestUpdateShopMenuToDBFail(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
 	userID := uuid.New()
 	ShopRequest := &models.ShopRequest{
@@ -1871,18 +1840,13 @@ func TestUpdateShopMenuToDBFail(t *testing.T) {
 	}
 
 	TestShop.On("CreateShopRequest").Return(nil)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), ShopExample.Name, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnError(errors.New("database Error"))
-	sqlMock.ExpectRollback()
+	ShopRepo.On("SaveShop").Return(errors.New("database Error"))
 
 	err := implShop.UpdateShopMenuToDB(ShopExample, ShopRequest)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "database Error")
 	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestReverseSoldItems(t *testing.T) {
@@ -1892,49 +1856,6 @@ func TestReverseSoldItems(t *testing.T) {
 	result := controllers.ReverseSoldItems(SoldItems)
 
 	assert.Equal(t, ReversedSoldItems, result, "checking if the slice got reversed")
-}
-
-func TestSaveSoldItemsToDB(t *testing.T) {
-
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
-
-	SoldItems := []models.SoldItems{{Name: "Example", ItemID: 1, ListingID: 12, DataShopID: "1122"}, {Name: "Example2", ItemID: 2, ListingID: 13, DataShopID: "1122"}}
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "sold_items" ("created_at","updated_at","deleted_at","item_id","listing_id","data_shop_id") VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), 1, 12, "1122", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), 2, 13, "1122").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-	sqlMock.ExpectCommit()
-
-	err := implShop.SaveSoldItemsToDB(SoldItems)
-
-	assert.NoError(t, err)
-
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-}
-
-func TestSaveSoldItemsToDBFail(t *testing.T) {
-
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
-
-	SoldItems := []models.SoldItems{{Name: "Example", ItemID: 1, ListingID: 12, DataShopID: "1122"}, {Name: "Example2", ItemID: 2, ListingID: 13, DataShopID: "1122"}}
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "sold_items" ("created_at","updated_at","deleted_at","item_id","listing_id","data_shop_id") VALUES ($1,$2,$3,$4,$5,$6),($7,$8,$9,$10,$11,$12) RETURNING "id"`)).WillReturnError(errors.New("error while saving sold item"))
-	sqlMock.ExpectRollback()
-
-	err := implShop.SaveSoldItemsToDB(SoldItems)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "error while saving sold item")
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestUpdateDailySalesSuccess(t *testing.T) {

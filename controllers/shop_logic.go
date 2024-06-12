@@ -77,7 +77,7 @@ func (s *Shop) UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule
 
 	ScrappedSoldItems = ReverseSoldItems(ScrappedSoldItems)
 
-	if err = s.SaveSoldItemsToDB(ScrappedSoldItems); err != nil {
+	if err = s.Shop.SaveSoldItemsToDB(ScrappedSoldItems); err != nil {
 		return utils.HandleError(err)
 	}
 

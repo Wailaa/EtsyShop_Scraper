@@ -39,14 +39,6 @@ func (s *Shop) UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopReq
 	return nil
 }
 
-func (s *Shop) SaveSoldItemsToDB(ScrappedSoldItems []models.SoldItems) error {
-	err := s.DB.Create(&ScrappedSoldItems).Error
-
-	if err != nil {
-		return utils.HandleError(err, "Shop's selling history failed while saving to database")
-	}
-	return nil
-}
 
 func (s *Shop) UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uint, dailyRevenue float64) error {
 
