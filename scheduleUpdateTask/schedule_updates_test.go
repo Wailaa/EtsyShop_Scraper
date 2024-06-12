@@ -74,6 +74,10 @@ func (m *MockShopUpdater) GetAverageItemPrice(ShopID uint) (float64, error) {
 	args := m.Called()
 	return args.Get(0).(float64), args.Error(1)
 }
+func (m *MockShopUpdater) CreateOutOfProdMenu(Shop *models.Shop, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) error {
+	args := m.Called()
+	return args.Error(0)
+}
 
 func (m *MockShopUpdater) CreateShopRequest(ShopRequest *models.ShopRequest) error {
 	args := m.Called()
@@ -83,6 +87,10 @@ func (m *MockShopUpdater) CreateShopRequest(ShopRequest *models.ShopRequest) err
 func (m *MockShopUpdater) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error) {
 	args := m.Called()
 	return args.Get(0).(float64), args.Error(1)
+}
+func (m *MockShopUpdater) CheckAndUpdateOutOfProdMenu(AllMenus []models.MenuItem, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) (bool, error) {
+	args := m.Called()
+	return args.Get(0).(bool), args.Error(1)
 }
 func (m *MockShopUpdater) EstablishAccountShopRelation(requestedShop *models.Shop, userID uuid.UUID) error {
 	args := m.Called()

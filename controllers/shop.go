@@ -78,6 +78,8 @@ type ShopOperations interface {
 	EstablishAccountShopRelation(requestedShop *models.Shop, userID uuid.UUID) error
 	SaveShopToDB(scrappedShop *models.Shop, ShopRequest *models.ShopRequest) error
 	UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopRequest) error
+	CreateOutOfProdMenu(Shop *models.Shop, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) error
+	CheckAndUpdateOutOfProdMenu(AllMenus []models.MenuItem, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) (bool, error)
 }
 
 var queueMutex sync.Mutex

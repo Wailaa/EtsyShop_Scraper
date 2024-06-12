@@ -114,14 +114,14 @@ func (s *Shop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSched
 	}
 	SoldOutItems := FilterSoldOutItems(scrapSoldItems, getAllItems, FilterSoldItems)
 
-	isOutOfProduction, err := s.CheckAndUpdateOutOfProdMenu(Shop.ShopMenu.Menu, SoldOutItems, ShopRequest)
+	isOutOfProduction, err := s.Operations.CheckAndUpdateOutOfProdMenu(Shop.ShopMenu.Menu, SoldOutItems, ShopRequest)
 	if err != nil {
 		return nil, utils.HandleError(err)
 
 	}
 
 	if len(SoldOutItems) != 0 && !isOutOfProduction {
-		if err := s.CreateOutOfProdMenu(Shop, SoldOutItems, ShopRequest); err != nil {
+		if err := s.Operations.CreateOutOfProdMenu(Shop, SoldOutItems, ShopRequest); err != nil {
 			return nil, utils.HandleError(err)
 		}
 

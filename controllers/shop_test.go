@@ -81,6 +81,10 @@ func (m *MockedShop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (flo
 	args := m.Called()
 	return args.Get(0).(float64), args.Error(1)
 }
+func (m *MockedShop) CheckAndUpdateOutOfProdMenu(AllMenus []models.MenuItem, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) (bool, error) {
+	args := m.Called()
+	return args.Get(0).(bool), args.Error(1)
+}
 
 func (m *MockedShop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []controllers.ResponseSoldItemInfo, err error) {
 	args := m.Called()
@@ -90,6 +94,10 @@ func (m *MockedShop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []controllers.
 		soldItems = shopInterface.([]controllers.ResponseSoldItemInfo)
 	}
 	return soldItems, args.Error(1)
+}
+func (m *MockedShop) CreateOutOfProdMenu(Shop *models.Shop, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) error {
+	args := m.Called()
+	return args.Error(0)
 }
 
 func (m *MockedShop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[string]controllers.DailySoldStats, error) {
@@ -858,13 +866,10 @@ func TestUpdateDiscontinuedItemsGetItemsByShopIDfail(t *testing.T) {
 	assert.Contains(t, err.Error(), "Error While fetching Shop's details")
 }
 func TestUpdateDiscontinuedItemsSuccess(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop}
 
 	userID := uuid.New()
 	Task := &models.TaskSchedule{
@@ -902,29 +907,14 @@ func TestUpdateDiscontinuedItemsSuccess(t *testing.T) {
 
 	Scraper.On("ScrapSalesHistory").Return(SoldItems, Task)
 	TestShop.On("GetItemsByShopID").Return(ShopItems, nil)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"1"}))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shop_menus" ("created_at","updated_at","deleted_at","shop_id","total_items_amount") VALUES ($1,$2,$3,$4,$5) ON CONFLICT ("id") DO UPDATE SET "shop_id"="excluded"."shop_id" RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"1"}))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "menu_items" ("created_at","updated_at","deleted_at","shop_menu_id","category","section_id","link","amount","id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9),($10,$11,$12,$13,$14,$15,$16,$17,DEFAULT) ON CONFLICT ("id") DO UPDATE SET "shop_menu_id"="excluded"."shop_menu_id" RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"1"}))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "items" ("created_at","updated_at","deleted_at","name","original_price","currency_symbol","sale_price","discout_percent","available","item_link","menu_item_id","listing_id","data_shop_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) ON CONFLICT ("id") DO UPDATE SET "menu_item_id"="excluded"."menu_item_id" RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"1"}))
-
-	sqlMock.ExpectCommit()
+	TestShop.On("CheckAndUpdateOutOfProdMenu").Return(true, nil)
+	TestShop.On("CreateOutOfProdMenu").Return(nil)
 
 	_, err := implShop.UpdateDiscontinuedItems(&ExampleShop, Task, ShopRequest)
 
 	assert.NoError(t, err)
 	Scraper.AssertNumberOfCalls(t, "ScrapSalesHistory", 1)
 	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
-
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestFollowShopInvalidJson(t *testing.T) {
