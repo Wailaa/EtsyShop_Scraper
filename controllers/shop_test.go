@@ -1972,11 +1972,8 @@ func TestCheckAndUpdateOutOfProdMenuNoExist(t *testing.T) {
 
 func TestCreateNewOutOfProdMenu(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Shop: ShopRepo}
 
 	SoldOutItems := []models.Item{{Name: "Example", ListingID: 12, DataShopID: "1122"}}
 
@@ -1991,35 +1988,17 @@ func TestCreateNewOutOfProdMenu(t *testing.T) {
 		Status:   "Pending",
 	}
 
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops"`)).
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shop_menus"`)).
-		WillReturnRows(sqlmock.NewRows([]string{"shop_id"}).AddRow(1))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "menu_items"`)).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "Category"}).AddRow(1, "Out Of Production"))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "items"`)).
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-	sqlMock.ExpectCommit()
+	ShopRepo.On("SaveShop").Return(nil)
 
 	err := implShop.CreateOutOfProdMenu(ShopExample, SoldOutItems, ShopRequest)
 
 	assert.NoError(t, err)
-
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestCreateNewOutOfProdMenuFail(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Shop: ShopRepo}
 
 	SoldOutItems := []models.Item{{Name: "Example", ListingID: 12, DataShopID: "1122"}}
 
@@ -2034,18 +2013,14 @@ func TestCreateNewOutOfProdMenuFail(t *testing.T) {
 		Status:   "Pending",
 	}
 
-	TestShop.On("CreateShopRequest").Return(nil)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops"`)).
-		WillReturnError(errors.New("error while creating menu"))
+	ShopRepo.On("SaveShop").Return(errors.New("error while creating menu"))
 
 	err := implShop.CreateOutOfProdMenu(ShopExample, SoldOutItems, ShopRequest)
 
 	assert.Error(t, err)
 
 	assert.Contains(t, err.Error(), "error while creating menu")
-	assert.Nil(t, sqlMock.ExpectationsWereMet())
+
 }
 
 func TestPopulateItemIDsFromListings(t *testing.T) {

@@ -26,7 +26,7 @@ func (s *Shop) SaveShopToDB(scrappedShop *models.Shop, ShopRequest *models.ShopR
 
 func (s *Shop) UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopRequest) error {
 
-	if err := s.DB.Save(Shop).Error; err != nil {
+	if err := s.Shop.SaveShop(Shop); err != nil {
 		ShopRequest.Status = "failed"
 		s.Operations.CreateShopRequest(ShopRequest)
 		message := fmt.Sprintf("failed to save Shop's menu into database for ShopRequest.ID: %v", ShopRequest.ID)
@@ -83,7 +83,7 @@ func (s *Shop) CreateOutOfProdMenu(Shop *models.Shop, SoldOutItems []models.Item
 	}
 
 	Shop.ShopMenu.Menu = append(Shop.ShopMenu.Menu, Menu)
-	if err := s.DB.Save(Shop).Error; err != nil {
+	if err := s.Shop.SaveShop(Shop); err != nil {
 		return utils.HandleError(err)
 	}
 
