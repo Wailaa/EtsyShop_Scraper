@@ -77,9 +77,10 @@ func (s *Shop) CreateOutOfProdMenu(Shop *models.Shop, SoldOutItems []models.Item
 	return nil
 }
 
-func (s *Shop) GetShopByID(ID uint) (shop *models.Shop, err error) {
+func (s *Shop) GetShopByID(ID uint) (*models.Shop, error) {
 
-	if err := s.DB.Preload("Member").Preload("ShopMenu.Menu").Preload("Reviews.ReviewsTopic").Where("id = ?", ID).First(&shop).Error; err != nil {
+	shop, err := s.Shop.FetchShopByID(ID)
+	if err != nil {
 		return nil, utils.HandleError(err, "no Shop was Found ")
 
 	}

@@ -38,6 +38,17 @@ func (m *MockedShop) GetShopByName(ShopName string) (*models.Shop, error) {
 	return shop, args.Error(1)
 }
 
+func (m *MockedShop) GetShopByID(ID uint) (*models.Shop, error) {
+
+	args := m.Called()
+	shopInterface := args.Get(0)
+	var shop *models.Shop
+	if shopInterface != nil {
+		shop = shopInterface.(*models.Shop)
+	}
+	return shop, args.Error(1)
+}
+
 func (m *MockedShop) CreateNewShop(ShopRequest *models.ShopRequest) error {
 	args := m.Called()
 	return args.Error(0)
@@ -1274,117 +1285,58 @@ func TestUnFollowShopSuccess(t *testing.T) {
 }
 
 func TestGetShopByIDAveragePriceFail(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
+
+	ShopRepo.On("FetchShopByID").Return(&ShopExample, nil)
 	TestShop.On("GetAverageItemPrice").Return(float64(0), errors.New("error getting Item average price"))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
-		WithArgs(ShopExample.ID, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(ShopExample.ID, ShopExample.Name))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_members" WHERE "shop_members"."shop_id" = $1 AND "shop_members"."deleted_at" IS NULL`)).
-		WithArgs(ShopExample.ID).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopID", "name"}).AddRow(10, ShopExample.ID, "Owner"))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "reviews" WHERE "reviews"."shop_id" = $1 AND "reviews"."deleted_at" IS NULL`)).
-		WithArgs(ShopExample.ID).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopID", "ShopRating"}).AddRow(5, ShopExample.ID, 4.4))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "reviews_topics" WHERE "reviews_topics"."reviews_id"`)).
-		WithArgs(5).WillReturnRows(sqlmock.NewRows([]string{"id", "ReviewsID", "Keyword"}).AddRow(5, 5, "Test1").AddRow(7, 5, "Test2"))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_menus" WHERE "shop_menus"."shop_id" = $1 AND "shop_menus"."deleted_at" IS NULL`)).
-		WithArgs(ShopExample.ID).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopID", "TotalItemsAmount"}).AddRow(9, ShopExample.ID, 5).AddRow(11, ShopExample.ID, 10))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "menu_items" WHERE "menu_items"."shop_menu_id" IN ($1,$2) AND "menu_items"."deleted_at" IS NULL`)).
-		WithArgs().WillReturnRows(sqlmock.NewRows([]string{"id", "ShopMenuID", "SectionID"}).AddRow(8, 9, "SelectionID"))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "items" WHERE "items"."menu_item_id" = $1 AND "items"."deleted_at" IS NULL`)).
-		WithArgs(8).WillReturnRows(sqlmock.NewRows([]string{"id", "Name", "Available", "MenuItemID"}).AddRow(8, "ItemName", true, 8))
 
 	_, err := implShop.GetShopByID(ShopExample.ID)
 
 	assert.Contains(t, err.Error(), "error getting Item average price")
-	assert.Error(t, sqlMock.ExpectationsWereMet())
+
 }
 
 func TestGetShopByIDRevenueFail(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{Name: "ExampleShop", HasSoldHistory: true}
 	ShopExample.ID = uint(2)
+
+	ShopRepo.On("FetchShopByID").Return(&ShopExample, nil)
 	TestShop.On("GetAverageItemPrice").Return(float64(15.5), nil)
-	TestShop.On("GetTotalRevenue").Return(float64(0), errors.New("Error while getting Total revenue"))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
-		WithArgs(ShopExample.ID, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "name", "has_sold_history"}).AddRow(ShopExample.ID, ShopExample.Name, true))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_members" WHERE "shop_members"."shop_id" = $1 AND "shop_members"."deleted_at" IS NULL`)).
-		WithArgs(ShopExample.ID).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopID", "name"}).AddRow(10, ShopExample.ID, "Owner"))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "reviews" WHERE "reviews"."shop_id" = $1 AND "reviews"."deleted_at" IS NULL`)).
-		WithArgs(ShopExample.ID).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopID", "ShopRating"}).AddRow(5, ShopExample.ID, 4.4))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "reviews_topics" WHERE "reviews_topics"."reviews_id"`)).
-		WithArgs(5).WillReturnRows(sqlmock.NewRows([]string{"id", "ReviewsID", "Keyword"}).AddRow(5, 5, "Test1").AddRow(7, 5, "Test2"))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_menus" WHERE "shop_menus"."shop_id" = $1 AND "shop_menus"."deleted_at" IS NULL`)).
-		WithArgs(ShopExample.ID).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopID", "TotalItemsAmount"}).AddRow(9, ShopExample.ID, 5).AddRow(11, ShopExample.ID, 10))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "menu_items" WHERE "menu_items"."shop_menu_id" IN ($1,$2) AND "menu_items"."deleted_at" IS NULL`)).
-		WithArgs().WillReturnRows(sqlmock.NewRows([]string{"id", "ShopMenuID", "SectionID"}).AddRow(8, 9, "SelectionID"))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "items" WHERE "items"."menu_item_id" = $1 AND "items"."deleted_at" IS NULL`)).
-		WithArgs(8).WillReturnRows(sqlmock.NewRows([]string{"id", "Name", "Available", "MenuItemID"}).AddRow(8, "ItemName", true, 8))
+	TestShop.On("GetTotalRevenue").Return(float64(0), errors.New("error while getting Total revenue"))
 
 	_, err := implShop.GetShopByID(ShopExample.ID)
 
-	assert.Contains(t, err.Error(), "Error while getting Total revenue")
-	assert.Error(t, sqlMock.ExpectationsWereMet())
+	assert.Contains(t, err.Error(), "error while getting Total revenue")
+
 }
 func TestGetShopByIDSuccess(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
 	TestShop.On("GetAverageItemPrice").Return(float64(15.5), nil)
 	TestShop.On("GetTotalRevenue").Return(float64(120), nil)
+	ShopRepo.On("FetchShopByID").Return(&ShopExample, nil)
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
-		WithArgs(ShopExample.ID, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "name"}).AddRow(ShopExample.ID, ShopExample.Name))
+	result, err := implShop.GetShopByID(ShopExample.ID)
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_members" WHERE "shop_members"."shop_id" = $1 AND "shop_members"."deleted_at" IS NULL`)).
-		WithArgs(ShopExample.ID).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopID", "name"}).AddRow(10, ShopExample.ID, "Owner"))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "reviews" WHERE "reviews"."shop_id" = $1 AND "reviews"."deleted_at" IS NULL`)).
-		WithArgs(ShopExample.ID).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopID", "ShopRating"}).AddRow(5, ShopExample.ID, 4.4))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "reviews_topics" WHERE "reviews_topics"."reviews_id"`)).
-		WithArgs(5).WillReturnRows(sqlmock.NewRows([]string{"id", "ReviewsID", "Keyword"}).AddRow(5, 5, "Test1").AddRow(7, 5, "Test2"))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_menus" WHERE "shop_menus"."shop_id" = $1 AND "shop_menus"."deleted_at" IS NULL`)).
-		WithArgs(ShopExample.ID).WillReturnRows(sqlmock.NewRows([]string{"id", "ShopID", "TotalItemsAmount"}).AddRow(9, ShopExample.ID, 5).AddRow(11, ShopExample.ID, 10))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "menu_items" WHERE "menu_items"."shop_menu_id" IN ($1,$2) AND "menu_items"."deleted_at" IS NULL`)).
-		WithArgs().WillReturnRows(sqlmock.NewRows([]string{"id", "ShopMenuID", "SectionID"}).AddRow(8, 9, "SelectionID"))
-
-	implShop.GetShopByID(ShopExample.ID)
-
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+	assert.NoError(t, err)
+	assert.Equal(t, result.ID, ShopExample.ID)
+	assert.Equal(t, result.Name, ShopExample.Name)
 }
 
 func TestGetItemsCountByShopIDFail(t *testing.T) {
