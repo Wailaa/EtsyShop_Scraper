@@ -92,7 +92,7 @@ func (s *Shop) GetShopByID(ID uint) (*models.Shop, error) {
 
 	if !shop.HasSoldHistory {
 		shop.Revenue = shop.AverageItemsPrice * float64(shop.TotalSales)
-		return
+		return shop, nil
 	}
 
 	shop.Revenue, err = s.Operations.GetTotalRevenue(shop.ID, shop.AverageItemsPrice)
@@ -100,14 +100,14 @@ func (s *Shop) GetShopByID(ID uint) (*models.Shop, error) {
 		return nil, utils.HandleError(err, "error while calculating shop's revenue")
 	}
 
-	return
+	return shop, nil
 }
 
 func (s *Shop) GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (map[string]DailySoldStats, error) {
 
-	dailyShopSales := []models.DailyShopSales{}
+	dailyShopSales, err := s.Shop.FetchStatsByPeriod(ShopID, timePeriod)
 
-	if err := s.DB.Where("shop_id = ? AND created_at > ?", ShopID, timePeriod).Find(&dailyShopSales).Error; err != nil {
+	if err != nil {
 		return nil, utils.HandleError(err)
 	}
 

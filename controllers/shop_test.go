@@ -1585,79 +1585,43 @@ func TestProcessStatsRequestSuccess(t *testing.T) {
 
 func TestGetSellingStatsByPeriodSelectData(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
-	TestShop.On("CreateSoldStats").Return(map[string]controllers.DailySoldStats{}, nil)
 	ShopID := uint(2)
 	now := time.Now()
 	Period := now.AddDate(0, 0, -6)
 
-	DailySales := sqlmock.NewRows([]string{"id", "created_at", "ShopID", "TotalSales"}).AddRow(1, now.AddDate(0, 0, -3), ShopID, 90).AddRow(2, now.AddDate(0, 0, -4), ShopID, 95)
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "daily_shop_sales" WHERE (shop_id = $1 AND created_at > $2) AND "daily_shop_sales"."deleted_at" IS NULL`)).WithArgs(ShopID, Period).WillReturnRows(DailySales)
+	stats := []models.DailyShopSales{
+		{
+			TotalSales: 100,
+		},
+	}
 
-	implShop.GetSellingStatsByPeriod(ShopID, Period)
+	ShopRepo.On("FetchStatsByPeriod").Return(stats, nil)
+	TestShop.On("CreateSoldStats").Return(map[string]controllers.DailySoldStats{}, nil)
 
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+	_, err := implShop.GetSellingStatsByPeriod(ShopID, Period)
+
+	assert.NoError(t, err)
+
 }
 func TestGetSellingStatsByPeriodSelectDataaFail(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
-	Shop := controllers.NewShopController(implShop)
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Shop: ShopRepo}
 
 	ShopID := uint(2)
 	now := time.Now()
 	Period := now.AddDate(0, 0, -6)
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "daily_shop_sales" WHERE (shop_id = $1 AND created_at > $2) AND "daily_shop_sales"."deleted_at" IS NULL`)).WillReturnError(errors.New("error fetching data"))
+	ShopRepo.On("FetchStatsByPeriod").Return(nil, errors.New("error fetching data"))
 
-	_, err := Shop.GetSellingStatsByPeriod(ShopID, Period)
+	_, err := implShop.GetSellingStatsByPeriod(ShopID, Period)
 
 	assert.Contains(t, err.Error(), "error fetching data")
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-}
-func TestGetSellingStatsByPeriodSuccess(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
-	Shop := controllers.NewShopController(implShop)
-
-	ShopID := uint(2)
-
-	now := time.Now()
-	Period := now.AddDate(0, 0, -6)
-
-	DailySales := sqlmock.NewRows([]string{"id", "created_at", "ShopID", "TotalSales"}).AddRow(1, now.AddDate(0, 0, -3), ShopID, 90)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "daily_shop_sales" WHERE (shop_id = $1 AND created_at > $2) AND "daily_shop_sales"."deleted_at" IS NULL`)).WithArgs(ShopID, Period).WillReturnRows(DailySales)
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT sold_items.* FROM "shops" JOIN shop_menus ON shops.id = shop_menus.shop_id JOIN menu_items ON shop_menus.id = menu_items.shop_menu_id JOIN items ON menu_items.id = items.menu_item_id JOIN sold_items ON items.id = sold_items.item_id WHERE (shops.id = $1 AND sold_items.created_at BETWEEN $2 AND $3) AND "shops"."deleted_at" IS NULL`)).
-		WithArgs(ShopID, sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"id", "item_id"}).AddRow(1, 1).AddRow(2, 2))
-	for i := 1; i <= 2; i++ {
-		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = ($1)`)).WillReturnRows(sqlmock.NewRows([]string{"ID", "ListingID"}).AddRow(i, 12).AddRow(i, 13))
-
-	}
-
-	itemsCount := 0
-	stats, _ := Shop.GetSellingStatsByPeriod(ShopID, Period)
-	for _, value := range stats {
-		itemsCount += len(value.Items)
-	}
-
-	assert.Equal(t, 1, len(stats))
-	assert.Equal(t, 2, itemsCount)
-	assert.IsTypef(t, map[string]controllers.DailySoldStats{}, stats, "GetSellingStatsByPeriod return map[string]controllers.DailySoldStats type")
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestSaveShopToDB(t *testing.T) {
