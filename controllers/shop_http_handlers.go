@@ -98,7 +98,7 @@ func (s *Shop) UnFollowShop(ctx *gin.Context) {
 		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	if err := s.UpdateAccountShopRelation(requestedShop, currentUserUUID); err != nil {
+	if err := s.Shop.UpdateAccountShopRelation(requestedShop, currentUserUUID); err != nil {
 		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}

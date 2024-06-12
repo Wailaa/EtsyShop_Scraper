@@ -1204,22 +1204,18 @@ func TestUnFollowShopGetShopByNameFail(t *testing.T) {
 	assert.Equal(t, w.Code, http.StatusBadRequest)
 }
 func TestUnFollowShopGetAccountFail(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop, Shop: ShopRepo}
 
 	ShopExample := models.Shop{}
 	TestShop.On("GetShopByName").Return(&ShopExample, nil)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WithArgs(currentUserUUID.String(), 1).WillReturnError(errors.New("Error while getting account"))
+	ShopRepo.On("UpdateAccountShopRelation").Return(errors.New("Error while getting account"))
 
 	router.POST("/unfollow_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -1234,39 +1230,23 @@ func TestUnFollowShopGetAccountFail(t *testing.T) {
 	TestShop.AssertNumberOfCalls(t, "GetShopByName", 1)
 	assert.Contains(t, w.Body.String(), "Error while getting account")
 	assert.Equal(t, w.Code, http.StatusBadRequest)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 
 func TestUnFollowShopSuccess(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
-	time := time.Now()
 	currentUserUUID := uuid.New()
 	Scraper := &scrap.Scraper{}
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop, Shop: ShopRepo}
 
 	ShopExample := models.Shop{}
 	ShopExample.ID = 2
 	TestShop.On("GetShopByName").Return(&ShopExample, nil)
-
-	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(currentUserUUID.String(), time, time, time, "Testing", "User", "", "", "free", false, "", false, "", time, time)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WithArgs(currentUserUUID.String(), 1).WillReturnRows(Account)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1`)).
-		WithArgs(currentUserUUID.String()).WillReturnRows(sqlmock.NewRows([]string{"1"}))
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1 AND "account_shop_following"."shop_id" = $2`)).
-		WithArgs(currentUserUUID.String(), 2).WillReturnResult(sqlmock.NewResult(1, 2))
-	sqlMock.ExpectCommit()
+	ShopRepo.On("UpdateAccountShopRelation").Return(nil)
 
 	router.POST("/unfollow_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -1279,9 +1259,10 @@ func TestUnFollowShopSuccess(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	TestShop.AssertNumberOfCalls(t, "GetShopByName", 1)
+	ShopRepo.AssertNumberOfCalls(t, "UpdateAccountShopRelation", 1)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 
 func TestGetShopByIDAveragePriceFail(t *testing.T) {
@@ -1906,69 +1887,6 @@ func TestPopulateItemIDsFromListings(t *testing.T) {
 
 	assert.Equal(t, expectedID, actualInjectedID)
 	assert.Equal(t, expectedRevenue, dailRevenue)
-}
-
-func TestUpdateAccountShopRelation(t *testing.T) {
-
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
-
-	ShopExample := &models.Shop{
-		Name:           "exampleShop",
-		TotalSales:     10,
-		HasSoldHistory: true,
-	}
-	userID := uuid.New()
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(userID.String()))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1`)).
-		WithArgs(userID.String()).WillReturnRows(sqlmock.NewRows([]string{"shop_id", "account_id"}).AddRow(1, userID.String()))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE "shops"."id" = $1 AND "shops"."deleted_at" IS NULL`)).
-		WithArgs(1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1 AND "account_shop_following"."shop_id" IN (NULL)`)).
-		WithArgs(userID.String()).WillReturnResult(sqlmock.NewResult(1, 1))
-	sqlMock.ExpectCommit()
-
-	err := implShop.UpdateAccountShopRelation(ShopExample, userID)
-
-	assert.NoError(t, err)
-
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-
-}
-
-func TestUpdateAccountShopRelationFail(t *testing.T) {
-
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
-
-	ShopExample := &models.Shop{
-		Name:           "exampleShop",
-		TotalSales:     10,
-		HasSoldHistory: true,
-	}
-	userID := uuid.New()
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WillReturnError(errors.New("error while handling database operation"))
-
-	err := implShop.UpdateAccountShopRelation(ShopExample, userID)
-
-	assert.Error(t, err)
-
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-
 }
 
 func TestEstablishAccountShopRelation(t *testing.T) {

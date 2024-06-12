@@ -128,19 +128,6 @@ func (s *Shop) GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, 
 	return revenue, nil
 }
 
-func (s *Shop) UpdateAccountShopRelation(requestedShop *models.Shop, UserID uuid.UUID) error {
-	account := &models.Account{}
-
-	if err := s.DB.Preload("ShopsFollowing").Where("id = ?", UserID).First(&account).Error; err != nil {
-		return utils.HandleError(err)
-	}
-
-	if err := s.DB.Model(&account).Association("ShopsFollowing").Delete(requestedShop); err != nil {
-		return utils.HandleError(err)
-	}
-	return nil
-}
-
 func (s *Shop) EstablishAccountShopRelation(requestedShop *models.Shop, userID uuid.UUID) error {
 
 	currentAccount, err := s.User.GetAccountByID(userID)
