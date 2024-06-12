@@ -152,6 +152,109 @@ func (m *MockScrapper) ScrapSalesHistory(ShopName string, Task *models.TaskSched
 	return args.Get(0).([]models.SoldItems), args.Get(1).(*models.TaskSchedule)
 }
 
+type MockedShopRepository struct {
+	mock.Mock
+}
+
+func (sr *MockedShopRepository) CreateShop(scrappedShop *models.Shop) error {
+	args := sr.Called()
+	return args.Error(0)
+}
+func (sr *MockedShopRepository) SaveShop(Shop *models.Shop) error {
+	args := sr.Called()
+	return args.Error(0)
+
+}
+func (sr *MockedShopRepository) SaveSoldItemsToDB(ScrappedSoldItems []models.SoldItems) error {
+	args := sr.Called()
+	return args.Error(0)
+
+}
+func (sr *MockedShopRepository) UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uint, dailyRevenue float64) error {
+	args := sr.Called()
+	return args.Error(0)
+}
+func (sr *MockedShopRepository) SaveMenu(Menus models.MenuItem) error {
+	args := sr.Called()
+	return args.Error(0)
+}
+func (sr *MockedShopRepository) FetchShopByID(ID uint) (*models.Shop, error) {
+	args := sr.Called()
+	shopInterface := args.Get(0)
+	var shop *models.Shop
+	if shopInterface != nil {
+		shop = shopInterface.(*models.Shop)
+	}
+	return shop, args.Error(1)
+}
+func (sr *MockedShopRepository) FetchStatsByPeriod(ShopID uint, timePeriod time.Time) ([]models.DailyShopSales, error) {
+	args := sr.Called()
+	shopInterface := args.Get(0)
+	var Sales []models.DailyShopSales
+	if shopInterface != nil {
+		Sales = shopInterface.([]models.DailyShopSales)
+	}
+	return Sales, args.Error(1)
+}
+func (sr *MockedShopRepository) FetchSoldItemsByListingID(listingIDs []uint) ([]models.SoldItems, error) {
+	args := sr.Called()
+	shopInterface := args.Get(0)
+	var SoldItems []models.SoldItems
+	if shopInterface != nil {
+		SoldItems = shopInterface.([]models.SoldItems)
+	}
+	return SoldItems, args.Error(1)
+}
+func (sr *MockedShopRepository) FetchItemsBySoldItems(soldItemID uint) (models.Item, error) {
+	args := sr.Called()
+	shopInterface := args.Get(0)
+	var Item models.Item
+	if shopInterface != nil {
+		Item = shopInterface.(models.Item)
+	}
+	return Item, args.Error(1)
+}
+func (sr *MockedShopRepository) GetSoldItemsInRange(fromDate time.Time, ShopID uint) ([]models.SoldItems, error) {
+	args := sr.Called()
+	shopInterface := args.Get(0)
+	var SoldItems []models.SoldItems
+	if shopInterface != nil {
+		SoldItems = shopInterface.([]models.SoldItems)
+	}
+	return SoldItems, args.Error(1)
+}
+func (sr *MockedShopRepository) UpdateAccountShopRelation(requestedShop *models.Shop, UserID uuid.UUID) error {
+	args := sr.Called()
+	return args.Error(0)
+}
+func (sr *MockedShopRepository) GetAverageItemPrice(ShopID uint) (float64, error) {
+	args := sr.Called()
+	return args.Get(0).(float64), args.Error(1)
+}
+
+func (sr *MockedShopRepository) SaveShopRequestToDB(ShopRequest *models.ShopRequest) error {
+	args := sr.Called()
+	return args.Error(0)
+}
+func (sr *MockedShopRepository) GetShopWithItemsByShopID(ID uint) (*models.Shop, error) {
+	args := sr.Called()
+	shopInterface := args.Get(0)
+	var shop *models.Shop
+	if shopInterface != nil {
+		shop = shopInterface.(*models.Shop)
+	}
+	return shop, args.Error(1)
+}
+func (sr *MockedShopRepository) GetShopByName(ShopName string) (shop *models.Shop, err error) {
+	args := sr.Called()
+	shopInterface := args.Get(0)
+
+	if shopInterface != nil {
+		shop = shopInterface.(*models.Shop)
+	}
+	return shop, args.Error(1)
+}
+
 func TestCreateNewShopRequestPanic(t *testing.T) {
 
 	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
@@ -1640,11 +1743,8 @@ func TestGetSellingStatsByPeriodSuccess(t *testing.T) {
 
 func TestSaveShopToDB(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Shop: ShopRepo}
 	Shop := controllers.NewShopController(implShop)
 
 	userID := uuid.New()
@@ -1659,16 +1759,11 @@ func TestSaveShopToDB(t *testing.T) {
 		HasSoldHistory: true,
 	}
 
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), ShopExample.Name, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-	sqlMock.ExpectCommit()
-
+	ShopRepo.On("CreateShop").Return(nil)
 	err := Shop.SaveShopToDB(ShopExample, ShopRequest)
 
 	assert.NoError(t, err)
 
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestSaveShopToDBFailed(t *testing.T) {
@@ -1678,7 +1773,8 @@ func TestSaveShopToDBFailed(t *testing.T) {
 	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop, Shop: ShopRepo}
 
 	userID := uuid.New()
 	ShopRequest := &models.ShopRequest{
@@ -1692,12 +1788,8 @@ func TestSaveShopToDBFailed(t *testing.T) {
 		HasSoldHistory: true,
 	}
 
+	ShopRepo.On("CreateShop").Return(errors.New("database Error"))
 	TestShop.On("CreateShopRequest").Return(nil)
-
-	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "shops" ("created_at","updated_at","deleted_at","name","description","location","total_sales","joined_since","last_update_time","admirers","has_sold_history","on_vacation","created_by_user_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), ShopExample.Name, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1)).WillReturnError(errors.New("database Error"))
-	sqlMock.ExpectRollback()
 
 	err := implShop.SaveShopToDB(ShopExample, ShopRequest)
 

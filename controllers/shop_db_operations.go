@@ -13,7 +13,7 @@ import (
 
 func (s *Shop) SaveShopToDB(scrappedShop *models.Shop, ShopRequest *models.ShopRequest) error {
 
-	if err := s.DB.Create(scrappedShop).Error; err != nil {
+	if err := s.Shop.CreateShop(scrappedShop); err != nil {
 		ShopRequest.Status = "failed"
 		s.Operations.CreateShopRequest(ShopRequest)
 		message := fmt.Sprintf("failed to save Shop's data while handling ShopRequest.ID: %v", ShopRequest.ID)

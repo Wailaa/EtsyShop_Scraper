@@ -17,6 +17,7 @@ type Shop struct {
 	Scraper    scrap.ScrapeUpdateProcess
 	Operations ShopOperations
 	User       repository.UserRepository
+	Shop       repository.ShopRepository
 }
 
 func NewShopController(implementSHOP Shop) *Shop {
@@ -25,6 +26,7 @@ func NewShopController(implementSHOP Shop) *Shop {
 		Scraper:    implementSHOP.Scraper,
 		Operations: &implementSHOP,
 		User:       implementSHOP.User,
+		Shop:       implementSHOP.Shop,
 	}
 }
 
