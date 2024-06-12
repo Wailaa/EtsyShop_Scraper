@@ -115,7 +115,7 @@ func (s *Shop) HandleGetShopByID(ctx *gin.Context) {
 		HandleResponse(ctx, err, http.StatusBadRequest, "failed to get Shop id", nil)
 		return
 	}
-	Shop, err := s.GetShopByID(ShopIDToUint)
+	Shop, err := s.Operations.GetShopByID(ShopIDToUint)
 	if err != nil {
 		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
