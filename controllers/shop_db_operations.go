@@ -206,12 +206,11 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 
 func (s *Shop) GetItemsBySoldItems(SoldItems []models.SoldItems) ([]models.Item, error) {
 
-	item := models.Item{}
-
 	items := []models.Item{}
 
 	for _, soldItem := range SoldItems {
-		if err := s.DB.Raw("SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = (?)", soldItem.ID).Scan(&item).Error; err != nil {
+		item, err := s.Shop.FetchItemsBySoldItems(soldItem.ID)
+		if err != nil {
 			return nil, utils.HandleError(err, "error parsing sold items")
 		}
 		items = append(items, item)

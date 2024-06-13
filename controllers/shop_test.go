@@ -1877,56 +1877,34 @@ func TestEstablishAccountShopRelation(t *testing.T) {
 }
 
 func TestGetItemsBySoldItemsSuccess(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
-	implShop := controllers.Shop{DB: MockedDataBase}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Shop: ShopRepo}
 
-	exampleSoldItemIds := []uint{2000, 2001, 2002, 2003, 2004}
 	SoldItems := make([]models.SoldItems, 5)
 
-	for index := range exampleSoldItemIds {
-		SoldItems[index].ID = exampleSoldItemIds[index]
-		SoldItems[index].ItemID = uint(index + 1)
-	}
-
-	for i, itemID := range exampleSoldItemIds {
-		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = ($1)`)).
-			WithArgs(itemID).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(i + 1))
-	}
+	ShopRepo.On("FetchItemsBySoldItems").Return(models.Item{}, nil)
 
 	items, err := implShop.GetItemsBySoldItems(SoldItems)
 
 	assert.NoError(t, err)
-	assert.Equal(t, len(exampleSoldItemIds), len(items))
+	assert.Equal(t, len(SoldItems), len(items))
 
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestGetItemsBySoldItemsFail(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
-	implShop := controllers.Shop{DB: MockedDataBase}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Shop: ShopRepo}
 
-	exampleSoldItemIds := []uint{2000, 2001, 2002, 2003, 2004}
 	SoldItems := make([]models.SoldItems, 5)
 
-	for index := range exampleSoldItemIds {
-		SoldItems[index].ID = exampleSoldItemIds[index]
-		SoldItems[index].ItemID = uint(index + 1)
-	}
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = ($1)`)).
-		WithArgs(exampleSoldItemIds[0]).WillReturnError(errors.New("error while processing database operations"))
-
+	ShopRepo.On("FetchItemsBySoldItems").Return(nil, errors.New("error while processing database operations"))
 	_, err := implShop.GetItemsBySoldItems(SoldItems)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "error while processing database operations")
 
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestHandleHandleGetShopByIDNoShop(t *testing.T) {
