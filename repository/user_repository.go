@@ -26,6 +26,7 @@ type UserRepository interface {
 	SaveAccount(Account *models.Account) error
 	CreateAccount(newAccount *models.Account) (*models.Account, error)
 	InsertTokenForAccount(column, token string, VerifyUser *models.Account) (*models.Account, error)
+	GetAccountWithShops(account *models.Account) (*models.Account, error)
 }
 
 func (d *DataBase) GetAccountByID(ID uuid.UUID) (account *models.Account, err error) {
@@ -126,4 +127,12 @@ func (s *DataBase) InsertTokenForAccount(column, token string, VerifyUser *model
 		return nil, utils.HandleError(err, "something went wrong while resetting password")
 	}
 	return VerifyUser, nil
+}
+
+func (s *DataBase) GetAccountWithShops(account *models.Account) (*models.Account, error) {
+
+	if err := s.DB.Preload("ShopsFollowing").First(account, account.ID).Error; err != nil {
+		return nil, utils.HandleError(err)
+	}
+	return account, nil
 }

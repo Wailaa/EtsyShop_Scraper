@@ -471,3 +471,51 @@ func TestInsertTokenForAccount(t *testing.T) {
 	User.InsertTokenForAccount("email_verification_token", "SomeToken", emptyAccount)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
+
+func TestGetAccountWithShops(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	User := repository.DataBase{DB: MockedDataBase}
+
+	Account := models.Account{FirstName: "Example"}
+	Account.ID = uuid.New()
+	AccountIdtoString := Account.ID.String()
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE "accounts"."id" = $1 AND "accounts"."deleted_at" IS NULL AND "accounts"."id" = $2 ORDER BY "accounts"."id" LIMIT $3`)).
+		WithArgs(AccountIdtoString, AccountIdtoString, 1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(AccountIdtoString))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1`)).
+		WithArgs(AccountIdtoString).WillReturnRows(sqlmock.NewRows([]string{"account_id", "shop_id"}).AddRow(AccountIdtoString, 1))
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE "shops"."id" = $1 AND "shops"."deleted_at" IS NULL`)).
+		WithArgs(1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+	result, err := User.GetAccountWithShops(&Account)
+
+	assert.NoError(t, err)
+	assert.Equal(t, Account.FirstName, result.FirstName)
+	assert.Equal(t, Account.ID, result.ID)
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+func TestGetAccountWithShopsFail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	User := repository.DataBase{DB: MockedDataBase}
+
+	Account := models.Account{FirstName: "Example"}
+	Account.ID = uuid.New()
+	AccountIdtoString := Account.ID.String()
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE "accounts"."id" = $1 AND "accounts"."deleted_at" IS NULL AND "accounts"."id" = $2 ORDER BY "accounts"."id" LIMIT $3`)).
+		WithArgs(AccountIdtoString, AccountIdtoString, 1).WillReturnError(errors.New(""))
+
+	_, err := User.GetAccountWithShops(&Account)
+
+	assert.Error(t, err)
+
+	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}

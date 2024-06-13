@@ -99,6 +99,17 @@ func (mr *MockedUserRepository) GetAccountByID(ID uuid.UUID) (account *models.Ac
 	return Account, args.Error(1)
 
 }
+func (mr *MockedUserRepository) GetAccountWithShops(account *models.Account) (*models.Account, error) {
+
+	args := mr.Called()
+	UserRepo := args.Get(0)
+	var Account *models.Account
+	if UserRepo != nil {
+		Account = UserRepo.(*models.Account)
+	}
+	return Account, args.Error(1)
+
+}
 
 func (mr *MockedUserRepository) GetAccountByEmail(email string) *models.Account {
 	args := mr.Called()
