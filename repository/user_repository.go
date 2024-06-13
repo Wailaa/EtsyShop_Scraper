@@ -26,7 +26,7 @@ type UserRepository interface {
 	SaveAccount(Account *models.Account) error
 	CreateAccount(newAccount *models.Account) (*models.Account, error)
 	InsertTokenForAccount(column, token string, VerifyUser *models.Account) (*models.Account, error)
-	GetAccountWithShops(account *models.Account) (*models.Account, error)
+	GetAccountWithShops(accountID uuid.UUID) (*models.Account, error)
 }
 
 func (d *DataBase) GetAccountByID(ID uuid.UUID) (account *models.Account, err error) {
@@ -56,12 +56,13 @@ func (s *DataBase) UpdateLastTimeLoggedIn(Account *models.Account) error {
 
 func (s *DataBase) JoinShopFollowing(Account *models.Account) error {
 
-	if err := s.DB.Preload("ShopsFollowing").First(Account, Account.ID).Error; err != nil {
+	result, err := s.GetAccountWithShops(Account.ID)
+	if err != nil {
 		return utils.HandleError(err)
 	}
 
-	for i := range Account.ShopsFollowing {
-		if err := s.DB.Preload("ShopMenu").Preload("Reviews").Preload("Member").First(&Account.ShopsFollowing[i]).Error; err != nil {
+	for i := range result.ShopsFollowing {
+		if err := s.DB.Preload("ShopMenu").Preload("Reviews").Preload("Member").First(&result.ShopsFollowing[i]).Error; err != nil {
 			return utils.HandleError(err)
 		}
 	}
@@ -129,9 +130,9 @@ func (s *DataBase) InsertTokenForAccount(column, token string, VerifyUser *model
 	return VerifyUser, nil
 }
 
-func (s *DataBase) GetAccountWithShops(account *models.Account) (*models.Account, error) {
-
-	if err := s.DB.Preload("ShopsFollowing").First(account, account.ID).Error; err != nil {
+func (s *DataBase) GetAccountWithShops(accountID uuid.UUID) (*models.Account, error) {
+	account := &models.Account{}
+	if err := s.DB.Preload("ShopsFollowing").Where("id = ? ", accountID).First(account).Error; err != nil {
 		return nil, utils.HandleError(err)
 	}
 	return account, nil

@@ -123,8 +123,8 @@ func TestJoinShopFollowing(t *testing.T) {
 	Account.ID = uuid.New()
 	AccountIdtoString := Account.ID.String()
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE "accounts"."id" = $1 AND "accounts"."deleted_at" IS NULL AND "accounts"."id" = $2 ORDER BY "accounts"."id" LIMIT $3`)).
-		WithArgs(AccountIdtoString, AccountIdtoString, 1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(AccountIdtoString))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WithArgs(AccountIdtoString, 1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(AccountIdtoString))
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1`)).
 		WithArgs(AccountIdtoString).WillReturnRows(sqlmock.NewRows([]string{"account_id", "shop_id"}).AddRow(AccountIdtoString, 1))
@@ -158,7 +158,7 @@ func TestJoinShopFollowingFAIL(t *testing.T) {
 
 	Account := models.Account{}
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE "accounts"."id" = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
 		WithArgs(Account.ID, 1).WillReturnError(errors.New("No User Found"))
 
 	err := User.JoinShopFollowing(&Account)
@@ -483,8 +483,8 @@ func TestGetAccountWithShops(t *testing.T) {
 	Account.ID = uuid.New()
 	AccountIdtoString := Account.ID.String()
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE "accounts"."id" = $1 AND "accounts"."deleted_at" IS NULL AND "accounts"."id" = $2 ORDER BY "accounts"."id" LIMIT $3`)).
-		WithArgs(AccountIdtoString, AccountIdtoString, 1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(AccountIdtoString))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WithArgs(AccountIdtoString, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "first_name"}).AddRow(AccountIdtoString, Account.FirstName))
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1`)).
 		WithArgs(AccountIdtoString).WillReturnRows(sqlmock.NewRows([]string{"account_id", "shop_id"}).AddRow(AccountIdtoString, 1))
@@ -492,7 +492,7 @@ func TestGetAccountWithShops(t *testing.T) {
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE "shops"."id" = $1 AND "shops"."deleted_at" IS NULL`)).
 		WithArgs(1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
-	result, err := User.GetAccountWithShops(&Account)
+	result, err := User.GetAccountWithShops(Account.ID)
 
 	assert.NoError(t, err)
 	assert.Equal(t, Account.FirstName, result.FirstName)
@@ -510,10 +510,10 @@ func TestGetAccountWithShopsFail(t *testing.T) {
 	Account.ID = uuid.New()
 	AccountIdtoString := Account.ID.String()
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE "accounts"."id" = $1 AND "accounts"."deleted_at" IS NULL AND "accounts"."id" = $2 ORDER BY "accounts"."id" LIMIT $3`)).
-		WithArgs(AccountIdtoString, AccountIdtoString, 1).WillReturnError(errors.New(""))
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
+		WithArgs(AccountIdtoString, 1).WillReturnError(errors.New(""))
 
-	_, err := User.GetAccountWithShops(&Account)
+	_, err := User.GetAccountWithShops(Account.ID)
 
 	assert.Error(t, err)
 
