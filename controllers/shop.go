@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 
 	"EtsyScraper/models"
 	"EtsyScraper/repository"
@@ -13,7 +12,6 @@ import (
 )
 
 type Shop struct {
-	DB         *gorm.DB
 	Scraper    scrap.ScrapeUpdateProcess
 	Operations ShopOperations
 	User       repository.UserRepository
@@ -22,7 +20,7 @@ type Shop struct {
 
 func NewShopController(implementSHOP Shop) *Shop {
 	return &Shop{
-		DB:         implementSHOP.DB,
+
 		Scraper:    implementSHOP.Scraper,
 		Operations: &implementSHOP,
 		User:       implementSHOP.User,

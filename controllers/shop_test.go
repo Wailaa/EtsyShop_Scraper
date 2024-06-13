@@ -266,14 +266,10 @@ func (sr *MockedShopRepository) GetShopByName(ShopName string) (shop *models.Sho
 
 func TestCreateNewShopRequestPanic(t *testing.T) {
 
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	ctx, router, w := setupMockServer.SetGinTestMode()
 	Scraper := &MockScrapper{}
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop}
 
 	router.Use(implShop.CreateNewShopRequest)
 
@@ -292,15 +288,12 @@ func TestCreateNewShopRequestPanic(t *testing.T) {
 
 func TestCreateNewShopRequestInvalidJson(t *testing.T) {
 
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &MockScrapper{}
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop}
 
 	router.POST("/create_shop", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
@@ -374,17 +367,13 @@ func TestCreateNewShopRequestShopExists(t *testing.T) {
 }
 func TestCreateNewShopRequestSuccess(t *testing.T) {
 
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	TestShop := &MockedShop{}
 	Scraper := &MockScrapper{}
 	ShopRepo := &MockedShopRepository{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop, Shop: ShopRepo}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop, Shop: ShopRepo}
 
 	ShopRepo.On("GetShopByName").Return(nil, errors.New("no Shop was Found ,error: record not found"))
 	TestShop.On("CreateShopRequest").Return(nil)
@@ -408,12 +397,9 @@ func TestCreateNewShopRequestSuccess(t *testing.T) {
 }
 
 func TestCreateNewShopScrapperErr(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper}
+	implShop := controllers.Shop{Scraper: Scraper}
 	Shop := controllers.NewShopController(implShop)
 
 	userID := uuid.New()
@@ -430,13 +416,10 @@ func TestCreateNewShopScrapperErr(t *testing.T) {
 	assert.Error(t, err)
 }
 func TestCreateNewShopFailedSaveShopToDB(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop}
 
 	userID := uuid.New()
 	ShopRequest := &models.ShopRequest{
@@ -456,16 +439,13 @@ func TestCreateNewShopFailedSaveShopToDB(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Failed to save shop")
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 func TestCreateNewShopSaveMenuToDBFail(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop}
 
 	userID := uuid.New()
 	ShopRequest := &models.ShopRequest{
@@ -486,16 +466,13 @@ func TestCreateNewShopSaveMenuToDBFail(t *testing.T) {
 	err := implShop.CreateNewShop(ShopRequest)
 
 	assert.Error(t, err)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 func TestCreateNewShopSaveMenuToDBSuccess(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop}
 
 	userID := uuid.New()
 	ShopRequest := &models.ShopRequest{
@@ -517,16 +494,13 @@ func TestCreateNewShopSaveMenuToDBSuccess(t *testing.T) {
 
 	assert.NoError(t, err)
 	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 func TestCreateNewShopHasSoldHistory(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop}
 
 	userID := uuid.New()
 	ShopRequest := &models.ShopRequest{
@@ -550,17 +524,14 @@ func TestCreateNewShopHasSoldHistory(t *testing.T) {
 
 	assert.NoError(t, err)
 	TestShop.AssertNumberOfCalls(t, "UpdateSellingHistory", 1)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 
 func TestUpdateSellingHistoryDisContintuesSoldItemsFail(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop}
 
 	userID := uuid.New()
 	Task := &models.TaskSchedule{
@@ -592,13 +563,10 @@ func TestUpdateSellingHistoryDisContintuesSoldItemsFail(t *testing.T) {
 
 }
 func TestUpdateSellingHistoryDisContintuesSoldItemsEmpty(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop}
 
 	userID := uuid.New()
 	Task := &models.TaskSchedule{
@@ -629,13 +597,10 @@ func TestUpdateSellingHistoryDisContintuesSoldItemsEmpty(t *testing.T) {
 
 }
 func TestUpdateSellingHistoryGetItemsFail(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
 
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 
 	userID := uuid.New()
 	Task := &models.TaskSchedule{
@@ -782,12 +747,9 @@ func TestUpdateSellingHistoryTaskSoldItem(t *testing.T) {
 }
 
 func TestUpdateDiscontinuedItemsEmptySoldItems(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper}
+	implShop := controllers.Shop{Scraper: Scraper}
 	Shop := controllers.NewShopController(implShop)
 
 	userID := uuid.New()
@@ -819,13 +781,10 @@ func TestUpdateDiscontinuedItemsEmptySoldItems(t *testing.T) {
 
 }
 func TestUpdateDiscontinuedItemsGetItemsByShopIDfail(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper, Operations: TestShop}
+	implShop := controllers.Shop{Scraper: Scraper, Operations: TestShop}
 
 	userID := uuid.New()
 	Task := &models.TaskSchedule{
@@ -910,14 +869,11 @@ func TestUpdateDiscontinuedItemsSuccess(t *testing.T) {
 
 func TestFollowShopInvalidJson(t *testing.T) {
 
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper}
+	implShop := controllers.Shop{Scraper: Scraper}
 	Shop := controllers.NewShopController(implShop)
 
 	router.POST("/follow_shop", func(ctx *gin.Context) {
@@ -936,13 +892,10 @@ func TestFollowShopInvalidJson(t *testing.T) {
 }
 
 func TestFollowShopPanic(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	ctx, router, w := setupMockServer.SetGinTestMode()
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper}
+	implShop := controllers.Shop{Scraper: Scraper}
 	Shop := controllers.NewShopController(implShop)
 
 	router.Use(Shop.FollowShop)
@@ -1070,14 +1023,11 @@ func TestFollowShopSuccess(t *testing.T) {
 
 func TestUnFollowShopInvalidJson(t *testing.T) {
 
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	currentUserUUID := uuid.New()
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper}
+	implShop := controllers.Shop{Scraper: Scraper}
 	Shop := controllers.NewShopController(implShop)
 
 	router.POST("/unfollow_shop", func(ctx *gin.Context) {
@@ -1096,13 +1046,10 @@ func TestUnFollowShopInvalidJson(t *testing.T) {
 }
 
 func TestUnFollowShopPanic(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	ctx, router, w := setupMockServer.SetGinTestMode()
 	Scraper := &MockScrapper{}
-	implShop := controllers.Shop{DB: MockedDataBase, Scraper: Scraper}
+	implShop := controllers.Shop{Scraper: Scraper}
 	Shop := controllers.NewShopController(implShop)
 
 	router.Use(Shop.UnFollowShop)
@@ -1282,12 +1229,9 @@ func TestGetShopByIDSuccess(t *testing.T) {
 }
 
 func TestGetItemsCountByShopIDFail(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
@@ -1296,15 +1240,12 @@ func TestGetItemsCountByShopIDFail(t *testing.T) {
 	implShop.GetItemsCountByShopID(ShopExample.ID)
 
 	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 func TestGetItemsCountByShopIDSuccess(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
@@ -1313,15 +1254,12 @@ func TestGetItemsCountByShopIDSuccess(t *testing.T) {
 	implShop.GetItemsCountByShopID(ShopExample.ID)
 
 	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 func TestGetSoldItemsByShopIDFail(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
@@ -1330,7 +1268,7 @@ func TestGetSoldItemsByShopIDFail(t *testing.T) {
 	implShop.GetSoldItemsByShopID(ShopExample.ID)
 
 	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 func TestGetSoldItemsByShopIDSuccess(t *testing.T) {
 
@@ -1381,12 +1319,9 @@ func TestGetSoldItemsByShopIDNoSoldItemsInDB(t *testing.T) {
 }
 
 func TestGetTotalRevenueFail(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
@@ -1401,12 +1336,9 @@ func TestGetTotalRevenueFail(t *testing.T) {
 
 }
 func TestGetTotalRevenueSuccess(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
@@ -1425,13 +1357,9 @@ func TestGetTotalRevenueSuccess(t *testing.T) {
 
 func TestProcessStatsRequestInvalidPeriod(t *testing.T) {
 
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	_, router, w := setupMockServer.SetGinTestMode()
 
-	implShop := controllers.Shop{DB: MockedDataBase}
+	implShop := controllers.Shop{}
 	Shop := controllers.NewShopController(implShop)
 
 	ShopID := uint(2)
@@ -1454,14 +1382,10 @@ func TestProcessStatsRequestInvalidPeriod(t *testing.T) {
 }
 func TestProcessStatsRequestGetSellingStatsByPeriodFail(t *testing.T) {
 
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 
 	ShopID := uint(2)
 	Period := "lastSevenDays"
@@ -1485,14 +1409,10 @@ func TestProcessStatsRequestGetSellingStatsByPeriodFail(t *testing.T) {
 }
 func TestProcessStatsRequestSuccess(t *testing.T) {
 
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 
 	ShopID := uint(2)
 	Period := "lastSevenDays"
@@ -1590,13 +1510,9 @@ func TestSaveShopToDB(t *testing.T) {
 
 func TestSaveShopToDBFailed(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	TestShop := &MockedShop{}
 	ShopRepo := &MockedShopRepository{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop, Shop: ShopRepo}
+	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
 	userID := uuid.New()
 	ShopRequest := &models.ShopRequest{
@@ -1618,18 +1534,14 @@ func TestSaveShopToDBFailed(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "database Error")
 	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 
 func TestUpdateShopMenuToDB(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	TestShop := &MockedShop{}
 	ShopRepo := &MockedShopRepository{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop, Shop: ShopRepo}
+	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
 	userID := uuid.New()
 	ShopRequest := &models.ShopRequest{
@@ -1658,7 +1570,7 @@ func TestUpdateShopMenuToDB(t *testing.T) {
 	assert.NoError(t, err)
 
 	TestShop.AssertNumberOfCalls(t, "CreateShopRequest", 1)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 
 func TestUpdateShopMenuToDBFail(t *testing.T) {
@@ -1742,11 +1654,7 @@ func TestCheckAndUpdateOutOfProdMenu(t *testing.T) {
 
 func TestCheckAndUpdateOutOfProdMenuNoExist(t *testing.T) {
 
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
+	implShop := controllers.Shop{}
 
 	AllMenus := []models.MenuItem{{Category: "All"}, {Category: "UnCategorized"}}
 
@@ -1849,13 +1757,9 @@ func TestPopulateItemIDsFromListings(t *testing.T) {
 
 func TestEstablishAccountShopRelation(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	UserRepo := &MockedUserRepository{}
 
-	implShop := controllers.Shop{DB: MockedDataBase, User: UserRepo}
+	implShop := controllers.Shop{User: UserRepo}
 
 	ShopExample := &models.Shop{
 		Name:           "exampleShop",
@@ -1868,8 +1772,6 @@ func TestEstablishAccountShopRelation(t *testing.T) {
 	err := implShop.EstablishAccountShopRelation(ShopExample, userID)
 
 	assert.NoError(t, err)
-
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 
 }
 
@@ -1905,14 +1807,11 @@ func TestGetItemsBySoldItemsFail(t *testing.T) {
 }
 
 func TestHandleHandleGetShopByIDNoShop(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 
 	TestShop.On("GetShopByID").Return(nil, errors.New("failed to get shop"))
 	router.GET("/testroute/:shopID", implShop.HandleGetShopByID)
@@ -1928,13 +1827,10 @@ func TestHandleHandleGetShopByIDNoShop(t *testing.T) {
 }
 
 func TestHandleHandleGetShopByIDfail(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
-	implShop := controllers.Shop{DB: MockedDataBase}
+	implShop := controllers.Shop{}
 	router.GET("/testroute/:shopID", implShop.HandleGetShopByID)
 
 	req, err := http.NewRequest("GET", "/testroute", nil)
@@ -1948,9 +1844,6 @@ func TestHandleHandleGetShopByIDfail(t *testing.T) {
 }
 
 func TestHandleHandleGetShopByIDSuccess(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
@@ -1960,7 +1853,7 @@ func TestHandleHandleGetShopByIDSuccess(t *testing.T) {
 		HasSoldHistory: true,
 	}
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 	router.GET("/testroute/:shopID", implShop.HandleGetShopByID)
 
 	TestShop.On("GetShopByID").Return(ShopExample, nil)
@@ -1976,14 +1869,11 @@ func TestHandleHandleGetShopByIDSuccess(t *testing.T) {
 }
 
 func TestHandleGetItemsByShopIDNoShop(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 	router.GET("/testroute/:shopID", implShop.HandleGetItemsByShopID)
 
 	TestShop.On("GetItemsByShopID").Return(nil, errors.New("no shop found"))
@@ -1999,13 +1889,10 @@ func TestHandleGetItemsByShopIDNoShop(t *testing.T) {
 }
 
 func TestHandleGetItemsByShopIDFail(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
-	implShop := controllers.Shop{DB: MockedDataBase}
+	implShop := controllers.Shop{}
 
 	router.GET("/testroute/:shopID", implShop.HandleGetItemsByShopID)
 
@@ -2020,14 +1907,11 @@ func TestHandleGetItemsByShopIDFail(t *testing.T) {
 }
 
 func TestHandleGetItemsByShopIDSuccess(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 
 	TestShop.On("GetItemsByShopID").Return([]models.Item{}, nil)
 	router.GET("/testroute/:shopID", implShop.HandleGetItemsByShopID)
@@ -2043,14 +1927,11 @@ func TestHandleGetItemsByShopIDSuccess(t *testing.T) {
 }
 
 func TestHandleGetSoldItemsByShopIDNoShop(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase}
+	implShop := controllers.Shop{}
 	router.GET("/testroute/:shopID/all_sold_items", implShop.HandleGetSoldItemsByShopID)
 
 	TestShop.On("ExecuteGetItemsByShopID").Return(nil, errors.New("no shop found"))
@@ -2066,14 +1947,11 @@ func TestHandleGetSoldItemsByShopIDNoShop(t *testing.T) {
 }
 
 func TestHandleGetSoldItemsByShopIDFail(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 
 	TestShop.On("GetSoldItemsByShopID").Return(nil, errors.New("error getting data"))
 
@@ -2090,14 +1968,11 @@ func TestHandleGetSoldItemsByShopIDFail(t *testing.T) {
 }
 
 func TestHandleGetSoldItemsByShopIDSuccess(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 
 	TestShop.On("GetSoldItemsByShopID").Return([]controllers.ResponseSoldItemInfo{}, nil)
 
@@ -2114,13 +1989,10 @@ func TestHandleGetSoldItemsByShopIDSuccess(t *testing.T) {
 }
 
 func TestHandleGetItemsCountByShopIDNoShop(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
-	implShop := controllers.Shop{DB: MockedDataBase}
+	implShop := controllers.Shop{}
 	router.GET("/testroute/:shopID/items_count", implShop.HandleGetItemsCountByShopID)
 
 	req, err := http.NewRequest("GET", "/testroute/d/items_count", nil)
@@ -2134,14 +2006,11 @@ func TestHandleGetItemsCountByShopIDNoShop(t *testing.T) {
 }
 
 func TestHandleGetItemsCountByShopIDFail(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 	router.GET("/testroute/:shopID/items_count", implShop.HandleGetItemsCountByShopID)
 
 	TestShop.On("GetItemsByShopID").Return(nil, errors.New("no shop found"))
@@ -2157,14 +2026,11 @@ func TestHandleGetItemsCountByShopIDFail(t *testing.T) {
 }
 
 func TestHandleGetItemsCountByShopIDSuccess(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	implShop := controllers.Shop{Operations: TestShop}
 	router.GET("/testroute/:shopID/items_count", implShop.HandleGetItemsCountByShopID)
 
 	TestShop.On("GetItemsByShopID").Return([]models.Item{}, nil)
@@ -2292,10 +2158,7 @@ func TestCreateSoldStatsSuccesswithNoItems(t *testing.T) {
 
 func TestCreateShopRequestTypeShopFailNoAccount(t *testing.T) {
 
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-	implShop := controllers.Shop{DB: MockedDataBase}
+	implShop := controllers.Shop{}
 
 	ShopRequest := &models.ShopRequest{
 		ShopName: "exampleShop",
