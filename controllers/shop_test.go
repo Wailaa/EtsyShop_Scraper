@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
 	"testing"
 	"time"
 
@@ -14,13 +13,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 
 	"EtsyScraper/controllers"
 	"EtsyScraper/models"
 	scrap "EtsyScraper/scraping"
 	setupMockServer "EtsyScraper/setupTests"
-	"EtsyScraper/utils"
 )
 
 type MockedShop struct {
@@ -2201,48 +2198,9 @@ func TestCalculateTotalRevenue(t *testing.T) {
 	assert.Equal(t, expectedRevenue, revenue)
 }
 
-func TestGetSoldItemsInRangesuccess(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
-
-	ShopId := uint(2)
-	fromDate := utils.TruncateDate(time.Now())
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT sold_items.* FROM "shops" JOIN shop_menus ON shops.id = shop_menus.shop_id JOIN menu_items ON shop_menus.id = menu_items.shop_menu_id JOIN items ON menu_items.id = items.menu_item_id JOIN sold_items ON items.id = sold_items.item_id WHERE (shops.id = $1 AND sold_items.created_at BETWEEN $2 AND $3) AND "shops"."deleted_at" IS NULL`)).
-		WithArgs(ShopId, sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
-
-	_, err := implShop.GetSoldItemsInRange(fromDate, ShopId)
-	assert.NoError(t, err)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-}
-
-func TestGetSoldItemsInRangeFail(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
-
-	ShopId := uint(2)
-	fromDate := utils.TruncateDate(time.Now())
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT sold_items.* FROM "shops" JOIN shop_menus ON shops.id = shop_menus.shop_id JOIN menu_items ON shop_menus.id = menu_items.shop_menu_id JOIN items ON menu_items.id = items.menu_item_id JOIN sold_items ON items.id = sold_items.item_id WHERE (shops.id = $1 AND sold_items.created_at BETWEEN $2 AND $3) AND "shops"."deleted_at" IS NULL`)).
-		WithArgs(ShopId, sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnError(errors.New("internal error"))
-
-	_, err := implShop.GetSoldItemsInRange(fromDate, ShopId)
-	assert.Error(t, err)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
-}
-
 func TestCreateSoldStatsFail(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
-	implShop := controllers.Shop{DB: MockedDataBase}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Shop: ShopRepo}
 
 	dailyShopSales := []models.DailyShopSales{
 		{
@@ -2251,27 +2209,20 @@ func TestCreateSoldStatsFail(t *testing.T) {
 			DailyRevenue: 90.1,
 		},
 	}
-	for i := range dailyShopSales {
-		dailyShopSales[i].CreatedAt = time.Now().AddDate(0, 0, (-len(dailyShopSales) + i))
-	}
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT sold_items.* FROM "shops" JOIN shop_menus ON shops.id = shop_menus.shop_id JOIN menu_items ON shop_menus.id = menu_items.shop_menu_id JOIN items ON menu_items.id = items.menu_item_id JOIN sold_items ON items.id = sold_items.item_id WHERE (shops.id = $1 AND sold_items.created_at BETWEEN $2 AND $3) AND "shops"."deleted_at" IS NULL`)).
-		WithArgs(dailyShopSales[0].ShopID, sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnError(errors.New("internal error"))
+	ShopRepo.On("GetSoldItemsInRange").Return(nil, errors.New("internal error"))
 
 	_, err := implShop.CreateSoldStats(dailyShopSales)
 
 	assert.Error(t, err)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 
 func TestCreateSoldStatsSuccessWithItems(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
 	dailyShopSales := []models.DailyShopSales{
 		{
@@ -2288,11 +2239,8 @@ func TestCreateSoldStatsSuccessWithItems(t *testing.T) {
 	for i := range dailyShopSales {
 		dailyShopSales[i].CreatedAt = time.Now().AddDate(0, 0, (-len(dailyShopSales) + i))
 	}
-	for i, row := range dailyShopSales {
-		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT sold_items.* FROM "shops" JOIN shop_menus ON shops.id = shop_menus.shop_id JOIN menu_items ON shop_menus.id = menu_items.shop_menu_id JOIN items ON menu_items.id = items.menu_item_id JOIN sold_items ON items.id = sold_items.item_id WHERE (shops.id = $1 AND sold_items.created_at BETWEEN $2 AND $3) AND "shops"."deleted_at" IS NULL`)).
-			WithArgs(row.ShopID, sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(i + 1))
 
-	}
+	ShopRepo.On("GetSoldItemsInRange").Return([]models.SoldItems{{}, {}, {}}, nil)
 	TestShop.On("GetItemsBySoldItems").Return([]models.Item{{}}, nil)
 
 	stats, err := implShop.CreateSoldStats(dailyShopSales)
@@ -2303,15 +2251,14 @@ func TestCreateSoldStatsSuccessWithItems(t *testing.T) {
 
 	assert.Equal(t, len(dailyShopSales), len(stats))
 	assert.NoError(t, err)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 
 func TestCreateSoldStatsSuccesswithNoItems(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
-	implShop := controllers.Shop{DB: MockedDataBase}
+	TestShop := &MockedShop{}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
 	dailyShopSales := []models.DailyShopSales{
 		{
@@ -2328,11 +2275,10 @@ func TestCreateSoldStatsSuccesswithNoItems(t *testing.T) {
 	for i := range dailyShopSales {
 		dailyShopSales[i].CreatedAt = time.Now().AddDate(0, 0, (-len(dailyShopSales) + i))
 	}
-	for _, row := range dailyShopSales {
-		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT sold_items.* FROM "shops" JOIN shop_menus ON shops.id = shop_menus.shop_id JOIN menu_items ON shop_menus.id = menu_items.shop_menu_id JOIN items ON menu_items.id = items.menu_item_id JOIN sold_items ON items.id = sold_items.item_id WHERE (shops.id = $1 AND sold_items.created_at BETWEEN $2 AND $3) AND "shops"."deleted_at" IS NULL`)).
-			WithArgs(row.ShopID, sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"id"}))
 
-	}
+	ShopRepo.On("GetSoldItemsInRange").Return([]models.SoldItems{}, nil)
+	TestShop.On("GetItemsBySoldItems").Return([]models.Item{}, nil)
+
 	stats, err := implShop.CreateSoldStats(dailyShopSales)
 
 	for _, record := range stats {
@@ -2341,7 +2287,7 @@ func TestCreateSoldStatsSuccesswithNoItems(t *testing.T) {
 
 	assert.Equal(t, len(dailyShopSales), len(stats))
 	assert.NoError(t, err)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 
 func TestCreateShopRequestTypeShopFailNoAccount(t *testing.T) {

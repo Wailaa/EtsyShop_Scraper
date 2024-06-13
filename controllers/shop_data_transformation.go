@@ -3,7 +3,6 @@ package controllers
 import (
 	"EtsyScraper/models"
 	"EtsyScraper/utils"
-	"log"
 )
 
 func (s *Shop) CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[string]DailySoldStats, error) {
@@ -13,9 +12,8 @@ func (s *Shop) CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[stri
 
 		day := utils.TruncateDate(sales.CreatedAt)
 
-		soldItems, err := s.GetSoldItemsInRange(day, sales.ShopID)
+		soldItems, err := s.Shop.GetSoldItemsInRange(day, sales.ShopID)
 		if err != nil {
-			log.Println(err)
 			return nil, utils.HandleError(err)
 		}
 
