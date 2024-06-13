@@ -27,7 +27,7 @@ func (s *Shop) CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[stri
 			}
 			continue
 		}
-		items, err := s.GetItemsBySoldItems(soldItems)
+		items, err := s.Operations.GetItemsBySoldItems(soldItems)
 		if err != nil {
 			return nil, utils.HandleError(err)
 		}

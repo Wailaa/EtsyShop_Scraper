@@ -122,6 +122,15 @@ func (m *MockedShop) UpdateDiscontinuedItems(Shop *models.Shop, Task *models.Tas
 	}
 	return soldItems, args.Error(1)
 }
+func (m *MockedShop) GetItemsBySoldItems(SoldItems []models.SoldItems) ([]models.Item, error) {
+	args := m.Called()
+	shopInterface := args.Get(0)
+	var Items []models.Item
+	if shopInterface != nil {
+		Items = shopInterface.([]models.Item)
+	}
+	return Items, args.Error(1)
+}
 
 type MockScrapper struct {
 	mock.Mock
@@ -2282,7 +2291,9 @@ func TestCreateSoldStatsSuccessWithItems(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	implShop := controllers.Shop{DB: MockedDataBase}
+	TestShop := &MockedShop{}
+
+	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
 
 	dailyShopSales := []models.DailyShopSales{
 		{
@@ -2302,9 +2313,10 @@ func TestCreateSoldStatsSuccessWithItems(t *testing.T) {
 	for i, row := range dailyShopSales {
 		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT sold_items.* FROM "shops" JOIN shop_menus ON shops.id = shop_menus.shop_id JOIN menu_items ON shop_menus.id = menu_items.shop_menu_id JOIN items ON menu_items.id = items.menu_item_id JOIN sold_items ON items.id = sold_items.item_id WHERE (shops.id = $1 AND sold_items.created_at BETWEEN $2 AND $3) AND "shops"."deleted_at" IS NULL`)).
 			WithArgs(row.ShopID, sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(i + 1))
-		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT items.* FROM items JOIN sold_items ON items.id = sold_items.item_id WHERE sold_items.id = ($1)`)).
-			WithArgs(i + 1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(i + 1))
+
 	}
+	TestShop.On("GetItemsBySoldItems").Return([]models.Item{{}}, nil)
+
 	stats, err := implShop.CreateSoldStats(dailyShopSales)
 
 	for _, record := range stats {

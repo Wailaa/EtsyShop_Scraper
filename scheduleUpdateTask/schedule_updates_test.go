@@ -63,6 +63,15 @@ func (m *MockShopUpdater) GetItemsByShopID(ID uint) ([]models.Item, error) {
 	}
 	return Items, args.Error(1)
 }
+func (m *MockShopUpdater) GetItemsBySoldItems(SoldItems []models.SoldItems) ([]models.Item, error) {
+	args := m.Called()
+	shopInterface := args.Get(0)
+	var Items []models.Item
+	if shopInterface != nil {
+		Items = shopInterface.([]models.Item)
+	}
+	return Items, args.Error(1)
+}
 
 func (m *MockShopUpdater) CreateSoldStats(dailyShopSales []models.DailyShopSales) (map[string]controllers.DailySoldStats, error) {
 	args := m.Called()
