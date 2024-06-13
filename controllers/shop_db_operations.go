@@ -170,7 +170,6 @@ func (s *Shop) GetItemsByShopID(ID uint) (items []models.Item, err error) {
 
 func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemInfo, err error) {
 	listingIDs := []uint{}
-	Solditems := []models.SoldItems{}
 
 	AllItems, err := s.Operations.GetItemsByShopID(ID)
 	if err != nil {
@@ -181,7 +180,8 @@ func (s *Shop) GetSoldItemsByShopID(ID uint) (SoldItemInfos []ResponseSoldItemIn
 		listingIDs = append(listingIDs, item.ListingID)
 	}
 
-	if err := s.DB.Where("listing_id IN ?", listingIDs).Find(&Solditems).Error; err != nil {
+	Solditems, err := s.Shop.FetchSoldItemsByListingID(listingIDs)
+	if err != nil {
 		return nil, utils.HandleError(err, "items were not found ")
 	}
 

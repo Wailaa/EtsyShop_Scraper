@@ -1327,12 +1327,10 @@ func TestGetSoldItemsByShopIDFail(t *testing.T) {
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 func TestGetSoldItemsByShopIDSuccess(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
@@ -1342,39 +1340,38 @@ func TestGetSoldItemsByShopIDSuccess(t *testing.T) {
 		Allitems[i].ID = uint(i + 1)
 	}
 
-	Solditems := sqlmock.NewRows([]string{"id", "listingID", "ItemID"}).AddRow(1, 1, 1).AddRow(2, 1, 1).AddRow(3, 3, 3)
+	SoldItems := []models.SoldItems{{ListingID: 1, ItemID: 1}, {ListingID: 1, ItemID: 1}, {ListingID: 3, ItemID: 3}}
 
 	TestShop.On("GetItemsByShopID").Return(Allitems, nil)
+	ShopRepo.On("FetchSoldItemsByListingID").Return(SoldItems, nil)
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sold_items" WHERE listing_id IN ($1,$2,$3) AND "sold_items"."deleted_at" IS NULL`)).
-		WithArgs().WillReturnRows(Solditems)
-
-	implShop.GetSoldItemsByShopID(ShopExample.ID)
+	result, err := implShop.GetSoldItemsByShopID(ShopExample.ID)
 
 	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+	ShopRepo.AssertNumberOfCalls(t, "FetchSoldItemsByListingID", 1)
+
+	assert.NoError(t, err)
+	assert.Equal(t, len(SoldItems)-1, len(result))
+
 }
 func TestGetSoldItemsByShopIDNoSoldItemsInDB(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	TestShop := &MockedShop{}
-	implShop := controllers.Shop{DB: MockedDataBase, Operations: TestShop}
+	ShopRepo := &MockedShopRepository{}
+	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
 	ShopExample := models.Shop{Name: "ExampleShop"}
 	ShopExample.ID = uint(2)
-	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}}, nil)
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "sold_items" WHERE listing_id IN ($1,$2) AND "sold_items"."deleted_at" IS NULL`)).
-		WithArgs().WillReturnError(errors.New("items were not found"))
+	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}}, nil)
+	ShopRepo.On("FetchSoldItemsByListingID").Return(nil, errors.New("items were not found"))
 
 	_, err := implShop.GetSoldItemsByShopID(ShopExample.ID)
 
 	TestShop.AssertNumberOfCalls(t, "GetItemsByShopID", 1)
 
 	assert.Contains(t, err.Error(), "items were not found")
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
+
 }
 
 func TestGetTotalRevenueFail(t *testing.T) {
