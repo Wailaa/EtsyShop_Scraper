@@ -219,8 +219,7 @@ func (s *Shop) GetItemsBySoldItems(SoldItems []models.SoldItems) ([]models.Item,
 	return items, nil
 }
 
-
-
+func (s *Shop) GetItemsCountByShopID(ID uint) (itemsCount, error) {
 	itemCount := itemsCount{}
 
 	items, err := s.Operations.GetItemsByShopID(ID)
