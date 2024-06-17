@@ -5,14 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
 	"testing"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 
 	"EtsyScraper/controllers"
 	initializer "EtsyScraper/init"
@@ -25,8 +22,9 @@ func TestAuthMiddleWareNoCookies(t *testing.T) {
 	ctx, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
+	UserRepo := &MockedUserRepository{}
 	MockedUtils.On("GetTokens").Return(map[string]*models.Token{}, fmt.Errorf("failed to retrieve both tokens "))
-	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils))
+	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils, UserRepo))
 
 	req := httptest.NewRequest("GET", "/", nil)
 	req.AddCookie(&http.Cookie{Name: "access_token", Value: ""})
@@ -43,6 +41,7 @@ func TestAuthMiddleWareAccessTokenIsBlackListed(t *testing.T) {
 
 	userID := uuid.New()
 	MockedUtils := &mockUtils{}
+	UserRepo := &MockedUserRepository{}
 	MockedUtils.On("GetTokens").Return(map[string]*models.Token{}, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{
 		CreatedAt: 12344533,
@@ -52,7 +51,7 @@ func TestAuthMiddleWareAccessTokenIsBlackListed(t *testing.T) {
 
 	MockedUtils.On("IsJWTBlackListed").Return(true, nil)
 
-	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils))
+	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils, UserRepo))
 
 	req := httptest.NewRequest("GET", "/auth", nil)
 	req.Header.Set("Cookie", "access_token=SomeToken1")
@@ -67,17 +66,14 @@ func TestAuthMiddleWareAccessTokenIsBlackListed(t *testing.T) {
 }
 
 func TestAuthMiddleWareAccessTokenIsBlackListedFalse(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
-	initializer.DB = MockedDataBase
 	currentUserUUID := interface{}(nil)
-	Now := time.Now()
+
 	userID := uuid.New()
 	MockedUtils := &mockUtils{}
+	UserRepo := &MockedUserRepository{}
 
 	token := models.NewToken("SomeToken")
 	MockedUtils.On("GetTokens").Return(map[string]*models.Token{
@@ -91,14 +87,9 @@ func TestAuthMiddleWareAccessTokenIsBlackListedFalse(t *testing.T) {
 	}, nil)
 
 	MockedUtils.On("IsJWTBlackListed").Return(false, nil)
+	UserRepo.On("GetAccountByID").Return(&models.Account{ID: userID}, nil)
 
-	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(userID.String(), Now, Now, nil, "Testing", "User", "test@test1242q21.com", "", "free", false, "", false, "", Now, Now)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WithArgs(userID.String(), 1).WillReturnRows(Account)
-
-	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils), func(ctx *gin.Context) {
+	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils, UserRepo), func(ctx *gin.Context) {
 		currentUserUUID, _ = ctx.Get("currentUserUUID")
 
 	})
@@ -109,7 +100,6 @@ func TestAuthMiddleWareAccessTokenIsBlackListedFalse(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, userID, currentUserUUID)
-	assert.NoError(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestAuthMiddleWareRefreshTokenError(t *testing.T) {
@@ -117,11 +107,12 @@ func TestAuthMiddleWareRefreshTokenError(t *testing.T) {
 	_, router, w := setupMockServer.SetGinTestMode()
 
 	MockedUtils := &mockUtils{}
+	UserRepo := &MockedUserRepository{}
 	MockedUtils.On("GetTokens").Return(map[string]*models.Token{}, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, errors.New("not Valid"))
 	MockedUtils.On("IsJWTBlackListed").Return(true, nil)
 
-	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils))
+	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils, UserRepo))
 
 	req := httptest.NewRequest("GET", "/auth", nil)
 	req.Header.Set("Cookie", "access_token=SomeToken1;")
@@ -140,6 +131,8 @@ func TestAuthMiddleWareRefreshAccessTokenFail(t *testing.T) {
 
 	token := models.Token("")
 	MockedUtils := &mockUtils{}
+	UserRepo := &MockedUserRepository{}
+
 	refToken := models.NewToken("SomeToken")
 
 	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"refresh_token": refToken}, nil)
@@ -147,7 +140,7 @@ func TestAuthMiddleWareRefreshAccessTokenFail(t *testing.T) {
 	MockedUtils.On("IsJWTBlackListed").Return(true, nil)
 	MockedUtils.On("RefreshAccToken").Return(&token, errors.New("login required"))
 
-	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils))
+	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils, UserRepo))
 
 	req := httptest.NewRequest("GET", "/auth", nil)
 	req.Header.Set("Cookie", "access_token=SomeToken1; refresh_token=SomeToken2")
@@ -167,6 +160,8 @@ func TestAuthMiddleWareValidateNewToken(t *testing.T) {
 	token := models.Token("")
 
 	MockedUtils := &mockUtils{}
+	UserRepo := &MockedUserRepository{}
+
 	refToken := models.NewToken("SomeToken")
 
 	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"refresh_token": refToken}, nil)
@@ -176,7 +171,7 @@ func TestAuthMiddleWareValidateNewToken(t *testing.T) {
 	MockedUtils.On("RefreshAccToken").Return(&token, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, errors.New("login required"))
 
-	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils))
+	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils, UserRepo))
 
 	req := httptest.NewRequest("GET", "/auth", nil)
 	req.Header.Set("Cookie", "access_token=SomeToken1; refresh_token=SomeToken2")
@@ -190,19 +185,14 @@ func TestAuthMiddleWareValidateNewToken(t *testing.T) {
 }
 
 func TestAuthMiddleWareNewCookie(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
-	initializer.DB = MockedDataBase
-
 	token := models.Token("NoewRefreshedToken")
 	user := uuid.New()
-	Now := time.Now()
 
 	MockedUtils := &mockUtils{}
+	UserRepo := &MockedUserRepository{}
 
 	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"refresh_token": &token}, nil)
 	MockedUtils.On("IsJWTBlackListed").Return(false, nil)
@@ -211,15 +201,14 @@ func TestAuthMiddleWareNewCookie(t *testing.T) {
 		ExpiresAt: 12344533,
 		UserUUID:  user,
 	}, nil)
+
+	Account := &models.Account{
+		ID: user,
+	}
+
 	MockedUtils.On("RefreshAccToken").Return(&token, nil)
-
-	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(user.String(), Now, Now, nil, "Testing", "User", "test@test1242q21.com", "", "free", false, "", false, "", Now, Now)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WithArgs(user.String(), 1).WillReturnRows(Account)
-
-	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils))
+	UserRepo.On("GetAccountByID").Return(Account, nil)
+	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils, UserRepo))
 
 	req := httptest.NewRequest("GET", "/auth", nil)
 	req.Header.Set("Cookie", "refresh_token=NoewRefreshedToken")
@@ -238,20 +227,15 @@ func TestAuthMiddleWareNewCookie(t *testing.T) {
 
 }
 func TestAuthMiddleWareSuccessKeySet(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	_, router, w := setupMockServer.SetGinTestMode()
 
-	initializer.DB = MockedDataBase
-
 	token := models.Token("NoewRefreshedToken")
 	user := uuid.New()
-	Now := time.Now()
 	var currentUserUUID uuid.UUID
 
 	MockedUtils := &mockUtils{}
+	UserRepo := &MockedUserRepository{}
 	MockedUtils.On("GetTokens").Return(map[string]*models.Token{"refresh_token": &token}, nil)
 	MockedUtils.On("IsJWTBlackListed").Return(false, nil)
 	MockedUtils.On("RefreshAccToken").Return(&token, nil)
@@ -261,13 +245,13 @@ func TestAuthMiddleWareSuccessKeySet(t *testing.T) {
 		UserUUID:  user,
 	}, nil)
 
-	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(user.String(), Now, Now, nil, "Testing", "User", "test@test1242q21.com", "", "free", false, "", false, "", Now, Now)
+	Account := &models.Account{
+		ID: user,
+	}
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WithArgs(user.String(), 1).WillReturnRows(Account)
+	UserRepo.On("GetAccountByID").Return(Account, nil)
 
-	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils), func(ctx *gin.Context) {
+	router.GET("/auth", controllers.AuthMiddleWare(MockedUtils, UserRepo), func(ctx *gin.Context) {
 		currentUserUUID = ctx.MustGet("currentUserUUID").(uuid.UUID)
 	})
 
@@ -287,7 +271,9 @@ func TestAuthorizationNoCurrentUserPanic(t *testing.T) {
 
 	ctx, router, w := setupMockServer.SetGinTestMode()
 
-	router.Use(controllers.Authorization())
+	UserRepo := &MockedUserRepository{}
+
+	router.Use(controllers.Authorization(UserRepo))
 
 	router.GET("/test", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, gin.H{"message": "success"})
@@ -302,23 +288,19 @@ func TestAuthorizationNoCurrentUserPanic(t *testing.T) {
 
 }
 func TestAuthorizationUserNotFound(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	c, router, w := setupMockServer.SetGinTestMode()
 
-	initializer.DB = MockedDataBase
+	UserRepo := &MockedUserRepository{}
 
 	currentUserUUID := uuid.New()
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WithArgs(currentUserUUID.String(), 1).WillReturnError(errors.New("No record found"))
+	UserRepo.On("GetAccountByID").Return(nil, errors.New("No record found"))
 
 	router.POST("/", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
 
-	}, controllers.Authorization())
+	}, controllers.Authorization(UserRepo))
 
 	c.Request, _ = http.NewRequest("POST", "/", nil)
 
@@ -327,27 +309,22 @@ func TestAuthorizationUserNotFound(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 func TestAuthorizationNotVerified(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	c, router, w := setupMockServer.SetGinTestMode()
 
-	initializer.DB = MockedDataBase
-
+	UserRepo := &MockedUserRepository{}
 	currentUserUUID := uuid.New()
-	Now := time.Now()
 
-	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(currentUserUUID.String(), Now, Now, nil, "Testing", "User", "test@test1242q21.com", "", "free", false, "", false, "", Now, Now)
+	Account := &models.Account{
+		EmailVerified: false,
+	}
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WithArgs(currentUserUUID.String(), 1).WillReturnRows(Account)
+	UserRepo.On("GetAccountByID").Return(Account, nil)
 
 	router.POST("/", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
 
-	}, controllers.Authorization())
+	}, controllers.Authorization(UserRepo))
 
 	c.Request, _ = http.NewRequest("POST", "/", nil)
 
@@ -357,28 +334,25 @@ func TestAuthorizationNotVerified(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 func TestAuthorizationSuccess(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
 	c, router, w := setupMockServer.SetGinTestMode()
 
-	initializer.DB = MockedDataBase
+	UserRepo := &MockedUserRepository{}
 
 	IsNextCalled := false
 	currentUserUUID := uuid.New()
-	Now := time.Now()
 
-	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(currentUserUUID.String(), Now, Now, nil, "Testing", "User", "test@test1242q21.com", "", "free", true, "", false, "", Now, Now)
+	Account := &models.Account{
+		ID:            currentUserUUID,
+		EmailVerified: true,
+	}
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WithArgs(currentUserUUID.String(), 1).WillReturnRows(Account)
+	UserRepo.On("GetAccountByID").Return(Account, nil)
 
 	router.POST("/", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
 
-	}, controllers.Authorization(), func(ctx *gin.Context) {
+	}, controllers.Authorization(UserRepo), func(ctx *gin.Context) {
 		IsNextCalled = true
 	})
 
@@ -392,31 +366,25 @@ func TestAuthorizationSuccess(t *testing.T) {
 
 func TestIsAccountFollowingShopSuccess(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	c, router, w := setupMockServer.SetGinTestMode()
 
-	initializer.DB = MockedDataBase
+	UserRepo := &MockedUserRepository{}
 
 	currentUserUUID := uuid.New()
-	ShopID := 1
 	IsNextCalled := false
+	ShopExample := models.Shop{Name: "Example"}
+	ShopExample.ID = 1
+	Account := &models.Account{
+		ID:             currentUserUUID,
+		ShopsFollowing: []models.Shop{ShopExample},
+	}
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(currentUserUUID.String()))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1`)).
-		WithArgs(currentUserUUID.String()).WillReturnRows(sqlmock.NewRows([]string{"shop_id", "account_id"}).AddRow(ShopID, currentUserUUID.String()))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE "shops"."id" = $1 AND "shops"."deleted_at" IS NULL`)).
-		WithArgs(ShopID).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(ShopID))
+	UserRepo.On("GetAccountWithShops").Return(Account, nil)
 
 	router.POST("/:shopID", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
 
-	}, controllers.IsAccountFollowingShop(), func(ctx *gin.Context) {
+	}, controllers.IsAccountFollowingShop(UserRepo), func(ctx *gin.Context) {
 		IsNextCalled = true
 	})
 
@@ -436,13 +404,14 @@ func TestIsAccountFollowingShopNoShopID(t *testing.T) {
 	c, router, w := setupMockServer.SetGinTestMode()
 
 	initializer.DB = MockedDataBase
+	UserRepo := &MockedUserRepository{}
 
 	currentUserUUID := uuid.New()
 
 	router.POST("/:shopID", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
 
-	}, controllers.IsAccountFollowingShop())
+	}, controllers.IsAccountFollowingShop(UserRepo))
 
 	c.Request, _ = http.NewRequest("POST", "/", nil)
 
@@ -453,23 +422,18 @@ func TestIsAccountFollowingShopNoShopID(t *testing.T) {
 
 func TestIsAccountFollowingShopDataBaseError(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	c, router, w := setupMockServer.SetGinTestMode()
 
-	initializer.DB = MockedDataBase
+	UserRepo := &MockedUserRepository{}
 
 	currentUserUUID := uuid.New()
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WillReturnError(errors.New("internal error"))
+	UserRepo.On("GetAccountWithShops").Return(nil, errors.New("internal error"))
 
 	router.POST("/:shopID", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
 
-	}, controllers.IsAccountFollowingShop())
+	}, controllers.IsAccountFollowingShop(UserRepo))
 
 	c.Request, _ = http.NewRequest("POST", "/1", nil)
 
@@ -480,30 +444,25 @@ func TestIsAccountFollowingShopDataBaseError(t *testing.T) {
 
 func TestIsAccountFollowingShopNotFollowing(t *testing.T) {
 
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
-
 	c, router, w := setupMockServer.SetGinTestMode()
 
-	initializer.DB = MockedDataBase
+	UserRepo := &MockedUserRepository{}
 
 	currentUserUUID := uuid.New()
-	ShopID := 2
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(currentUserUUID.String()))
+	ShopExample := models.Shop{Name: "Example"}
+	ShopExample.ID = uint(2)
+	Account := &models.Account{
+		ID:             currentUserUUID,
+		ShopsFollowing: []models.Shop{ShopExample},
+	}
 
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "account_shop_following" WHERE "account_shop_following"."account_id" = $1`)).
-		WithArgs(currentUserUUID.String()).WillReturnRows(sqlmock.NewRows([]string{"shop_id", "account_id"}).AddRow(ShopID, currentUserUUID.String()))
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE "shops"."id" = $1 AND "shops"."deleted_at" IS NULL`)).
-		WithArgs(ShopID).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(ShopID))
+	UserRepo.On("GetAccountWithShops").Return(Account, nil)
 
 	router.POST("/:shopID", func(ctx *gin.Context) {
 		ctx.Set("currentUserUUID", currentUserUUID)
 
-	}, controllers.IsAccountFollowingShop())
+	}, controllers.IsAccountFollowingShop(UserRepo))
 
 	c.Request, _ = http.NewRequest("POST", "/1", nil)
 
@@ -512,61 +471,51 @@ func TestIsAccountFollowingShopNotFollowing(t *testing.T) {
 }
 
 func TestIsAuthorized(t *testing.T) {
-	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
-	initializer.DB = MockedDataBase
 	c, _, w := setupMockServer.SetGinTestMode()
 
-	user := uuid.New()
+	UserRepo := &MockedUserRepository{}
 
+	userID := uuid.New()
+	Account := &models.Account{
+		ID: userID,
+	}
+
+	UserRepo.On("GetAccountByID").Return(Account, nil)
 	token := models.Token("anotherToken")
-	Now := time.Now()
+
 	MockedUtils := &mockUtils{}
 	MockedUtils.On("IsJWTBlackListed").Return(false, nil)
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{
 		CreatedAt: 12344533,
 		ExpiresAt: 12344533,
-		UserUUID:  user,
+		UserUUID:  userID,
 	}, nil)
 
-	Account := sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "first_name", "last_name", "email", "password_hashed", "subscription_type", "email_verified", "email_verification_token", "request_change_pass", "account_pass_reset_token", "last_time_logged_in", "last_time_logged_out"}).
-		AddRow(user.String(), Now, Now, nil, "Testing", "User", "test@test1242q21.com", "", "free", false, "", false, "", Now, Now)
-
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
-		WithArgs(user.String(), 1).WillReturnRows(Account)
-
-	controllers.IsAuthorized(c, MockedUtils, &token)
+	controllers.IsAuthorized(c, MockedUtils, &token, UserRepo)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestIsAuthorizedFailNoClaims(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
-	initializer.DB = MockedDataBase
 	c, _, _ := setupMockServer.SetGinTestMode()
+	UserRepo := &MockedUserRepository{}
 
 	token := models.Token("anotherToken")
 
 	MockedUtils := &mockUtils{}
 	MockedUtils.On("ValidateJWT").Return(&models.CustomClaims{}, errors.New("some error"))
 
-	result := controllers.IsAuthorized(c, MockedUtils, &token)
+	result := controllers.IsAuthorized(c, MockedUtils, &token, UserRepo)
 
 	assert.False(t, result)
 }
 
 func TestIsAuthorizedFailedIsBlackListed(t *testing.T) {
-	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	testDB.Begin()
-	defer testDB.Close()
 
-	initializer.DB = MockedDataBase
 	c, _, _ := setupMockServer.SetGinTestMode()
+	UserRepo := &MockedUserRepository{}
 
 	user := uuid.New()
 
@@ -580,7 +529,7 @@ func TestIsAuthorizedFailedIsBlackListed(t *testing.T) {
 		UserUUID:  user,
 	}, nil)
 
-	result := controllers.IsAuthorized(c, MockedUtils, &token)
+	result := controllers.IsAuthorized(c, MockedUtils, &token, UserRepo)
 
 	assert.False(t, result)
 }

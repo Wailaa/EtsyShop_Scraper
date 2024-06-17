@@ -9,10 +9,11 @@ import (
 
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
+	"EtsyScraper/repository"
 	"EtsyScraper/utils"
 )
 
-func AuthMiddleWare(Process utils.UtilsProcess) gin.HandlerFunc {
+func AuthMiddleWare(Process utils.UtilsProcess, userRepo repository.UserRepository) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		config := initializer.LoadProjConfig(".")
 
@@ -26,7 +27,7 @@ func AuthMiddleWare(Process utils.UtilsProcess) gin.HandlerFunc {
 		refreshToken, refHasValue := JwtTokens["refresh_token"]
 
 		if accHasValue {
-			if ok := IsAuthorized(ctx, Process, accessToken); ok {
+			if ok := IsAuthorized(ctx, Process, accessToken, userRepo); ok {
 				ctx.Next()
 				return
 			}
@@ -37,7 +38,7 @@ func AuthMiddleWare(Process utils.UtilsProcess) gin.HandlerFunc {
 			return
 		}
 
-		if ok := IsAuthorized(ctx, Process, refreshToken); ok {
+		if ok := IsAuthorized(ctx, Process, refreshToken, userRepo); ok {
 
 			accessToken, err = Process.RefreshAccToken(refreshToken)
 			if err != nil {
@@ -52,12 +53,12 @@ func AuthMiddleWare(Process utils.UtilsProcess) gin.HandlerFunc {
 	}
 }
 
-func Authorization() gin.HandlerFunc {
+func Authorization(userRepo repository.UserRepository) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		Account := models.Account{}
-		currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 
-		if err := initializer.DB.Where("id = ?", currentUserUUID).First(&Account).Error; err != nil {
+		currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
+		Account, err := userRepo.GetAccountByID(currentUserUUID)
+		if err != nil { //implement GetAccountByID
 			HandleResponse(ctx, err, http.StatusUnauthorized, err.Error(), nil)
 			return
 		}
@@ -71,7 +72,7 @@ func Authorization() gin.HandlerFunc {
 
 	}
 }
-func IsAccountFollowingShop() gin.HandlerFunc {
+func IsAccountFollowingShop(userRepo repository.UserRepository) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 		ShopID := ctx.Param("shopID")
@@ -82,9 +83,10 @@ func IsAccountFollowingShop() gin.HandlerFunc {
 			return
 		}
 
-		Account := models.Account{}
+		// Account := models.Account{}
 
-		if err := initializer.DB.Preload("ShopsFollowing").First(&Account, "id = ?", currentUserUUID).Error; err != nil {
+		Account, err := userRepo.GetAccountWithShops(currentUserUUID)
+		if err != nil { //implement preload
 			HandleResponse(ctx, err, http.StatusInternalServerError, "internal error", nil)
 			return
 		}
@@ -106,9 +108,9 @@ func IsAccountFollowingShop() gin.HandlerFunc {
 	}
 }
 
-func IsAuthorized(ctx *gin.Context, Process utils.UtilsProcess, Token *models.Token) bool {
+func IsAuthorized(ctx *gin.Context, Process utils.UtilsProcess, Token *models.Token, userRepo repository.UserRepository) bool { //implement GetAccountByID
 
-	user := &models.Account{}
+	// user := &models.Account{}
 	userClaims, err := Process.ValidateJWT(Token)
 	if err != nil {
 		return false
@@ -119,7 +121,8 @@ func IsAuthorized(ctx *gin.Context, Process utils.UtilsProcess, Token *models.To
 		return false
 	}
 
-	if err := initializer.DB.Where("id = ?", userClaims.UserUUID).First(user).Error; err != nil {
+	_, err = userRepo.GetAccountByID(userClaims.UserUUID)
+	if err != nil {
 		HandleResponse(ctx, err, http.StatusUnauthorized, err.Error(), nil)
 		return false
 	}
