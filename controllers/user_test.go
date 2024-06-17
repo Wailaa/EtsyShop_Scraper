@@ -161,9 +161,15 @@ func (mr *MockedUserRepository) CreateAccount(account *models.Account) (*models.
 	return Account, args.Error(1)
 
 }
-func (mr *MockedUserRepository) JoinShopFollowing(Account *models.Account) error {
+func (mr *MockedUserRepository) JoinShopFollowing(Account *models.Account) (*models.Account, error) {
+
 	args := mr.Called()
-	return args.Error(0)
+	UserRepo := args.Get(0)
+	if UserRepo != nil {
+		Account = UserRepo.(*models.Account)
+	}
+	return Account, args.Error(1)
+
 }
 
 func TestRegisterUserInvalidJson(t *testing.T) {

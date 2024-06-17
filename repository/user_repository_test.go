@@ -144,7 +144,7 @@ func TestJoinShopFollowing(t *testing.T) {
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_menus" WHERE "shop_menus"."shop_id" = $1 AND "shop_menus"."deleted_at" IS NULL`)).
 		WithArgs(1).WillReturnRows(sqlmock.NewRows([]string{"shop_id"}).AddRow(1))
 
-	err := User.JoinShopFollowing(&Account)
+	_, err := User.JoinShopFollowing(&Account)
 
 	assert.NoError(t, err)
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
@@ -161,7 +161,7 @@ func TestJoinShopFollowingFAIL(t *testing.T) {
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "accounts" WHERE id = $1 AND "accounts"."deleted_at" IS NULL ORDER BY "accounts"."id" LIMIT $2`)).
 		WithArgs(Account.ID, 1).WillReturnError(errors.New("No User Found"))
 
-	err := User.JoinShopFollowing(&Account)
+	_, err := User.JoinShopFollowing(&Account)
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "No User Found")

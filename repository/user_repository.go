@@ -18,7 +18,7 @@ type UserRepository interface {
 	GetAccountByID(ID uuid.UUID) (account *models.Account, err error)
 	GetAccountByEmail(email string) *models.Account
 	UpdateLastTimeLoggedIn(Account *models.Account) error
-	JoinShopFollowing(Account *models.Account) error
+	JoinShopFollowing(Account *models.Account) (*models.Account, error)
 	UpdateLastTimeLoggedOut(UserID uuid.UUID) error
 	UpdateAccountAfterVerify(Account *models.Account) error
 	UpdateAccountNewPass(Account *models.Account, passwardHashed string) error
@@ -54,20 +54,22 @@ func (s *DataBase) UpdateLastTimeLoggedIn(Account *models.Account) error {
 	return nil
 }
 
-func (s *DataBase) JoinShopFollowing(Account *models.Account) error {
+func (s *DataBase) JoinShopFollowing(Account *models.Account) (*models.Account, error) {
 
-	result, err := s.GetAccountWithShops(Account.ID)
+	Account, err := s.GetAccountWithShops(Account.ID)
+
 	if err != nil {
-		return utils.HandleError(err)
+		return nil, utils.HandleError(err)
 	}
 
-	for i := range result.ShopsFollowing {
-		if err := s.DB.Preload("ShopMenu").Preload("Reviews").Preload("Member").First(&result.ShopsFollowing[i]).Error; err != nil {
-			return utils.HandleError(err)
+	for i := range Account.ShopsFollowing {
+		if err := s.DB.Preload("ShopMenu").Preload("Reviews").Preload("Member").First(&Account.ShopsFollowing[i]).Error; err != nil {
+
+			return nil, utils.HandleError(err)
 		}
 	}
 
-	return nil
+	return Account, nil
 }
 
 func (s *DataBase) UpdateLastTimeLoggedOut(UserID uuid.UUID) error {

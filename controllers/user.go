@@ -151,7 +151,7 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.User.JoinShopFollowing(result); err != nil {
+	if result, err = s.User.JoinShopFollowing(result); err != nil {
 		HandleResponse(ctx, err, http.StatusInternalServerError, "internal error", nil)
 		return
 	}
