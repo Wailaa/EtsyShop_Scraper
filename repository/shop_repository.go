@@ -122,12 +122,14 @@ func (d *DataBase) GetSoldItemsInRange(fromDate time.Time, ShopID uint) ([]model
 
 func (d *DataBase) UpdateAccountShopRelation(requestedShop *models.Shop, UserID uuid.UUID) error {
 	account := &models.Account{}
+	account.ID = UserID
 
-	if err := d.DB.Preload("ShopsFollowing").Where("id = ?", UserID).First(&account).Error; err != nil {
+	result, err := d.GetAccountWithShops(account.ID)
+	if err != nil {
 		return utils.HandleError(err)
 	}
 
-	if err := d.DB.Model(&account).Association("ShopsFollowing").Delete(requestedShop); err != nil {
+	if err := d.DB.Model(result).Association("ShopsFollowing").Delete(requestedShop); err != nil {
 		return utils.HandleError(err)
 	}
 	return nil

@@ -48,14 +48,14 @@ func main() {
 	implShop.Operations = &implShop
 
 	userRoutes := routes.NewUserRouteController(controllers.NewUserController(utils, Repository))
-	userRoutes.GeneraluserRoutes(server, controllers.AuthMiddleWare(utils), controllers.Authorization())
+	userRoutes.GeneraluserRoutes(server, controllers.AuthMiddleWare(utils, Repository), controllers.Authorization(Repository))
 
 	shopRoutes := routes.NewShopRouteController(&implShop)
-	shopRoutes.GeneralShopRoutes(server, controllers.AuthMiddleWare(utils), controllers.Authorization(), controllers.IsAccountFollowingShop())
+	shopRoutes.GeneralShopRoutes(server, controllers.AuthMiddleWare(utils, Repository), controllers.Authorization(Repository), controllers.IsAccountFollowingShop(Repository))
 
 	templatesFilesPath := "./static/templates/*"
 	htmlRoutes := routes.NewHTMLRouter()
-	htmlRoutes.GeneralHTMLRoutes(server, controllers.AuthMiddleWare(utils), controllers.Authorization(), templatesFilesPath)
+	htmlRoutes.GeneralHTMLRoutes(server, controllers.AuthMiddleWare(utils, Repository), controllers.Authorization(Repository), templatesFilesPath)
 
 	log.Fatal(server.Run(":" + config.ServerPort))
 
