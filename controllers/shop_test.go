@@ -1179,7 +1179,7 @@ func TestGetShopByIDAveragePriceFail(t *testing.T) {
 	ShopRepo := &MockedShopRepository{}
 	implShop := controllers.Shop{Shop: ShopRepo}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 
 	ShopRepo.On("FetchShopByID").Return(&ShopExample, nil)
@@ -1215,7 +1215,7 @@ func TestGetShopByIDSuccess(t *testing.T) {
 	ShopRepo := &MockedShopRepository{}
 	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 	ShopRepo.On("GetAverageItemPrice").Return(float64(15.5), nil)
 	TestShop.On("GetTotalRevenue").Return(float64(120), nil)
@@ -1233,7 +1233,7 @@ func TestGetItemsCountByShopIDFail(t *testing.T) {
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{Operations: TestShop}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 	TestShop.On("GetItemsByShopID").Return(nil, errors.New("error while calculating item average price "))
 
@@ -1247,7 +1247,7 @@ func TestGetItemsCountByShopIDSuccess(t *testing.T) {
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{Operations: TestShop}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}}, nil)
 
@@ -1261,7 +1261,7 @@ func TestGetSoldItemsByShopIDFail(t *testing.T) {
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{Operations: TestShop}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 	TestShop.On("GetItemsByShopID").Return(nil, errors.New("error while calculating item average price "))
 
@@ -1276,7 +1276,7 @@ func TestGetSoldItemsByShopIDSuccess(t *testing.T) {
 	ShopRepo := &MockedShopRepository{}
 	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 
 	Allitems := []models.Item{{ListingID: 1}, {ListingID: 2}, {ListingID: 3}}
@@ -1304,7 +1304,7 @@ func TestGetSoldItemsByShopIDNoSoldItemsInDB(t *testing.T) {
 	ShopRepo := &MockedShopRepository{}
 	implShop := controllers.Shop{Operations: TestShop, Shop: ShopRepo}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 
 	TestShop.On("GetItemsByShopID").Return([]models.Item{{}, {}}, nil)
@@ -1323,7 +1323,7 @@ func TestGetTotalRevenueFail(t *testing.T) {
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{Operations: TestShop}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 	AverageItemPrice := 19.2
 	TestShop.On("GetSoldItemsByShopID").Return(nil, errors.New("Sold items where not found"))
@@ -1340,7 +1340,7 @@ func TestGetTotalRevenueSuccess(t *testing.T) {
 	TestShop := &MockedShop{}
 	implShop := controllers.Shop{Operations: TestShop}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 	AverageItemPrice := 19.2
 	revenueExpected := 485.68
@@ -2208,7 +2208,7 @@ func TestGetItemsByShopIDTypeShopSuccess(t *testing.T) {
 	ShopRepo := &MockedShopRepository{}
 	implShop := controllers.Shop{Shop: ShopRepo}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 
 	ShopRepo.On("GetShopWithItemsByShopID").Return(&ShopExample, nil)
@@ -2223,7 +2223,7 @@ func TestGetItemsByShopIDTypeShopFail(t *testing.T) {
 
 	ShopRepo := &MockedShopRepository{}
 	implShop := controllers.Shop{Shop: ShopRepo}
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 
 	ShopRepo.On("GetShopWithItemsByShopID").Return(nil, errors.New("error while getting shop from DB"))

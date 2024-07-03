@@ -16,14 +16,16 @@ import (
 )
 
 type User struct {
-	utils utils.UtilsProcess
-	User  repository.UserRepository
+	utils  utils.UtilsProcess
+	User   repository.UserRepository
+	config initializer.Config
 }
 
-func NewUserController(Process utils.UtilsProcess, UserDB repository.UserRepository) *User {
+func NewUserController(Process utils.UtilsProcess, UserDB repository.UserRepository, config initializer.Config) *User {
 	return &User{
-		utils: Process,
-		User:  UserDB,
+		utils:  Process,
+		User:   UserDB,
+		config: config,
 	}
 }
 
@@ -115,7 +117,6 @@ func (s *User) RegisterUser(ctx *gin.Context) {
 func (s *User) LoginAccount(ctx *gin.Context) {
 
 	var loginDetails *LoginRequest
-	config := initializer.LoadProjConfig(".")
 
 	if err := ctx.ShouldBindJSON(&loginDetails); err != nil {
 		HandleResponse(ctx, err, http.StatusNotFound, "failed to fetch login details", nil)
@@ -134,13 +135,13 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 		return
 	}
 
-	accessToken, err := s.utils.CreateJwtToken(config.AccTokenExp, result.ID)
+	accessToken, err := s.utils.CreateJwtToken(s.config.AccTokenExp, result.ID)
 	if err != nil {
 		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
-	refreshToken, err := s.utils.CreateJwtToken(config.RefTokenExp, result.ID)
+	refreshToken, err := s.utils.CreateJwtToken(s.config.RefTokenExp, result.ID)
 	if err != nil {
 		HandleResponse(ctx, err, http.StatusBadRequest, err.Error(), nil)
 		return
@@ -158,8 +159,8 @@ func (s *User) LoginAccount(ctx *gin.Context) {
 
 	loginResponse := s.GenerateLoginResponse(result, accessToken, refreshToken)
 
-	ctx.SetCookie("access_token", string(*accessToken), int(config.AccTokenExp.Seconds()), "/", config.ClientOrigin, false, true)
-	ctx.SetCookie("refresh_token", string(*refreshToken), int(config.RefTokenExp.Seconds()), "/", config.ClientOrigin, false, true)
+	ctx.SetCookie("access_token", string(*accessToken), int(s.config.AccTokenExp.Seconds()), "/", s.config.ClientOrigin, false, true)
+	ctx.SetCookie("refresh_token", string(*refreshToken), int(s.config.RefTokenExp.Seconds()), "/", s.config.ClientOrigin, false, true)
 
 	HandleResponse(ctx, nil, http.StatusOK, "", loginResponse)
 

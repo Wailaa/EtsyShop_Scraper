@@ -58,7 +58,7 @@ func Authorization(userRepo repository.UserRepository) gin.HandlerFunc {
 
 		currentUserUUID := ctx.MustGet("currentUserUUID").(uuid.UUID)
 		Account, err := userRepo.GetAccountByID(currentUserUUID)
-		if err != nil { //implement GetAccountByID
+		if err != nil {
 			HandleResponse(ctx, err, http.StatusUnauthorized, err.Error(), nil)
 			return
 		}
@@ -83,10 +83,8 @@ func IsAccountFollowingShop(userRepo repository.UserRepository) gin.HandlerFunc 
 			return
 		}
 
-		// Account := models.Account{}
-
 		Account, err := userRepo.GetAccountWithShops(currentUserUUID)
-		if err != nil { //implement preload
+		if err != nil {
 			HandleResponse(ctx, err, http.StatusInternalServerError, "internal error", nil)
 			return
 		}
@@ -108,9 +106,8 @@ func IsAccountFollowingShop(userRepo repository.UserRepository) gin.HandlerFunc 
 	}
 }
 
-func IsAuthorized(ctx *gin.Context, Process utils.UtilsProcess, Token *models.Token, userRepo repository.UserRepository) bool { //implement GetAccountByID
+func IsAuthorized(ctx *gin.Context, Process utils.UtilsProcess, Token *models.Token, userRepo repository.UserRepository) bool {
 
-	// user := &models.Account{}
 	userClaims, err := Process.ValidateJWT(Token)
 	if err != nil {
 		return false
