@@ -11,10 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
-	"gorm.io/gorm"
 
 	"EtsyScraper/controllers"
 	"EtsyScraper/models"
+	"EtsyScraper/repository"
 	scheduleUpdates "EtsyScraper/scheduleUpdateTask"
 	setupMockServer "EtsyScraper/setupTests"
 )
@@ -174,57 +174,6 @@ func TestUpdateSoldItemsShopParameterNil(t *testing.T) {
 
 }
 
-func TestGetAllShopsSuccess(t *testing.T) {
-	mock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	defer testDB.Close()
-
-	shopRows := sqlmock.NewRows([]string{"id", "name"}).
-		AddRow(1, "Shop 1").
-		AddRow(2, "Shop 2")
-
-	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM \"shops\"")).WillReturnRows(shopRows)
-
-	shopMenuRows := sqlmock.NewRows([]string{"id", "shop_id", "total_items_amount"}).
-		AddRow(1, 1, 2).
-		AddRow(2, 2, 2)
-
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_menus" WHERE "shop_menus"."shop_id" IN ($1,$2) AND "shop_menus"."deleted_at" IS NULL`)).
-		WillReturnRows(shopMenuRows)
-
-	menuRows := sqlmock.NewRows([]string{"id", "shop_menu_id", "category"}).
-		AddRow(1, 1, "Category 1").
-		AddRow(2, 1, "Category 2").
-		AddRow(3, 2, "Category 1").
-		AddRow(4, 2, "Category 2")
-
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "menu_items" WHERE "menu_items"."shop_menu_id" IN ($1,$2) AND "menu_items"."deleted_at" IS NULL`)).
-		WillReturnRows(menuRows)
-
-	updateDB := scheduleUpdates.NewUpdateDB(MockedDataBase)
-
-	_, err := updateDB.GetAllShops()
-	if err != nil {
-		t.Errorf("An Error occurred While testing getAllShops()")
-	}
-
-	assert.Nil(t, mock.ExpectationsWereMet())
-}
-
-func TestGetAllShopsError(t *testing.T) {
-	mock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
-	defer testDB.Close()
-
-	expectedQuery := `SELECT * FROM "shops" WHERE "shops"."deleted_at"`
-
-	mock.MatchExpectationsInOrder(true)
-	mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).WillReturnError(gorm.ErrRecordNotFound)
-
-	updateDB := scheduleUpdates.NewUpdateDB(MockedDataBase)
-
-	_, err := updateDB.GetAllShops()
-
-	assert.True(t, errors.Is(err, gorm.ErrRecordNotFound))
-}
 func TestMenuExists(t *testing.T) {
 	Menu := "Test"
 	ListOfMenus := []string{"this", "is", "a", "Test"}
@@ -277,7 +226,8 @@ func TestStartShopUpdateUpdatesSuccess(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase}
+	ShopRepo := &repository.DataBase{DB: MockedDataBase}
+	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
 
 	MockedScrapper := &MockScrapper{}
 	expectedShop := &models.Shop{TotalSales: 101, Admirers: 10, HasSoldHistory: false}
@@ -336,7 +286,8 @@ func TestStartShopUpdateOneUpdate(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase}
+	ShopRepo := &repository.DataBase{DB: MockedDataBase}
+	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
 
 	MockedScrapper := &MockScrapper{}
 	expectedShop := &models.Shop{TotalSales: 100, Admirers: 2, HasSoldHistory: false}

@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/DATA-DOG/go-sqlmock.v1"
+	"gorm.io/gorm"
 )
 
 func TestCreateShopToDB(t *testing.T) {
@@ -281,7 +282,7 @@ func TestFetchShopByIDFail(t *testing.T) {
 
 	ShopRepo := repository.DataBase{DB: MockedDataBase}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
@@ -518,7 +519,7 @@ func TestGetAverageItemPrice(t *testing.T) {
 
 	ShopRepo := repository.DataBase{DB: MockedDataBase}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 
 	rows := sqlmock.NewRows([]string{"average_price"}).AddRow(10.5)
@@ -539,7 +540,7 @@ func TestGetAverageItemPriceShopFail(t *testing.T) {
 
 	ShopRepo := repository.DataBase{DB: MockedDataBase}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 
 	sqlMock.ExpectQuery("SELECT AVG\\(items.original_price\\) as average_price").
@@ -635,7 +636,7 @@ func TestGetShopWithItemsByShopIDFail(t *testing.T) {
 
 	ShopRepo := repository.DataBase{DB: MockedDataBase}
 
-	ShopExample := models.Shop{Name: "ExampleShop"}
+	ShopExample := models.Shop{}
 	ShopExample.ID = uint(2)
 
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shops" WHERE id = $1 AND "shops"."deleted_at" IS NULL ORDER BY "shops"."id" LIMIT $2`)).
@@ -702,4 +703,56 @@ func TestGetShopByNameTypeShopfail(t *testing.T) {
 
 	assert.Contains(t, err.Error(), "Error getting shop data")
 	assert.NoError(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestGetAllShopsSuccess(t *testing.T) {
+	mock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	defer testDB.Close()
+
+	ShopRepo := repository.DataBase{DB: MockedDataBase}
+
+	shopRows := sqlmock.NewRows([]string{"id", "name"}).
+		AddRow(1, "Shop 1").
+		AddRow(2, "Shop 2")
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM \"shops\"")).WillReturnRows(shopRows)
+
+	shopMenuRows := sqlmock.NewRows([]string{"id", "shop_id", "total_items_amount"}).
+		AddRow(1, 1, 2).
+		AddRow(2, 2, 2)
+
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_menus" WHERE "shop_menus"."shop_id" IN ($1,$2) AND "shop_menus"."deleted_at" IS NULL`)).
+		WillReturnRows(shopMenuRows)
+
+	menuRows := sqlmock.NewRows([]string{"id", "shop_menu_id", "category"}).
+		AddRow(1, 1, "Category 1").
+		AddRow(2, 1, "Category 2").
+		AddRow(3, 2, "Category 1").
+		AddRow(4, 2, "Category 2")
+
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "menu_items" WHERE "menu_items"."shop_menu_id" IN ($1,$2) AND "menu_items"."deleted_at" IS NULL`)).
+		WillReturnRows(menuRows)
+
+	_, err := ShopRepo.GetAllShops()
+	if err != nil {
+		t.Errorf("An Error occurred While testing getAllShops()")
+	}
+
+	assert.Nil(t, mock.ExpectationsWereMet())
+}
+
+func TestGetAllShopsError(t *testing.T) {
+	mock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	defer testDB.Close()
+
+	ShopRepo := repository.DataBase{DB: MockedDataBase}
+
+	expectedQuery := `SELECT * FROM "shops" WHERE "shops"."deleted_at"`
+
+	mock.MatchExpectationsInOrder(true)
+	mock.ExpectQuery(regexp.QuoteMeta(expectedQuery)).WillReturnError(gorm.ErrRecordNotFound)
+
+	_, err := ShopRepo.GetAllShops()
+
+	assert.True(t, errors.Is(err, gorm.ErrRecordNotFound))
 }

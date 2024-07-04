@@ -11,12 +11,14 @@ import (
 	"EtsyScraper/controllers"
 	initializer "EtsyScraper/init"
 	"EtsyScraper/models"
+	"EtsyScraper/repository"
 	scrap "EtsyScraper/scraping"
 	"EtsyScraper/utils"
 )
 
 type UpdateDB struct {
-	DB *gorm.DB
+	DB   *gorm.DB
+	Repo repository.ShopRepository
 }
 
 type UpdateSoldItemsQueue struct {
@@ -83,7 +85,7 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 
 	SoldItemsQueueList := []UpdateSoldItemsQueue{}
 
-	Shops, err := u.GetAllShops()
+	Shops, err := u.Repo.GetAllShops()
 	if err != nil {
 		return utils.HandleError(err, "error while retrieving Shops rows.")
 	}
@@ -143,16 +145,6 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 func UpdateSoldItems(queue UpdateSoldItemsQueue, newController controllers.ShopOperations) {
 	ShopRequest := &models.ShopRequest{}
 	newController.UpdateSellingHistory(&queue.Shop, &queue.Task, ShopRequest)
-}
-
-func (u *UpdateDB) GetAllShops() (*[]models.Shop, error) {
-	AllShops := &[]models.Shop{}
-
-	if err := u.DB.Preload("ShopMenu.Menu").Find(AllShops).Error; err != nil {
-		return nil, utils.HandleError(err, "error while retrieving shops data")
-	}
-
-	return AllShops, nil
 }
 
 func MenuExists(Menu string, ListOfMenus []string) bool {

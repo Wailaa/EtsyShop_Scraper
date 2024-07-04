@@ -169,10 +169,19 @@ func (sr *MockedShopRepository) CreateShop(scrappedShop *models.Shop) error {
 	args := sr.Called()
 	return args.Error(0)
 }
+func (sr *MockedShopRepository) GetAllShops() (*[]models.Shop, error) {
+	args := sr.Called()
+	shopInterface := args.Get(0)
+	shops := &[]models.Shop{}
+	if shopInterface != nil {
+		shops = shopInterface.(*[]models.Shop)
+	}
+	return shops, args.Error(1)
+}
+
 func (sr *MockedShopRepository) SaveShop(Shop *models.Shop) error {
 	args := sr.Called()
 	return args.Error(0)
-
 }
 func (sr *MockedShopRepository) SaveSoldItemsToDB(ScrappedSoldItems []models.SoldItems) error {
 	args := sr.Called()

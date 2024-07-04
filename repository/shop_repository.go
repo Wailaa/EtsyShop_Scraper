@@ -24,6 +24,7 @@ type ShopRepository interface {
 	SaveShopRequestToDB(ShopRequest *models.ShopRequest) error
 	GetShopWithItemsByShopID(ID uint) (*models.Shop, error)
 	GetShopByName(ShopName string) (shop *models.Shop, err error)
+	GetAllShops() (*[]models.Shop, error)
 }
 
 func (d *DataBase) CreateShop(scrappedShop *models.Shop) error {
@@ -174,4 +175,13 @@ func (d *DataBase) GetShopByName(ShopName string) (shop *models.Shop, err error)
 		return nil, utils.HandleError(err, "no Shop was Found ,error")
 	}
 	return
+}
+func (d *DataBase) GetAllShops() (*[]models.Shop, error) {
+	AllShops := &[]models.Shop{}
+
+	if err := d.DB.Preload("ShopMenu.Menu").Find(AllShops).Error; err != nil {
+		return nil, utils.HandleError(err, "error while retrieving shops data")
+	}
+
+	return AllShops, nil
 }
