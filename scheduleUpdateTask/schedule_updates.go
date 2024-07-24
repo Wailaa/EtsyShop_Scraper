@@ -186,7 +186,9 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 		if Exists := MenuExists(UpdatedMenu.Category, ListOfMenus); !Exists {
 			NewMenu := models.CreateMenuItem(UpdatedMenu)
 			NewMenu.ShopMenuID = Shop.ShopMenu.ID
-			u.DB.Create(&NewMenu)
+			if err := u.Repo.CreateMenu(NewMenu); err != nil {
+				return utils.HandleError(err)
+			}
 			UpdatedMenu.ID = NewMenu.ID
 		}
 
@@ -207,8 +209,10 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 		}
 
 	}
+	if OutOfProductionID != 0 {
+		u.HandleOutOfProductionItems(dataShopID, OutOfProductionID, Shop.ShopMenu.ID, existingItemMap)
 
-	u.HandleOutOfProductionItems(dataShopID, OutOfProductionID, Shop.ShopMenu.ID, existingItemMap)
+	}
 	return nil
 }
 

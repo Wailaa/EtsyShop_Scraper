@@ -27,6 +27,7 @@ type ShopRepository interface {
 	GetAllShops() (*[]models.Shop, error)
 	CreateDailySales(ShopID uint, TotalSales, Admirers int) error
 	UpdateColumnsInShop(Shop models.Shop, updateData map[string]interface{}) error
+	CreateMenu(Menus models.MenuItem) error
 }
 
 func (d *DataBase) UpdateColumnsInShop(Shop models.Shop, updateData map[string]interface{}) error {
@@ -83,6 +84,12 @@ func (d *DataBase) UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID
 
 func (d *DataBase) SaveMenu(Menus models.MenuItem) error {
 	if err := d.DB.Save(&Menus).Error; err != nil {
+		return utils.HandleError(err)
+	}
+	return nil
+}
+func (d *DataBase) CreateMenu(Menus models.MenuItem) error {
+	if err := d.DB.Create(&Menus).Error; err != nil {
 		return utils.HandleError(err)
 	}
 	return nil

@@ -853,3 +853,51 @@ func TestUpdateColumnsInShopFail(t *testing.T) {
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
 
+func TestCreateMenuFail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	ShopRepo := repository.DataBase{DB: MockedDataBase}
+	menu := models.MenuItem{
+
+		Category:  "Out Of Production",
+		SectionID: "0",
+		Amount:    0,
+		Items:     []models.Item{},
+	}
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "menu_items" ("created_at","updated_at","deleted_at","shop_menu_id","category","section_id","link","amount") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "id"`)).
+		WillReturnError(errors.New("error while handling database operation"))
+	sqlMock.ExpectRollback()
+
+	err := ShopRepo.CreateMenu(menu)
+	assert.Contains(t, err.Error(), "error while handling database operation")
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestCreateMenuSuccess(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	ShopRepo := repository.DataBase{DB: MockedDataBase}
+	menu := models.MenuItem{
+
+		Category:  "Out Of Production",
+		SectionID: "0",
+		Link:      "JustALink.com",
+		Amount:    0,
+		Items:     []models.Item{},
+	}
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "menu_items" ("created_at","updated_at","deleted_at","shop_menu_id","category","section_id","link","amount") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "id"`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), 0, menu.Category, menu.SectionID, menu.Link, menu.Amount).WillReturnRows(sqlmock.NewRows([]string{"1", "2"}))
+	sqlMock.ExpectCommit()
+
+	err := ShopRepo.CreateMenu(menu)
+	assert.NoError(t, err)
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}

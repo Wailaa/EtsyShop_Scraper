@@ -192,6 +192,10 @@ func (sr *MockedShopRepository) UpdateDailySales(ScrappedSoldItems []models.Sold
 	args := sr.Called()
 	return args.Error(0)
 }
+func (sr *MockedShopRepository) CreateMenu(Menus models.MenuItem) error {
+	args := sr.Called()
+	return args.Error(0)
+}
 func (sr *MockedShopRepository) SaveMenu(Menus models.MenuItem) error {
 	args := sr.Called()
 	return args.Error(0)
