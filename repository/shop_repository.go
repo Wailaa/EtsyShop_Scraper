@@ -26,6 +26,16 @@ type ShopRepository interface {
 	GetShopByName(ShopName string) (shop *models.Shop, err error)
 	GetAllShops() (*[]models.Shop, error)
 	CreateDailySales(ShopID uint, TotalSales, Admirers int) error
+	UpdateColumnsInShop(Shop models.Shop, updateData map[string]interface{}) error
+}
+
+func (d *DataBase) UpdateColumnsInShop(Shop models.Shop, updateData map[string]interface{}) error {
+	if err := d.DB.Model(&Shop).Updates(updateData).Error; err != nil {
+		return utils.HandleError(err)
+	}
+	return nil
+}
+
 func (d *DataBase) CreateDailySales(ShopID uint, TotalSales, Admirers int) error {
 	dailySales := models.DailyShopSales{
 		ShopID:     ShopID,

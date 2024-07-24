@@ -802,3 +802,54 @@ func TestCreateDailySalesFail(t *testing.T) {
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 
 }
+func TestUpdateColumnsInShopSuccess(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	Shop := models.Shop{}
+	Shop.ID = uint(2)
+	updateData := map[string]interface{}{
+		"total_sales": 201,
+		"admirers":    101,
+	}
+
+	ShopRepo := repository.DataBase{DB: MockedDataBase}
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "shops" SET "admirers"=$1,"total_sales"=$2,"updated_at"=$3 WHERE "shops"."deleted_at" IS NULL AND "id" = $4`)).
+		WithArgs(101, 201, sqlmock.AnyArg(), Shop.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	sqlMock.ExpectCommit()
+
+	err := ShopRepo.UpdateColumnsInShop(Shop, updateData)
+
+	assert.NoError(t, err)
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}
+func TestUpdateColumnsInShopFail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	Shop := models.Shop{}
+	Shop.ID = uint(2)
+	updateData := map[string]interface{}{
+		"total_sales": 201,
+		"admirers":    101,
+	}
+
+	ShopRepo := repository.DataBase{DB: MockedDataBase}
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "shops" SET "admirers"=$1,"total_sales"=$2,"updated_at"=$3 WHERE "shops"."deleted_at" IS NULL AND "id" = $4`)).
+		WillReturnError(errors.New("error while handling database operation"))
+
+	sqlMock.ExpectRollback()
+
+	err := ShopRepo.UpdateColumnsInShop(Shop, updateData)
+
+	assert.Contains(t, err.Error(), "error while handling database operation")
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}
+

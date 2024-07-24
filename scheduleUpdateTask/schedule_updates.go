@@ -120,7 +120,9 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 
 		if NewAdmirers > 0 || NewSoldItems > 0 {
 			log.Printf("Shop's name: %s , TotalSales was: %v , TotalSales now: %v \n", Shop.Name, Shop.TotalSales, updatedShop.TotalSales)
-			u.DB.Model(&Shop).Updates(updateData)
+			if err := u.Repo.UpdateColumnsInShop(Shop, updateData); err != nil {
+				return utils.HandleError(err)
+			}
 		}
 
 		if needUpdateItems {
