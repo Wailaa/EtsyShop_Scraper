@@ -114,7 +114,7 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 			"admirers":    updatedShop.Admirers,
 		}
 
-		if err := u.CreateDailySales(Shop.ID, updatedShop.TotalSales, updatedShop.Admirers); err != nil {
+		if err := u.Repo.CreateDailySales(Shop.ID, updatedShop.TotalSales, updatedShop.Admirers); err != nil {
 			return utils.HandleError(err)
 		}
 
@@ -318,17 +318,4 @@ func AddSoldItemsQueueList(SoldItemsQueueList []UpdateSoldItemsQueue, NewSoldIte
 	SoldItemsQueueList = append(SoldItemsQueueList, SoldItemsQueue)
 
 	return SoldItemsQueueList
-}
-
-func (u *UpdateDB) CreateDailySales(ShopID uint, TotalSales, Admirers int) error {
-	dailySales := models.DailyShopSales{
-		ShopID:     ShopID,
-		TotalSales: TotalSales,
-		Admirers:   Admirers,
-	}
-
-	if err := u.DB.Create(&dailySales).Error; err != nil {
-		return utils.HandleError(err)
-	}
-	return nil
 }

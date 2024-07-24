@@ -25,8 +25,19 @@ type ShopRepository interface {
 	GetShopWithItemsByShopID(ID uint) (*models.Shop, error)
 	GetShopByName(ShopName string) (shop *models.Shop, err error)
 	GetAllShops() (*[]models.Shop, error)
-}
+	CreateDailySales(ShopID uint, TotalSales, Admirers int) error
+func (d *DataBase) CreateDailySales(ShopID uint, TotalSales, Admirers int) error {
+	dailySales := models.DailyShopSales{
+		ShopID:     ShopID,
+		TotalSales: TotalSales,
+		Admirers:   Admirers,
+	}
 
+	if err := d.DB.Create(&dailySales).Error; err != nil {
+		return utils.HandleError(err)
+	}
+	return nil
+}
 func (d *DataBase) CreateShop(scrappedShop *models.Shop) error {
 	if err := d.DB.Create(scrappedShop).Error; err != nil {
 		return utils.HandleError(err)

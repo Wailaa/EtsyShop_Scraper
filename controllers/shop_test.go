@@ -196,6 +196,10 @@ func (sr *MockedShopRepository) SaveMenu(Menus models.MenuItem) error {
 	args := sr.Called()
 	return args.Error(0)
 }
+func (sr *MockedShopRepository) CreateDailySales(ShopID uint, TotalSales, Admirers int) error {
+	args := sr.Called()
+	return args.Error(0)
+}
 func (sr *MockedShopRepository) FetchShopByID(ID uint) (*models.Shop, error) {
 	args := sr.Called()
 	shopInterface := args.Get(0)

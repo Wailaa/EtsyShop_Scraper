@@ -506,7 +506,7 @@ func TestGetAccountWithShopsFail(t *testing.T) {
 
 	User := repository.DataBase{DB: MockedDataBase}
 
-	Account := models.Account{FirstName: "Example"}
+	Account := models.Account{}
 	Account.ID = uuid.New()
 	AccountIdtoString := Account.ID.String()
 

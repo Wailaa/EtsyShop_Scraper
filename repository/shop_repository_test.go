@@ -756,3 +756,49 @@ func TestGetAllShopsError(t *testing.T) {
 
 	assert.True(t, errors.Is(err, gorm.ErrRecordNotFound))
 }
+
+func TestCreateDailySales(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	ShopRepo := repository.DataBase{DB: MockedDataBase}
+
+	ShopID := uint(10)
+	TotalSales := 100
+	Admirers := 90
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "daily_shop_sales" ("created_at","updated_at","deleted_at","shop_id","total_sales","admirers","daily_revenue") VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING "id"`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), ShopID, TotalSales, Admirers, float64(0)).WillReturnRows(sqlmock.NewRows([]string{"1", "2"}))
+	sqlMock.ExpectCommit()
+
+	ShopRepo.CreateDailySales(ShopID, TotalSales, Admirers)
+
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+
+}
+
+func TestCreateDailySalesFail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	ShopRepo := repository.DataBase{DB: MockedDataBase}
+
+	ShopID := uint(10)
+	TotalSales := 100
+	Admirers := 90
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "daily_shop_sales" ("created_at","updated_at","deleted_at","shop_id","total_sales","admirers","daily_revenue") VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING "id"`)).
+		WillReturnError(errors.New("error while handling database operation"))
+	sqlMock.ExpectRollback()
+
+	err := ShopRepo.CreateDailySales(ShopID, TotalSales, Admirers)
+
+	assert.Contains(t, err.Error(), "error while handling database operation")
+
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+
+}
