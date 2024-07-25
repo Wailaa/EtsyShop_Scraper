@@ -193,10 +193,12 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 		}
 
 		for _, item := range UpdatedMenu.Items {
-			existingItem := models.Item{}
 			existingItemMap[item.ListingID] = true
 
-			u.DB.Where("Listing_id = ? ", item.ListingID).First(&existingItem)
+			existingItem, err := u.Repo.GetItemByListingID(item.ListingID)
+			if err != nil {
+				return utils.HandleError(err)
+			}
 			dataShopID = existingItem.DataShopID
 
 			if existingItem.ID == 0 {
@@ -204,7 +206,7 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 				u.AddNewItem(item)
 
 			} else if ShouldUpdateItem(existingItem.OriginalPrice, item.OriginalPrice) {
-				ApplyUpdated(u.DB, existingItem, item, UpdatedMenu.ID)
+				ApplyUpdated(u.DB, *existingItem, item, UpdatedMenu.ID)
 			}
 		}
 
