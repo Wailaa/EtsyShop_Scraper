@@ -898,7 +898,7 @@ func TestApplyUpdatedSuccess(t *testing.T) {
 		WithArgs(sqlmock.AnyArg(), NewItem.OriginalPrice, NewItem.Available, ExistingItem.MenuItemID, ExistingItem.ID).WillReturnResult(sqlmock.NewResult(1, 1))
 	sqlMock.ExpectCommit()
 
-	scheduleUpdates.ApplyUpdated(MockedDataBase, ExistingItem, NewItem, ExistingItem.MenuItemID)
+	scheduleUpdates.ApplyItemUpdates(MockedDataBase, ExistingItem, NewItem, ExistingItem.MenuItemID)
 
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
@@ -930,7 +930,7 @@ func TestApplyUpdatedFail(t *testing.T) {
 		WithArgs(sqlmock.AnyArg(), NewItem.OriginalPrice, NewItem.Available, ExistingItem.MenuItemID, NewItem.ID).WillReturnError(errors.New("no item id"))
 	sqlMock.ExpectRollback()
 
-	scheduleUpdates.ApplyUpdated(MockedDataBase, ExistingItem, NewItem, ExistingItem.MenuItemID)
+	scheduleUpdates.ApplyItemUpdates(MockedDataBase, ExistingItem, NewItem, ExistingItem.MenuItemID)
 
 	assert.Error(t, sqlMock.ExpectationsWereMet())
 }

@@ -206,7 +206,7 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 				u.AddNewItem(item)
 
 			} else if ShouldUpdateItem(existingItem.OriginalPrice, item.OriginalPrice) {
-				ApplyUpdated(u.DB, *existingItem, item, UpdatedMenu.ID)
+				ApplyItemUpdates(u.DB, *existingItem, item, UpdatedMenu.ID)
 			}
 		}
 
@@ -225,7 +225,7 @@ func ShouldUpdateItem(existingPrice, newPrice float64) bool {
 	return PriceChangePerc >= PriceDiscrepancy
 }
 
-func ApplyUpdated(DB *gorm.DB, existingItem, item models.Item, UpdatedMenuID uint) {
+func ApplyItemUpdates(DB *gorm.DB, existingItem, item models.Item, UpdatedMenuID uint) {
 
 	DB.Create(&models.ItemHistoryChange{
 		ItemID:         existingItem.ID,
