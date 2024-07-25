@@ -28,8 +28,16 @@ type ShopRepository interface {
 	CreateDailySales(ShopID uint, TotalSales, Admirers int) error
 	UpdateColumnsInShop(Shop models.Shop, updateData map[string]interface{}) error
 	CreateMenu(Menus models.MenuItem) error
+	GetItemByListingID(ID uint) (*models.Item, error)
 }
 
+func (d *DataBase) GetItemByListingID(ID uint) (*models.Item, error) {
+	existingItem := models.Item{}
+	if err := d.DB.Where("Listing_id = ? ", ID).First(&existingItem).Error; err != nil {
+		return nil, utils.HandleError(err)
+	}
+	return &existingItem, nil
+}
 func (d *DataBase) UpdateColumnsInShop(Shop models.Shop, updateData map[string]interface{}) error {
 	if err := d.DB.Model(&Shop).Updates(updateData).Error; err != nil {
 		return utils.HandleError(err)

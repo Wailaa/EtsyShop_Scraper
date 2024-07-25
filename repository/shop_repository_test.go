@@ -901,3 +901,53 @@ func TestCreateMenuSuccess(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
+func TestGetItemByListingIDSuccess(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	ShopRepo := repository.DataBase{DB: MockedDataBase}
+
+	ExistingItem := models.Item{
+		Name:           "ExampeItem",
+		OriginalPrice:  10.0,
+		CurrencySymbol: "€",
+		SalePrice:      10.0,
+		DiscoutPercent: "",
+		Available:      true,
+		ItemLink:       "www.ExampleLink.com",
+		MenuItemID:     uint(2),
+		ListingID:      uint(9),
+		DataShopID:     "98889",
+	}
+	ExistingItem.ID = uint(15)
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "items" WHERE Listing_id = $1 AND "items"."deleted_at" IS NULL ORDER BY "items"."id" LIMIT $2`)).WithArgs(ExistingItem.ListingID, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "original_price", "currency_symbol", "sale_price", "discount_percent", "available", "item_link", "menu_item_id", "listing_id", "data_shop_id"}).
+			AddRow(ExistingItem.ID, ExistingItem.Name, ExistingItem.OriginalPrice, ExistingItem.CurrencySymbol, ExistingItem.SalePrice, ExistingItem.DiscoutPercent, ExistingItem.Available, ExistingItem.ItemLink, ExistingItem.MenuItemID, ExistingItem.ListingID, ExistingItem.DataShopID))
+
+	result, err := ShopRepo.GetItemByListingID(ExistingItem.ListingID)
+	assert.Equal(t, result, &ExistingItem)
+
+	assert.NoError(t, err)
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}
+
+func TestGetItemByListingIDFail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	ShopRepo := repository.DataBase{DB: MockedDataBase}
+
+	ExistingItem := models.Item{
+		ListingID: uint(9),
+	}
+	ExistingItem.ID = uint(15)
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "items" WHERE Listing_id = $1 AND "items"."deleted_at" IS NULL ORDER BY "items"."id" LIMIT $2`)).WithArgs(ExistingItem.ListingID, 1).WillReturnError(errors.New("error while fetching database"))
+	_, err := ShopRepo.GetItemByListingID(ExistingItem.ListingID)
+
+	assert.Error(t, err, "error while fetching database")
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}

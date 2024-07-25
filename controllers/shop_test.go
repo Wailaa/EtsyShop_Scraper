@@ -178,6 +178,15 @@ func (sr *MockedShopRepository) GetAllShops() (*[]models.Shop, error) {
 	}
 	return shops, args.Error(1)
 }
+func (sr *MockedShopRepository) GetItemByListingID(ID uint) (*models.Item, error) {
+	args := sr.Called()
+	shopInterface := args.Get(0)
+	item := &models.Item{}
+	if shopInterface != nil {
+		item = shopInterface.(*models.Item)
+	}
+	return item, args.Error(1)
+}
 
 func (sr *MockedShopRepository) SaveShop(Shop *models.Shop) error {
 	args := sr.Called()
