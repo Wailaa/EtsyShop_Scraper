@@ -29,6 +29,38 @@ type ShopRepository interface {
 	UpdateColumnsInShop(Shop models.Shop, updateData map[string]interface{}) error
 	CreateMenu(Menus models.MenuItem) error
 	GetItemByListingID(ID uint) (*models.Item, error)
+	CreateItemHistoryChange(existingItem, item models.Item, UpdatedMenuID uint) error
+	UpdateItem(existingItem, item models.Item, UpdatedMenuID uint) error
+}
+
+func (d *DataBase) CreateItemHistoryChange(existingItem, item models.Item, UpdatedMenuID uint) error {
+
+	if err := d.DB.Create(&models.ItemHistoryChange{
+		ItemID:         existingItem.ID,
+		NewItemCreated: false,
+		OldPrice:       existingItem.OriginalPrice,
+		NewPrice:       item.OriginalPrice,
+		OldAvailable:   existingItem.Available,
+		NewAvailable:   item.Available,
+		OldMenuItemID:  existingItem.MenuItemID,
+		NewMenuItemID:  UpdatedMenuID,
+	}).Error; err != nil {
+		return utils.HandleError(err)
+	}
+
+	return nil
+}
+func (d *DataBase) UpdateItem(existingItem, item models.Item, UpdatedMenuID uint) error {
+
+	if err := d.DB.Model(&existingItem).Updates(models.Item{
+		OriginalPrice: item.OriginalPrice,
+		Available:     item.Available,
+		MenuItemID:    UpdatedMenuID,
+	}).Error; err != nil {
+		return utils.HandleError(err)
+	}
+
+	return nil
 }
 
 func (d *DataBase) GetItemByListingID(ID uint) (*models.Item, error) {

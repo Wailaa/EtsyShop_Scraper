@@ -169,6 +169,10 @@ func (sr *MockedShopRepository) CreateShop(scrappedShop *models.Shop) error {
 	args := sr.Called()
 	return args.Error(0)
 }
+func (sr *MockedShopRepository) UpdateItem(existingItem, item models.Item, UpdatedMenuID uint) error {
+	args := sr.Called()
+	return args.Error(0)
+}
 func (sr *MockedShopRepository) GetAllShops() (*[]models.Shop, error) {
 	args := sr.Called()
 	shopInterface := args.Get(0)
@@ -189,6 +193,10 @@ func (sr *MockedShopRepository) GetItemByListingID(ID uint) (*models.Item, error
 }
 
 func (sr *MockedShopRepository) SaveShop(Shop *models.Shop) error {
+	args := sr.Called()
+	return args.Error(0)
+}
+func (sr *MockedShopRepository) CreateItemHistoryChange(existingItem, item models.Item, UpdatedMenuID uint) error {
 	args := sr.Called()
 	return args.Error(0)
 }
