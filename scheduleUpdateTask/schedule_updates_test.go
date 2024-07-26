@@ -867,6 +867,9 @@ func TestApplyUpdatedSuccess(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
+	ShopRepo := &repository.DataBase{DB: MockedDataBase}
+	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
+
 	sqlMock.MatchExpectationsInOrder(true)
 
 	NewItem := models.Item{
@@ -898,7 +901,7 @@ func TestApplyUpdatedSuccess(t *testing.T) {
 		WithArgs(sqlmock.AnyArg(), NewItem.OriginalPrice, NewItem.Available, ExistingItem.MenuItemID, ExistingItem.ID).WillReturnResult(sqlmock.NewResult(1, 1))
 	sqlMock.ExpectCommit()
 
-	scheduleUpdates.ApplyItemUpdates(MockedDataBase, ExistingItem, NewItem, ExistingItem.MenuItemID)
+	updateDB.ApplyItemUpdates(ExistingItem, NewItem, ExistingItem.MenuItemID)
 
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
@@ -907,6 +910,9 @@ func TestApplyUpdatedFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
+
+	ShopRepo := &repository.DataBase{DB: MockedDataBase}
+	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
 
 	sqlMock.MatchExpectationsInOrder(true)
 
@@ -930,7 +936,7 @@ func TestApplyUpdatedFail(t *testing.T) {
 		WithArgs(sqlmock.AnyArg(), NewItem.OriginalPrice, NewItem.Available, ExistingItem.MenuItemID, NewItem.ID).WillReturnError(errors.New("no item id"))
 	sqlMock.ExpectRollback()
 
-	scheduleUpdates.ApplyItemUpdates(MockedDataBase, ExistingItem, NewItem, ExistingItem.MenuItemID)
+	updateDB.ApplyItemUpdates(ExistingItem, NewItem, ExistingItem.MenuItemID)
 
 	assert.Error(t, sqlMock.ExpectationsWereMet())
 }
