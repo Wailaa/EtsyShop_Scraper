@@ -186,7 +186,7 @@ func (u *UpdateDB) ShopItemsUpdate(Shop, updatedShop *models.Shop, scraper scrap
 		if Exists := MenuExists(UpdatedMenu.Category, ListOfMenus); !Exists {
 			NewMenu := models.CreateMenuItem(UpdatedMenu)
 			NewMenu.ShopMenuID = Shop.ShopMenu.ID
-			if err := u.Repo.CreateMenu(NewMenu); err != nil {
+			if _, err := u.Repo.CreateMenu(NewMenu); err != nil {
 				return utils.HandleError(err)
 			}
 			UpdatedMenu.ID = NewMenu.ID
@@ -245,7 +245,7 @@ func (u *UpdateDB) HandleOutOfProductionItems(dataShopID string, OutOfProduction
 					SectionID:  "0",
 				})
 
-				u.DB.Create(&Menu)
+				Menu, err = u.Repo.CreateMenu(Menu)
 				OutOfProductionID = Menu.ID
 				log.Println("Out Of Production is created , id : ", OutOfProductionID)
 

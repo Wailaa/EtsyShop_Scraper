@@ -218,9 +218,9 @@ func (sr *MockedShopRepository) UpdateDailySales(ScrappedSoldItems []models.Sold
 	args := sr.Called()
 	return args.Error(0)
 }
-func (sr *MockedShopRepository) CreateMenu(Menus models.MenuItem) error {
+func (sr *MockedShopRepository) CreateMenu(Menus models.MenuItem) (models.MenuItem, error) {
 	args := sr.Called()
-	return args.Error(0)
+	return Menus, args.Error(0)
 }
 func (sr *MockedShopRepository) SaveMenu(Menus models.MenuItem) error {
 	args := sr.Called()

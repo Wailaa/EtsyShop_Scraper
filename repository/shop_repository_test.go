@@ -872,7 +872,7 @@ func TestCreateMenuFail(t *testing.T) {
 		WillReturnError(errors.New("error while handling database operation"))
 	sqlMock.ExpectRollback()
 
-	err := ShopRepo.CreateMenu(menu)
+	_, err := ShopRepo.CreateMenu(menu)
 	assert.Contains(t, err.Error(), "error while handling database operation")
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
@@ -897,7 +897,7 @@ func TestCreateMenuSuccess(t *testing.T) {
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), 0, menu.Category, menu.SectionID, menu.Link, menu.Amount).WillReturnRows(sqlmock.NewRows([]string{"1", "2"}))
 	sqlMock.ExpectCommit()
 
-	err := ShopRepo.CreateMenu(menu)
+	_, err := ShopRepo.CreateMenu(menu)
 	assert.NoError(t, err)
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
