@@ -31,6 +31,7 @@ type ShopRepository interface {
 	GetItemByListingID(ID uint) (*models.Item, error)
 	CreateItemHistoryChange(existingItem, item models.Item, UpdatedMenuID uint) error
 	UpdateItem(existingItem, item models.Item, UpdatedMenuID uint) error
+	GetAllItemsByDataShopID(dataShopID string) ([]models.Item, error)
 }
 
 func (d *DataBase) CreateItemHistoryChange(existingItem, item models.Item, UpdatedMenuID uint) error {
@@ -69,6 +70,13 @@ func (d *DataBase) GetItemByListingID(ID uint) (*models.Item, error) {
 		return nil, utils.HandleError(err)
 	}
 	return &existingItem, nil
+}
+func (d *DataBase) GetAllItemsByDataShopID(dataShopID string) ([]models.Item, error) {
+	existingItems := []models.Item{}
+	if err := d.DB.Where("data_shop_id = ?", dataShopID).Find(&existingItems).Error; err != nil {
+		return nil, utils.HandleError(err)
+	}
+	return existingItems, nil
 }
 func (d *DataBase) UpdateColumnsInShop(Shop models.Shop, updateData map[string]interface{}) error {
 	if err := d.DB.Model(&Shop).Updates(updateData).Error; err != nil {

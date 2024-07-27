@@ -200,6 +200,15 @@ func (sr *MockedShopRepository) CreateItemHistoryChange(existingItem, item model
 	args := sr.Called()
 	return args.Error(0)
 }
+func (sr *MockedShopRepository) GetAllItemsByDataShopID(dataShopID string) ([]models.Item, error) {
+	args := sr.Called()
+	shopInterface := args.Get(0)
+	var Items []models.Item
+	if shopInterface != nil {
+		Items = shopInterface.([]models.Item)
+	}
+	return Items, args.Error(1)
+}
 func (sr *MockedShopRepository) SaveSoldItemsToDB(ScrappedSoldItems []models.SoldItems) error {
 	args := sr.Called()
 	return args.Error(0)

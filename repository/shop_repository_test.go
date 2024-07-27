@@ -932,6 +932,68 @@ func TestGetItemByListingIDSuccess(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
+func TestGetAllItemsByDataShopIDSuccess(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	ShopRepo := repository.DataBase{DB: MockedDataBase}
+
+	DataShopID := "98889"
+
+	ExistingItems := []models.Item{{
+		Name:           "ExampeItem",
+		OriginalPrice:  10.0,
+		CurrencySymbol: "€",
+		SalePrice:      10.0,
+		DiscoutPercent: "",
+		Available:      true,
+		ItemLink:       "www.ExampleLink.com",
+		MenuItemID:     uint(2),
+		ListingID:      uint(9),
+		DataShopID:     "98889",
+	}, {
+
+		Name:           "ExampeItem2",
+		OriginalPrice:  10.0,
+		CurrencySymbol: "€",
+		SalePrice:      10.0,
+		DiscoutPercent: "",
+		Available:      true,
+		ItemLink:       "www.ExampleLink.com",
+		MenuItemID:     uint(2),
+		ListingID:      uint(9),
+		DataShopID:     "98889",
+	}}
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "items" WHERE data_shop_id = $1 AND "items"."deleted_at" IS NULL`)).WithArgs(DataShopID).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "original_price", "currency_symbol", "sale_price", "discount_percent", "available", "item_link", "menu_item_id", "listing_id", "data_shop_id"}).
+			AddRow(ExistingItems[0].ID, ExistingItems[0].Name, ExistingItems[0].OriginalPrice, ExistingItems[0].CurrencySymbol, ExistingItems[0].SalePrice, ExistingItems[0].DiscoutPercent, ExistingItems[0].Available, ExistingItems[0].ItemLink, ExistingItems[0].MenuItemID, ExistingItems[0].ListingID, ExistingItems[0].DataShopID).
+			AddRow(ExistingItems[1].ID, ExistingItems[1].Name, ExistingItems[1].OriginalPrice, ExistingItems[1].CurrencySymbol, ExistingItems[1].SalePrice, ExistingItems[1].DiscoutPercent, ExistingItems[1].Available, ExistingItems[1].ItemLink, ExistingItems[1].MenuItemID, ExistingItems[1].ListingID, ExistingItems[1].DataShopID))
+
+	result, err := ShopRepo.GetAllItemsByDataShopID(DataShopID)
+	assert.Equal(t, result, ExistingItems)
+
+	assert.NoError(t, err)
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}
+func TestGetItemByDataShopIDFail(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	ShopRepo := repository.DataBase{DB: MockedDataBase}
+
+	DataShopID := "98889"
+
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "items" WHERE data_shop_id = $1 AND "items"."deleted_at" IS NULL`)).WithArgs(DataShopID).
+		WillReturnError(errors.New("error while handling database"))
+
+	_, err := ShopRepo.GetAllItemsByDataShopID(DataShopID)
+
+	assert.Error(t, err)
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}
 
 func TestGetItemByListingIDFail(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
