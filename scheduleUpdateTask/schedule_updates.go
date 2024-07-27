@@ -233,8 +233,8 @@ func (u *UpdateDB) ApplyItemUpdates(existingItem, item models.Item, UpdatedMenuI
 }
 
 func (u *UpdateDB) HandleOutOfProductionItems(dataShopID string, OutOfProductionID, ShopMenuID uint, existingItemMap map[uint]bool) {
-	existingItems := []models.Item{}
-	u.DB.Where("data_shop_id = ?", dataShopID).Find(&existingItems)
+	existingItems, err := u.Repo.GetAllItemsByDataShopID(dataShopID)
+	log.Println("error is :", err)
 
 	for _, item := range existingItems {
 		if _, ok := existingItemMap[item.ListingID]; !ok && item.MenuItemID != OutOfProductionID {

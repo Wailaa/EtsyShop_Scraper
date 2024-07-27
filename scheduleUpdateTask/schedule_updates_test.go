@@ -336,40 +336,41 @@ func TestShopItemsUpdateNoUpdates(t *testing.T) {
 	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
 
 	MockedScrapper := &MockScrapper{}
-	ExistingShop := &models.Shop{ShopMenu: models.ShopMenu{
-		Menu: []models.MenuItem{
-			{
-				Category:  "All",
-				SectionID: "0",
-				Amount:    0,
-				Items:     []models.Item{},
+	ExistingShop := &models.Shop{
+		ShopMenu: models.ShopMenu{
+			Menu: []models.MenuItem{
+				{
+					Category:  "All",
+					SectionID: "0",
+					Amount:    0,
+					Items:     []models.Item{},
+				},
+				{
+					Category:  "On sale",
+					SectionID: "1",
+					Amount:    0,
+					Items:     []models.Item{},
+				},
+				{
+					Category:  "shelving",
+					SectionID: "46696458",
+					Amount:    45,
+					Items:     []models.Item{{ListingID: 1, DataShopID: "101", OriginalPrice: 10}, {ListingID: 2, DataShopID: "101", OriginalPrice: 10}, {ListingID: 3, DataShopID: "101", OriginalPrice: 10}},
+				},
+				{
+					Category:  "tables",
+					SectionID: "46704593",
+					Amount:    44,
+					Items:     []models.Item{{ListingID: 4, DataShopID: "101", OriginalPrice: 10}, {ListingID: 5, DataShopID: "101", OriginalPrice: 10}},
+				},
+				{
+					Category:  "coat racks",
+					SectionID: "46704591",
+					Amount:    46,
+					Items:     []models.Item{{ListingID: 6, DataShopID: "101", OriginalPrice: 10}, {ListingID: 7, DataShopID: "101", OriginalPrice: 10}, {ListingID: 8, DataShopID: "101", OriginalPrice: 10}, {ListingID: 9, DataShopID: "101", OriginalPrice: 10}},
+				},
 			},
-			{
-				Category:  "On sale",
-				SectionID: "1",
-				Amount:    0,
-				Items:     []models.Item{},
-			},
-			{
-				Category:  "shelving",
-				SectionID: "46696458",
-				Amount:    45,
-				Items:     []models.Item{{ListingID: 1, DataShopID: "101", OriginalPrice: 10}, {ListingID: 2, DataShopID: "101", OriginalPrice: 10}, {ListingID: 3, DataShopID: "101", OriginalPrice: 10}},
-			},
-			{
-				Category:  "tables",
-				SectionID: "46704593",
-				Amount:    44,
-				Items:     []models.Item{{ListingID: 4, DataShopID: "101", OriginalPrice: 10}, {ListingID: 5, DataShopID: "101", OriginalPrice: 10}},
-			},
-			{
-				Category:  "coat racks",
-				SectionID: "46704591",
-				Amount:    46,
-				Items:     []models.Item{{ListingID: 6, DataShopID: "101", OriginalPrice: 10}, {ListingID: 7, DataShopID: "101", OriginalPrice: 10}, {ListingID: 8, DataShopID: "101", OriginalPrice: 10}, {ListingID: 9, DataShopID: "101", OriginalPrice: 10}},
-			},
-		},
-	}}
+		}}
 
 	UpdatedShop := &models.Shop{
 		ShopMenu: models.ShopMenu{
@@ -417,9 +418,8 @@ func TestShopItemsUpdateNoUpdates(t *testing.T) {
 	sqlMock.MatchExpectationsInOrder(true)
 
 	for _, Menu := range UpdatedShop.ShopMenu.Menu {
-		for _, item := range Menu.Items {
-			sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "items" WHERE Listing_id = $1 AND "items"."deleted_at" IS NULL ORDER BY "items"."id" LIMIT $2`)).WithArgs(item.ListingID, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "listing_id"}).AddRow(item.ID, item.ListingID))
-
+		for index, item := range Menu.Items {
+			sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "items" WHERE Listing_id = $1 AND "items"."deleted_at" IS NULL ORDER BY "items"."id" LIMIT $2`)).WithArgs(item.ListingID, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "ListingID", "DataShopID", "OriginalPrice"}).AddRow(index+1, item.ListingID, item.DataShopID, item.OriginalPrice))
 		}
 
 	}
@@ -923,22 +923,21 @@ func TestApplyUpdatedFail(t *testing.T) {
 	NewItem.ID = uint(2)
 
 	ExistingItem := models.Item{}
-	ExistingItem.ID = 0
+	ExistingItem.ID = 1
 
 	sqlMock.ExpectBegin()
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "item_history_changes" ("created_at","updated_at","deleted_at","item_id","new_item_created","old_price","new_price","old_available","new_available","old_menu_item_id","new_menu_item_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"`)).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, ExistingItem.ID, false, ExistingItem.OriginalPrice, NewItem.OriginalPrice, ExistingItem.Available, NewItem.Available, ExistingItem.MenuItemID, ExistingItem.MenuItemID).WillReturnRows(sqlmock.NewRows([]string{"1"}))
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, ExistingItem.ID, false, ExistingItem.OriginalPrice, NewItem.OriginalPrice, ExistingItem.Available, NewItem.Available, ExistingItem.MenuItemID, ExistingItem.MenuItemID).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(ExistingItem.ID))
 	sqlMock.ExpectCommit()
 
 	sqlMock.ExpectBegin()
-
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "updated_at"=$1,"original_price"=$2,"available"=$3,"menu_item_id"=$4 WHERE "items"."deleted_at" IS NULL AND "id" = $5`)).
-		WithArgs(sqlmock.AnyArg(), NewItem.OriginalPrice, NewItem.Available, ExistingItem.MenuItemID, NewItem.ID).WillReturnError(errors.New("no item id"))
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "updated_at"=$1,"original_price"=$2,"available"=$3 WHERE "items"."deleted_at" IS NULL AND "id" = $4`)).
+		WithArgs(sqlmock.AnyArg(), NewItem.OriginalPrice, NewItem.Available, ExistingItem.ID).WillReturnError(errors.New("no item id"))
 	sqlMock.ExpectRollback()
 
 	updateDB.ApplyItemUpdates(ExistingItem, NewItem, ExistingItem.MenuItemID)
 
-	assert.Error(t, sqlMock.ExpectationsWereMet())
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
 
 func TestHandleOutOfProductionItemsCreateNewMenu(t *testing.T) {
@@ -947,7 +946,8 @@ func TestHandleOutOfProductionItemsCreateNewMenu(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase}
+	ShopRepo := &repository.DataBase{DB: MockedDataBase}
+	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
 
 	dataShopId := "101"
 	OutOfProductionID := uint(0)
@@ -1002,7 +1002,8 @@ func TestHandleOutOfProductionItemsExists(t *testing.T) {
 	testDB.Begin()
 	defer testDB.Close()
 
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase}
+	ShopRepo := &repository.DataBase{DB: MockedDataBase}
+	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
 
 	dataShopId := "101"
 	OutOfProductionID := uint(10)
@@ -1106,7 +1107,7 @@ func TestAddNewItemFail(t *testing.T) {
 	Item.ID = 7
 
 	sqlMock.ExpectBegin()
-	sqlMock.ExpectQuery(regexp.QuoteMeta(`NSERT INTO "items" ("created_at","updated_at","deleted_at","name","original_price","currency_symbol","sale_price","discout_percent","available","item_link","menu_item_id","listing_id","data_shop_id","id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING "id"`)).
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "items" ("created_at","updated_at","deleted_at","name","original_price","currency_symbol","sale_price","discout_percent","available","item_link","menu_item_id","listing_id","data_shop_id","id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING "id"`)).
 		WillReturnError(errors.New("error while handling db operation"))
 
 	sqlMock.ExpectRollback()
