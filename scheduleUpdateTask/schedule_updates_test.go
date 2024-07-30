@@ -1063,7 +1063,8 @@ func TestAddNewItemSuccess(t *testing.T) {
 	defer testDB.Close()
 
 	sqlMock.MatchExpectationsInOrder(true)
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase}
+	ShopRepo := &repository.DataBase{DB: MockedDataBase}
+	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
 
 	Item := models.Item{
 		Name:           "testItem",
@@ -1100,7 +1101,8 @@ func TestAddNewItemFail(t *testing.T) {
 	defer testDB.Close()
 
 	sqlMock.MatchExpectationsInOrder(true)
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase}
+	ShopRepo := &repository.DataBase{DB: MockedDataBase}
+	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
 
 	Item := models.Item{
 		Name:           "testItem",
