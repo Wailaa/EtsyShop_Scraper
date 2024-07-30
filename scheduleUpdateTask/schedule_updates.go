@@ -292,21 +292,22 @@ func (u *UpdateDB) HandleOutOfProductionItems(dataShopID string, OutOfProduction
 
 func (u *UpdateDB) AddNewItem(item models.Item) error {
 
-	if err := u.DB.Create(&item).Error; err != nil {
+	newItem, err := u.Repo.CreateNewItem(item)
+	if err != nil {
 		return utils.HandleError(err)
 	}
 
-	log.Println("new item created : ", item)
+	log.Println("new item created : ", newItem)
 
 	changeRecords := models.ItemHistoryChange{
-		ItemID:         item.ID,
+		ItemID:         newItem.ID,
 		NewItemCreated: true,
 		OldPrice:       0,
-		NewPrice:       item.OriginalPrice,
+		NewPrice:       newItem.OriginalPrice,
 		OldAvailable:   false,
 		NewAvailable:   true,
 
-		NewMenuItemID: item.MenuItemID,
+		NewMenuItemID: newItem.MenuItemID,
 	}
 
 	if err := u.Repo.CreateItemHistoryChange(changeRecords); err != nil {
