@@ -538,10 +538,20 @@ func TestShopItemsUpdateFewUpdates(t *testing.T) {
 			for _, UpdatedItem := range UpdatedMenu.Items {
 				for _, ExistingItem := range ExistingMenu.Items {
 					if UpdatedItem.ListingID == ExistingItem.ListingID {
+
 						sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "items" WHERE Listing_id = $1 AND "items"."deleted_at" IS NULL ORDER BY "items"."id" LIMIT $2`)).WithArgs(ExistingItem.ListingID, 1).
 							WillReturnRows(sqlmock.NewRows([]string{"id", "name", "original_price", "currency_symbol", "sale_price", "discount_percent", "available", "item_link", "menu_item_id", "listing_id", "data_shop_id"}).
 								AddRow(ExistingItem.ID, ExistingItem.Name, ExistingItem.OriginalPrice, ExistingItem.CurrencySymbol, ExistingItem.SalePrice, ExistingItem.DiscoutPercent, ExistingItem.Available, ExistingItem.ItemLink, ExistingItem.MenuItemID, ExistingItem.ListingID, ExistingItem.DataShopID))
-
+						if UpdatedItem.OriginalPrice != ExistingItem.OriginalPrice {
+							sqlMock.ExpectBegin()
+							sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "item_history_changes" ("created_at","updated_at","deleted_at","item_id","new_item_created","old_price","new_price","old_available","new_available","old_menu_item_id","new_menu_item_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"`)).
+								WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, ExistingItem.ID, false, ExistingItem.OriginalPrice, UpdatedItem.OriginalPrice, ExistingItem.Available, UpdatedItem.Available, ExistingItem.MenuItemID, ExistingItem.MenuItemID).WillReturnRows(sqlmock.NewRows([]string{"1"}))
+							sqlMock.ExpectCommit()
+							sqlMock.ExpectBegin()
+							sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "available"=$1,"menu_item_id"=$2,"original_price"=$3,"updated_at"=$4 WHERE "items"."deleted_at" IS NULL AND "id" = $5`)).
+								WithArgs(UpdatedItem.Available, ExistingItem.MenuItemID, UpdatedItem.OriginalPrice, sqlmock.AnyArg(), ExistingItem.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+							sqlMock.ExpectCommit()
+						}
 					}
 				}
 			}
@@ -553,7 +563,7 @@ func TestShopItemsUpdateFewUpdates(t *testing.T) {
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 }
 
-func TestShopItemsUpdateNewItemAdded(t *testing.T) {
+func TestShopItemsUpdateUpdatedItemAdded(t *testing.T) {
 	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
 	testDB.Begin()
 	defer testDB.Close()
@@ -897,8 +907,8 @@ func TestApplyUpdatedSuccess(t *testing.T) {
 	sqlMock.ExpectCommit()
 
 	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "updated_at"=$1,"original_price"=$2,"available"=$3,"menu_item_id"=$4 WHERE "items"."deleted_at" IS NULL AND "id" = $5`)).
-		WithArgs(sqlmock.AnyArg(), NewItem.OriginalPrice, NewItem.Available, ExistingItem.MenuItemID, ExistingItem.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "available"=$1,"menu_item_id"=$2,"original_price"=$3,"updated_at"=$4 WHERE "items"."deleted_at" IS NULL AND "id" = $5`)).
+		WithArgs(NewItem.Available, ExistingItem.MenuItemID, NewItem.OriginalPrice, sqlmock.AnyArg(), ExistingItem.ID).WillReturnResult(sqlmock.NewResult(1, 1))
 	sqlMock.ExpectCommit()
 
 	updateDB.ApplyItemUpdates(ExistingItem, NewItem, ExistingItem.MenuItemID)
@@ -931,8 +941,8 @@ func TestApplyUpdatedFail(t *testing.T) {
 	sqlMock.ExpectCommit()
 
 	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "updated_at"=$1,"original_price"=$2,"available"=$3 WHERE "items"."deleted_at" IS NULL AND "id" = $4`)).
-		WithArgs(sqlmock.AnyArg(), NewItem.OriginalPrice, NewItem.Available, ExistingItem.ID).WillReturnError(errors.New("no item id"))
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "available"=$1,"menu_item_id"=$2,"original_price"=$3,"updated_at"=$4 WHERE "items"."deleted_at" IS NULL AND "id" = $5`)).
+		WithArgs(NewItem.Available, ExistingItem.MenuItemID, NewItem.OriginalPrice, sqlmock.AnyArg(), ExistingItem.ID).WillReturnError(errors.New("no item id"))
 	sqlMock.ExpectRollback()
 
 	updateDB.ApplyItemUpdates(ExistingItem, NewItem, ExistingItem.MenuItemID)

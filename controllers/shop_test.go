@@ -169,7 +169,7 @@ func (sr *MockedShopRepository) CreateShop(scrappedShop *models.Shop) error {
 	args := sr.Called()
 	return args.Error(0)
 }
-func (sr *MockedShopRepository) UpdateItem(existingItem, item models.Item, UpdatedMenuID uint) error {
+func (sr *MockedShopRepository) UpdateItem(existingItem models.Item, changes map[string]interface{}) error {
 	args := sr.Called()
 	return args.Error(0)
 }
@@ -196,7 +196,7 @@ func (sr *MockedShopRepository) SaveShop(Shop *models.Shop) error {
 	args := sr.Called()
 	return args.Error(0)
 }
-func (sr *MockedShopRepository) CreateItemHistoryChange(existingItem, item models.Item, UpdatedMenuID uint) error {
+func (sr *MockedShopRepository) CreateItemHistoryChange(Change models.ItemHistoryChange) error {
 	args := sr.Called()
 	return args.Error(0)
 }

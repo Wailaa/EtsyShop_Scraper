@@ -1028,16 +1028,20 @@ func TestCreateItemHistoryChange(t *testing.T) {
 	}
 
 	ExistingItem := models.Item{
-		Name:           "testItem",
-		OriginalPrice:  20.0,
-		CurrencySymbol: "$",
-		SalePrice:      -1,
-		DiscoutPercent: "",
-		Available:      true,
-		ItemLink:       "www.examplelink.com",
-		MenuItemID:     UpdatedMenuID,
-		ListingID:      101010,
-		DataShopID:     "1234",
+		OriginalPrice: 20.0,
+		Available:     true,
+		MenuItemID:    UpdatedMenuID,
+	}
+
+	Change := models.ItemHistoryChange{
+		ItemID:         ExistingItem.ID,
+		NewItemCreated: false,
+		OldPrice:       ExistingItem.OriginalPrice,
+		NewPrice:       NewItem.OriginalPrice,
+		OldAvailable:   ExistingItem.Available,
+		NewAvailable:   NewItem.Available,
+		OldMenuItemID:  ExistingItem.MenuItemID,
+		NewMenuItemID:  UpdatedMenuID,
 	}
 
 	sqlMock.ExpectBegin()
@@ -1045,7 +1049,7 @@ func TestCreateItemHistoryChange(t *testing.T) {
 		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, ExistingItem.ID, false, ExistingItem.OriginalPrice, NewItem.OriginalPrice, ExistingItem.Available, NewItem.Available, ExistingItem.MenuItemID, UpdatedMenuID).WillReturnRows(sqlmock.NewRows([]string{"1"}))
 	sqlMock.ExpectCommit()
 
-	err := ShopRepo.CreateItemHistoryChange(ExistingItem, NewItem, UpdatedMenuID)
+	err := ShopRepo.CreateItemHistoryChange(Change)
 
 	assert.NoError(t, err)
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
@@ -1066,24 +1070,27 @@ func TestCreateItemHistoryChangeFail(t *testing.T) {
 	}
 
 	ExistingItem := models.Item{
-		Name:           "testItem",
-		OriginalPrice:  20.0,
-		CurrencySymbol: "$",
-		SalePrice:      -1,
-		DiscoutPercent: "",
-		Available:      true,
-		ItemLink:       "www.examplelink.com",
-		MenuItemID:     UpdatedMenuID,
-		ListingID:      101010,
-		DataShopID:     "1234",
-	}
 
+		OriginalPrice: 20.0,
+		Available:     true,
+		MenuItemID:    UpdatedMenuID,
+	}
+	Change := models.ItemHistoryChange{
+		ItemID:         ExistingItem.ID,
+		NewItemCreated: false,
+		OldPrice:       ExistingItem.OriginalPrice,
+		NewPrice:       NewItem.OriginalPrice,
+		OldAvailable:   ExistingItem.Available,
+		NewAvailable:   NewItem.Available,
+		OldMenuItemID:  ExistingItem.MenuItemID,
+		NewMenuItemID:  UpdatedMenuID,
+	}
 	sqlMock.ExpectBegin()
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "item_history_changes" ("created_at","updated_at","deleted_at","item_id","new_item_created","old_price","new_price","old_available","new_available","old_menu_item_id","new_menu_item_id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING "id"`)).
 		WillReturnError(errors.New("error while handling DB"))
 	sqlMock.ExpectRollback()
 
-	err := ShopRepo.CreateItemHistoryChange(ExistingItem, NewItem, UpdatedMenuID)
+	err := ShopRepo.CreateItemHistoryChange(Change)
 
 	assert.Error(t, err)
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
@@ -1098,11 +1105,6 @@ func TestUpdateItemSuccess(t *testing.T) {
 
 	ShopRepo := repository.DataBase{DB: MockedDataBase}
 
-	NewItem := models.Item{
-		OriginalPrice: 40,
-		Available:     true,
-	}
-
 	ExistingItem := models.Item{
 		Name:           "ExampeItem",
 		OriginalPrice:  10.0,
@@ -1117,12 +1119,18 @@ func TestUpdateItemSuccess(t *testing.T) {
 	}
 	ExistingItem.ID = uint(15)
 
+	NewItem := map[string]interface{}{
+		"original_price": 40,
+		"available":      true,
+		"menu_item_id":   ExistingItem.MenuItemID,
+	}
+
 	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "updated_at"=$1,"original_price"=$2,"available"=$3,"menu_item_id"=$4 WHERE "items"."deleted_at" IS NULL AND "id" = $5`)).
-		WithArgs(sqlmock.AnyArg(), NewItem.OriginalPrice, NewItem.Available, ExistingItem.MenuItemID, ExistingItem.ID).WillReturnResult(sqlmock.NewResult(1, 1))
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "available"=$1,"menu_item_id"=$2,"original_price"=$3,"updated_at"=$4 WHERE "items"."deleted_at" IS NULL AND "id" = $5`)).
+		WithArgs(true, ExistingItem.MenuItemID, 40, sqlmock.AnyArg(), ExistingItem.ID).WillReturnResult(sqlmock.NewResult(1, 1))
 	sqlMock.ExpectCommit()
 
-	err := ShopRepo.UpdateItem(ExistingItem, NewItem, ExistingItem.MenuItemID)
+	err := ShopRepo.UpdateItem(ExistingItem, NewItem)
 
 	assert.NoError(t, err)
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
@@ -1136,11 +1144,6 @@ func TestUpdateItemFail(t *testing.T) {
 
 	ShopRepo := repository.DataBase{DB: MockedDataBase}
 
-	NewItem := models.Item{
-		OriginalPrice: 40,
-		Available:     true,
-	}
-
 	ExistingItem := models.Item{
 		Name:           "ExampeItem",
 		OriginalPrice:  10.0,
@@ -1155,12 +1158,18 @@ func TestUpdateItemFail(t *testing.T) {
 	}
 	ExistingItem.ID = uint(15)
 
+	NewItem := map[string]interface{}{
+		"original_price": 40,
+		"available":      true,
+		"menu_item_id":   ExistingItem.MenuItemID,
+	}
+
 	sqlMock.ExpectBegin()
-	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "updated_at"=$1,"original_price"=$2,"available"=$3,"menu_item_id"=$4 WHERE "items"."deleted_at" IS NULL AND "id" = $5`)).
-		WillReturnError(errors.New("error while handling DB"))
+	sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE "items" SET "available"=$1,"menu_item_id"=$2,"original_price"=$3,"updated_at"=$4 WHERE "items"."deleted_at" IS NULL AND "id" = $5`)).
+		WithArgs(true, ExistingItem.MenuItemID, 40, sqlmock.AnyArg(), ExistingItem.ID).WillReturnError(errors.New("error while handling DB"))
 	sqlMock.ExpectRollback()
 
-	err := ShopRepo.UpdateItem(ExistingItem, NewItem, ExistingItem.MenuItemID)
+	err := ShopRepo.UpdateItem(ExistingItem, NewItem)
 
 	assert.Error(t, err)
 	assert.Nil(t, sqlMock.ExpectationsWereMet())

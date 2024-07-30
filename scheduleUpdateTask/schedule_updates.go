@@ -227,8 +227,25 @@ func ShouldUpdateItem(existingPrice, newPrice float64) bool {
 
 func (u *UpdateDB) ApplyItemUpdates(existingItem, item models.Item, UpdatedMenuID uint) {
 
-	u.Repo.CreateItemHistoryChange(existingItem, item, UpdatedMenuID)
-	u.Repo.UpdateItem(existingItem, item, UpdatedMenuID)
+	Change := models.ItemHistoryChange{
+		ItemID:         existingItem.ID,
+		NewItemCreated: false,
+		OldPrice:       existingItem.OriginalPrice,
+		NewPrice:       item.OriginalPrice,
+		OldAvailable:   existingItem.Available,
+		NewAvailable:   item.Available,
+		OldMenuItemID:  existingItem.MenuItemID,
+		NewMenuItemID:  UpdatedMenuID,
+	}
+	u.Repo.CreateItemHistoryChange(Change)
+
+	itemUpdate := map[string]interface{}{
+		"original_price": item.OriginalPrice,
+		"available":      item.Available,
+		"menu_item_id":   UpdatedMenuID,
+	}
+
+	u.Repo.UpdateItem(existingItem, itemUpdate)
 
 }
 
@@ -245,13 +262,13 @@ func (u *UpdateDB) HandleOutOfProductionItems(dataShopID string, OutOfProduction
 					SectionID:  "0",
 				})
 
-				Menu, err = u.Repo.CreateMenu(Menu)
+				Menu, _ = u.Repo.CreateMenu(Menu)
 				OutOfProductionID = Menu.ID
 				log.Println("Out Of Production is created , id : ", OutOfProductionID)
 
 			}
 
-			u.DB.Create(&models.ItemHistoryChange{
+			Change := models.ItemHistoryChange{
 				ItemID:       item.ID,
 				OldPrice:     item.OriginalPrice,
 				NewPrice:     item.OriginalPrice,
@@ -260,12 +277,18 @@ func (u *UpdateDB) HandleOutOfProductionItems(dataShopID string, OutOfProduction
 
 				OldMenuItemID: item.MenuItemID,
 				NewMenuItemID: OutOfProductionID,
-			})
-
-			u.DB.Model(&item).Updates(map[string]interface{}{
+			}
+			u.Repo.CreateItemHistoryChange(Change)
+			itemChanges := map[string]interface{}{
 				"available":    false,
 				"menu_item_id": OutOfProductionID,
-			})
+			}
+
+			u.Repo.UpdateItem(item, itemChanges)
+			// u.DB.Model(&item).Updates(map[string]interface{}{
+			// 	"available":    false,
+			// 	"menu_item_id": OutOfProductionID,
+			// })
 
 			log.Println("item  not available anymore: ", item)
 		}
