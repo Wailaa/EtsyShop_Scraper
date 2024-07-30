@@ -1175,3 +1175,69 @@ func TestUpdateItemFail(t *testing.T) {
 	assert.Nil(t, sqlMock.ExpectationsWereMet())
 
 }
+
+func TestCreateNewItemFailed(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	ShopRepo := repository.DataBase{DB: MockedDataBase}
+
+	Item := models.Item{
+		Name:           "ExampeItem",
+		OriginalPrice:  10.0,
+		CurrencySymbol: "€",
+		SalePrice:      10.0,
+		DiscoutPercent: "",
+		Available:      true,
+		ItemLink:       "www.ExampleLink.com",
+		MenuItemID:     uint(2),
+		ListingID:      uint(9),
+		DataShopID:     "98889",
+	}
+	Item.ID = uint(15)
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "items" ("created_at","updated_at","deleted_at","name","original_price","currency_symbol","sale_price","discout_percent","available","item_link","menu_item_id","listing_id","data_shop_id","id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING "id"`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, Item.Name, Item.OriginalPrice, Item.CurrencySymbol, Item.SalePrice, Item.DiscoutPercent, Item.Available, Item.ItemLink, Item.MenuItemID, Item.ListingID, Item.DataShopID, Item.ID).WillReturnError(errors.New("error while handling DB"))
+	sqlMock.ExpectRollback()
+
+	_, err := ShopRepo.CreateNewItem(Item)
+
+	assert.Error(t, err)
+
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}
+func TestCreateNewItemSuccess(t *testing.T) {
+	sqlMock, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
+
+	ShopRepo := repository.DataBase{DB: MockedDataBase}
+
+	Item := models.Item{
+		Name:           "ExampeItem",
+		OriginalPrice:  10.0,
+		CurrencySymbol: "€",
+		SalePrice:      10.0,
+		DiscoutPercent: "",
+		Available:      true,
+		ItemLink:       "www.ExampleLink.com",
+		MenuItemID:     uint(2),
+		ListingID:      uint(9),
+		DataShopID:     "98889",
+	}
+	Item.ID = uint(15)
+
+	sqlMock.ExpectBegin()
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "items" ("created_at","updated_at","deleted_at","name","original_price","currency_symbol","sale_price","discout_percent","available","item_link","menu_item_id","listing_id","data_shop_id","id") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING "id"`)).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), nil, Item.Name, Item.OriginalPrice, Item.CurrencySymbol, Item.SalePrice, Item.DiscoutPercent, Item.Available, Item.ItemLink, Item.MenuItemID, Item.ListingID, Item.DataShopID, Item.ID).
+		WillReturnRows(sqlmock.NewRows([]string{"created_at", "updated_at", "deleted_at", "name", "original_price", "currency_symbol", "sale_price", "discout_percent", "available", "item_link", "menu_item_id", "listing_id", "data_shop_id", "id"}))
+	sqlMock.ExpectCommit()
+
+	_, err := ShopRepo.CreateNewItem(Item)
+
+	assert.NoError(t, err)
+
+	assert.Nil(t, sqlMock.ExpectationsWereMet())
+}

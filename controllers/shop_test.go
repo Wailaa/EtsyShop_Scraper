@@ -209,6 +209,15 @@ func (sr *MockedShopRepository) GetAllItemsByDataShopID(dataShopID string) ([]mo
 	}
 	return Items, args.Error(1)
 }
+func (sr *MockedShopRepository) CreateNewItem(item models.Item) (models.Item, error) {
+	args := sr.Called()
+	shopInterface := args.Get(0)
+	var Item models.Item
+	if shopInterface != nil {
+		Item = shopInterface.(models.Item)
+	}
+	return Item, args.Error(1)
+}
 func (sr *MockedShopRepository) SaveSoldItemsToDB(ScrappedSoldItems []models.SoldItems) error {
 	args := sr.Called()
 	return args.Error(0)

@@ -32,6 +32,7 @@ type ShopRepository interface {
 	CreateItemHistoryChange(Change models.ItemHistoryChange) error
 	UpdateItem(existingItem models.Item, changes map[string]interface{}) error
 	GetAllItemsByDataShopID(dataShopID string) ([]models.Item, error)
+	CreateNewItem(item models.Item) (models.Item, error)
 }
 
 func (d *DataBase) CreateItemHistoryChange(Change models.ItemHistoryChange) error {
@@ -41,6 +42,14 @@ func (d *DataBase) CreateItemHistoryChange(Change models.ItemHistoryChange) erro
 	}
 
 	return nil
+}
+func (d *DataBase) CreateNewItem(item models.Item) (models.Item, error) {
+
+	if err := d.DB.Create(&item).Error; err != nil {
+		return item, utils.HandleError(err)
+	}
+
+	return item, nil
 }
 func (d *DataBase) UpdateItem(existingItem models.Item, changes map[string]interface{}) error {
 
