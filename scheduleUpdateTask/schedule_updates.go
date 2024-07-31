@@ -17,8 +17,8 @@ import (
 )
 
 type UpdateDB struct {
-	DB   *gorm.DB
 	Repo repository.ShopRepository
+	Shop controllers.ShopOperations
 }
 
 type UpdateSoldItemsQueue struct {
@@ -26,8 +26,10 @@ type UpdateSoldItemsQueue struct {
 	Task models.TaskSchedule
 }
 
-func NewUpdateDB(DB *gorm.DB) *UpdateDB {
-	return &UpdateDB{DB: DB}
+func NewUpdateDB(DB *gorm.DB, Shop controllers.Shop) *UpdateDB {
+	Repository := &repository.DataBase{DB: DB}
+
+	return &UpdateDB{Repo: Repository, Shop: &Shop}
 }
 
 type CustomCronJob struct {
@@ -57,20 +59,21 @@ type CronJob interface {
 	Start()
 }
 
-func StartScheduleScrapUpdate() {
+func StartScheduleScrapUpdate(Shop controllers.Shop) {
 	c := NewCustomCronJob()
-	ScheduleScrapUpdate(c)
+	UpdateShop := NewUpdateDB(initializer.DB, Shop)
+	ScheduleScrapUpdate(c, UpdateShop)
 }
-func ScheduleScrapUpdate(c CronJob) error {
+func ScheduleScrapUpdate(c CronJob, UpdateShop *UpdateDB) error {
 	scraper := &scrap.Scraper{}
 	var FuncError error
-	c.AddFunc("12 15 * * *", func() {
+	c.AddFunc("27 12 * * *", func() {
 		log.Println("ScheduleScrapUpdate executed at", time.Now())
 		needUpdateItems := false
 		if time.Now().Weekday() == time.Tuesday {
-			needUpdateItems = true
+			needUpdateItems = false
 		}
-		if err := NewUpdateDB(initializer.DB).StartShopUpdate(needUpdateItems, scraper); err != nil {
+		if err := UpdateShop.StartShopUpdate(needUpdateItems, scraper); err != nil {
 			FuncError = err
 		}
 	})
@@ -133,9 +136,7 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 	}
 	if len(SoldItemsQueueList) > 0 {
 		for _, queue := range SoldItemsQueueList {
-
-			newController := controllers.NewShopController(controllers.Shop{Scraper: &scrap.Scraper{}})
-			UpdateSoldItems(queue, newController)
+			u.UpdateSoldItems(queue)
 			log.Printf("added %v new SoldItems to Shop: %s\n", queue.Task.UpdateSoldItems, queue.Shop.Name)
 		}
 	}
@@ -144,9 +145,9 @@ func (u *UpdateDB) StartShopUpdate(needUpdateItems bool, scraper scrap.ScrapeUpd
 	return nil
 }
 
-func UpdateSoldItems(queue UpdateSoldItemsQueue, newController controllers.ShopOperations) {
+func (u *UpdateDB) UpdateSoldItems(queue UpdateSoldItemsQueue) {
 	ShopRequest := &models.ShopRequest{}
-	newController.UpdateSellingHistory(&queue.Shop, &queue.Task, ShopRequest)
+	u.Shop.UpdateSellingHistory(&queue.Shop, &queue.Task, ShopRequest)
 }
 
 func MenuExists(Menu string, ListOfMenus []string) bool {

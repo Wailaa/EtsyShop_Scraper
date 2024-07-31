@@ -148,7 +148,8 @@ func TestScheduleScrapUpdateSchedulesCronJob(t *testing.T) {
 
 	cronJob := &MockCronJob{}
 
-	err := scheduleUpdates.ScheduleScrapUpdate(cronJob)
+	updateDB := &scheduleUpdates.UpdateDB{}
+	err := scheduleUpdates.ScheduleScrapUpdate(cronJob, updateDB)
 
 	assert.Nil(t, err)
 
@@ -158,8 +159,13 @@ func TestScheduleScrapUpdateSchedulesCronJob(t *testing.T) {
 }
 
 func TestUpdateSoldItemsShopParameterNil(t *testing.T) {
+	_, testDB, MockedDataBase := setupMockServer.StartMockedDataBase()
+	testDB.Begin()
+	defer testDB.Close()
 
 	shopController := &MockShopUpdater{}
+	ShopRepo := &repository.DataBase{DB: MockedDataBase}
+	updateDB := &scheduleUpdates.UpdateDB{Repo: ShopRepo, Shop: shopController}
 
 	queue := scheduleUpdates.UpdateSoldItemsQueue{
 		Shop: models.Shop{},
@@ -167,7 +173,7 @@ func TestUpdateSoldItemsShopParameterNil(t *testing.T) {
 	}
 	shopController.On("UpdateSellingHistory").Return(nil)
 
-	scheduleUpdates.UpdateSoldItems(queue, shopController)
+	updateDB.UpdateSoldItems(queue)
 
 	shopController.AssertNumberOfCalls(t, "UpdateSellingHistory", 1)
 
@@ -226,7 +232,7 @@ func TestStartShopUpdateUpdatesSuccess(t *testing.T) {
 	defer testDB.Close()
 
 	ShopRepo := &repository.DataBase{DB: MockedDataBase}
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
+	updateDB := &scheduleUpdates.UpdateDB{Repo: ShopRepo}
 
 	MockedScrapper := &MockScrapper{}
 	expectedShop := &models.Shop{TotalSales: 101, Admirers: 10, HasSoldHistory: false}
@@ -286,7 +292,7 @@ func TestStartShopUpdateOneUpdate(t *testing.T) {
 	defer testDB.Close()
 
 	ShopRepo := &repository.DataBase{DB: MockedDataBase}
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
+	updateDB := &scheduleUpdates.UpdateDB{Repo: ShopRepo}
 
 	MockedScrapper := &MockScrapper{}
 	expectedShop := &models.Shop{TotalSales: 100, Admirers: 2, HasSoldHistory: false}
@@ -333,7 +339,7 @@ func TestShopItemsUpdateNoUpdates(t *testing.T) {
 	defer testDB.Close()
 
 	ShopRepo := &repository.DataBase{DB: MockedDataBase}
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
+	updateDB := &scheduleUpdates.UpdateDB{Repo: ShopRepo}
 
 	MockedScrapper := &MockScrapper{}
 	ExistingShop := &models.Shop{
@@ -434,7 +440,7 @@ func TestShopItemsUpdateFewUpdates(t *testing.T) {
 	defer testDB.Close()
 
 	ShopRepo := &repository.DataBase{DB: MockedDataBase}
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
+	updateDB := &scheduleUpdates.UpdateDB{Repo: ShopRepo}
 
 	MockedScrapper := &MockScrapper{}
 	ExistingShop := &models.Shop{
@@ -569,7 +575,7 @@ func TestShopItemsUpdateUpdatedItemAdded(t *testing.T) {
 	defer testDB.Close()
 
 	ShopRepo := &repository.DataBase{DB: MockedDataBase}
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
+	updateDB := &scheduleUpdates.UpdateDB{Repo: ShopRepo}
 
 	MockedScrapper := &MockScrapper{}
 	ExistingShop := &models.Shop{
@@ -716,7 +722,7 @@ func TestShopItemsUpdateCreateNewMenu(t *testing.T) {
 	defer testDB.Close()
 
 	ShopRepo := &repository.DataBase{DB: MockedDataBase}
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
+	updateDB := &scheduleUpdates.UpdateDB{Repo: ShopRepo}
 
 	MockedScrapper := &MockScrapper{}
 	ExistingShop := &models.Shop{
@@ -878,7 +884,7 @@ func TestApplyUpdatedSuccess(t *testing.T) {
 	defer testDB.Close()
 
 	ShopRepo := &repository.DataBase{DB: MockedDataBase}
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
+	updateDB := &scheduleUpdates.UpdateDB{Repo: ShopRepo}
 
 	sqlMock.MatchExpectationsInOrder(true)
 
@@ -922,7 +928,7 @@ func TestApplyUpdatedFail(t *testing.T) {
 	defer testDB.Close()
 
 	ShopRepo := &repository.DataBase{DB: MockedDataBase}
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
+	updateDB := &scheduleUpdates.UpdateDB{Repo: ShopRepo}
 
 	sqlMock.MatchExpectationsInOrder(true)
 
@@ -957,7 +963,7 @@ func TestHandleOutOfProductionItemsCreateNewMenu(t *testing.T) {
 	defer testDB.Close()
 
 	ShopRepo := &repository.DataBase{DB: MockedDataBase}
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
+	updateDB := &scheduleUpdates.UpdateDB{Repo: ShopRepo}
 
 	dataShopId := "101"
 	OutOfProductionID := uint(0)
@@ -1013,7 +1019,7 @@ func TestHandleOutOfProductionItemsExists(t *testing.T) {
 	defer testDB.Close()
 
 	ShopRepo := &repository.DataBase{DB: MockedDataBase}
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
+	updateDB := &scheduleUpdates.UpdateDB{Repo: ShopRepo}
 
 	dataShopId := "101"
 	OutOfProductionID := uint(10)
@@ -1064,7 +1070,7 @@ func TestAddNewItemSuccess(t *testing.T) {
 
 	sqlMock.MatchExpectationsInOrder(true)
 	ShopRepo := &repository.DataBase{DB: MockedDataBase}
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
+	updateDB := &scheduleUpdates.UpdateDB{Repo: ShopRepo}
 
 	Item := models.Item{
 		Name:           "testItem",
@@ -1102,7 +1108,7 @@ func TestAddNewItemFail(t *testing.T) {
 
 	sqlMock.MatchExpectationsInOrder(true)
 	ShopRepo := &repository.DataBase{DB: MockedDataBase}
-	updateDB := &scheduleUpdates.UpdateDB{DB: MockedDataBase, Repo: ShopRepo}
+	updateDB := &scheduleUpdates.UpdateDB{Repo: ShopRepo}
 
 	Item := models.Item{
 		Name:           "testItem",

@@ -22,7 +22,6 @@ func init() {
 	config := initializer.LoadProjConfig(".")
 	initializer.DataBaseConnect(&config)
 	initializer.RedisDBConnect(&config)
-	scheduleUpdates.StartScheduleScrapUpdate()
 	initializer.DB.AutoMigrate(models.ModelsGroup...)
 	fmt.Println("Migration is completed")
 
@@ -46,6 +45,8 @@ func main() {
 	Repository := &repository.DataBase{DB: initializer.DB}
 	implShop := controllers.Shop{Scraper: Scraper, User: Repository, Shop: Repository}
 	implShop.Operations = &implShop
+
+	scheduleUpdates.StartScheduleScrapUpdate(implShop)
 
 	userRoutes := routes.NewUserRouteController(controllers.NewUserController(utils, Repository, config))
 	userRoutes.GeneraluserRoutes(server, controllers.AuthMiddleWare(utils, Repository), controllers.Authorization(Repository))
