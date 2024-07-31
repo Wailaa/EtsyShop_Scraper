@@ -1,25 +1,16 @@
 package routes
 
 import (
+	"EtsyScraper/controllers"
+
 	"github.com/gin-gonic/gin"
 )
 
 type ShopRoutes struct {
-	ShopController ShopRoutesInterface
+	ShopController controllers.ShopRoutesInterface
 }
 
-type ShopRoutesInterface interface {
-	CreateNewShopRequest(ctx *gin.Context)
-	FollowShop(ctx *gin.Context)
-	UnFollowShop(ctx *gin.Context)
-	HandleGetShopByID(ctx *gin.Context)
-	HandleGetItemsByShopID(ctx *gin.Context)
-	HandleGetSoldItemsByShopID(ctx *gin.Context)
-	ProcessStatsRequest(ctx *gin.Context)
-	HandleGetItemsCountByShopID(ctx *gin.Context)
-}
-
-func NewShopRouteController(process ShopRoutesInterface) *ShopRoutes {
+func NewShopRouteController(process controllers.ShopRoutesInterface) *ShopRoutes {
 	return &ShopRoutes{ShopController: process}
 }
 

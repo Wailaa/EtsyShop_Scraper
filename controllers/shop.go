@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
 	"EtsyScraper/models"
@@ -59,6 +60,17 @@ type DailySoldStats struct {
 type itemsCount struct {
 	Available       int
 	OutOfProduction int
+}
+
+type ShopRoutesInterface interface {
+	CreateNewShopRequest(ctx *gin.Context)
+	FollowShop(ctx *gin.Context)
+	UnFollowShop(ctx *gin.Context)
+	HandleGetShopByID(ctx *gin.Context)
+	HandleGetItemsByShopID(ctx *gin.Context)
+	HandleGetSoldItemsByShopID(ctx *gin.Context)
+	ProcessStatsRequest(ctx *gin.Context)
+	HandleGetItemsCountByShopID(ctx *gin.Context)
 }
 
 type ShopOperations interface {
