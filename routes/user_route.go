@@ -1,24 +1,16 @@
 package routes
 
 import (
+	"EtsyScraper/controllers"
+
 	"github.com/gin-gonic/gin"
 )
 
 type UserRoute struct {
-	UserController UserControllerInterface
+	UserController controllers.UserControllerInterface
 }
 
-type UserControllerInterface interface {
-	RegisterUser(c *gin.Context)
-	VerifyAccount(c *gin.Context)
-	LoginAccount(c *gin.Context)
-	LogOutAccount(c *gin.Context)
-	ForgotPassReq(c *gin.Context)
-	ChangePass(c *gin.Context)
-	ResetPass(c *gin.Context)
-}
-
-func NewUserRouteController(process UserControllerInterface) *UserRoute {
+func NewUserRouteController(process controllers.UserControllerInterface) *UserRoute {
 	return &UserRoute{UserController: process}
 }
 

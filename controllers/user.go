@@ -21,6 +21,16 @@ type User struct {
 	config initializer.Config
 }
 
+type UserControllerInterface interface {
+	RegisterUser(c *gin.Context)
+	VerifyAccount(c *gin.Context)
+	LoginAccount(c *gin.Context)
+	LogOutAccount(c *gin.Context)
+	ForgotPassReq(c *gin.Context)
+	ChangePass(c *gin.Context)
+	ResetPass(c *gin.Context)
+}
+
 func NewUserController(Process utils.UtilsProcess, UserDB repository.UserRepository, config initializer.Config) *User {
 	return &User{
 		utils:  Process,
