@@ -3,7 +3,7 @@
 
 
 
-### Login
+## Login
 
 Used to collect a Token for a registered User.
 
@@ -90,7 +90,7 @@ Used to collect a Token for a registered User.
 }
 ```
 
-### Register
+## Register
 
 Used to register new user.
 
@@ -154,7 +154,7 @@ Used to register new user.
     "status": "fail"
 }
 ```
-### VerifyUser
+## VerifyUser
 
 Used to verify the email after user registers.
 
@@ -225,7 +225,7 @@ Used to verify the email after user registers.
 }
 ```
 
-### LogOut
+## LogOut
 
 Used to logout user , delete cookies, and black list JWTs.
 
@@ -249,7 +249,7 @@ Used to logout user , delete cookies, and black list JWTs.
 }
 ```
 
-### Change Password
+## Change Password
 
 when user want to optain new password.
 
@@ -315,7 +315,7 @@ when user want to optain new password.
 
 
 
-### Forgot Password
+## Forgot Password
 
 when user forgot passwrod and want to get a reset request
 
@@ -363,7 +363,7 @@ when user forgot passwrod and want to get a reset request
 
 
 
-### Reset Password
+## Reset Password
 
 when user apply password change.
 
@@ -442,7 +442,7 @@ when user apply password change.
 
 
 
-### Create Shop 
+## Create Shop 
 
 when requesting to create a shop.
 
@@ -505,7 +505,7 @@ when requesting to create a shop.
 
 
 
-### Follow Shop 
+## Follow Shop 
 
 when the user request to follow a shop.
 
@@ -566,7 +566,7 @@ when the user request to follow a shop.
 }
 ```
 
-### Unfollow Shop 
+## Unfollow Shop 
 
 when the user applies password change.
 
@@ -627,7 +627,7 @@ when the user applies password change.
 }
 ```
 
-### Shop
+## Shop
 
 request a shop by Id.
 
