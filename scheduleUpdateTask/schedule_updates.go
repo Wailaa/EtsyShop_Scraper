@@ -67,7 +67,7 @@ func StartScheduleScrapUpdate(Shop controllers.Shop) {
 func ScheduleScrapUpdate(c CronJob, UpdateShop *UpdateDB) error {
 	scraper := &scrap.Scraper{}
 	var FuncError error
-	c.AddFunc("27 12 * * *", func() {
+	c.AddFunc("12 15 * * *", func() {
 		log.Println("ScheduleScrapUpdate executed at", time.Now())
 		needUpdateItems := false
 		if time.Now().Weekday() == time.Tuesday {

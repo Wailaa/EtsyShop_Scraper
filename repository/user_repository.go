@@ -67,6 +67,10 @@ func (s *DataBase) JoinShopFollowing(Account *models.Account) (*models.Account, 
 
 			return nil, utils.HandleError(err)
 		}
+		Account.ShopsFollowing[i].AverageItemsPrice, err = s.GetAverageItemPrice(Account.ShopsFollowing[i].ID)
+		if err != nil {
+			return nil, utils.HandleError(err, "error while calculating item avearage price")
+		}
 	}
 
 	return Account, nil

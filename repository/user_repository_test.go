@@ -144,6 +144,9 @@ func TestJoinShopFollowing(t *testing.T) {
 	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shop_menus" WHERE "shop_menus"."shop_id" = $1 AND "shop_menus"."deleted_at" IS NULL`)).
 		WithArgs(1).WillReturnRows(sqlmock.NewRows([]string{"shop_id"}).AddRow(1))
 
+	sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT AVG(items.original_price) as average_price FROM "items" JOIN menu_items ON items.menu_item_id = menu_items.id JOIN shop_menus ON menu_items.shop_menu_id = shop_menus.id JOIN shops ON shop_menus.shop_id = shops.id WHERE shops.id = $1 AND items.original_price > 0`)).
+		WithArgs(1).WillReturnRows(sqlmock.NewRows([]string{"shop_id"}).AddRow(1))
+
 	_, err := User.JoinShopFollowing(&Account)
 
 	assert.NoError(t, err)
