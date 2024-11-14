@@ -42,7 +42,7 @@ To run this project, you will need to add the following environment variables to
 
 `MAILTRAP_SMTP_PORT`
 
-`REDISURL`=localhost:6379
+`REDISURL`=host.docker.internal:6379
 
 `SCRAP_SHOP_URL`=https://www.etsy.com/de-en/shop/
 
@@ -83,5 +83,5 @@ to stop and remove container , please run:
 
 ## Documentation
 
-full endpoint list is available [here](https://github.com/Wailaa/EtsyShop_Scraper/blob/master/Documentaion.md)
+full endpoint list is available [here](https://github.com/Wailaa/EtsyShop_Scraper/blob/master/documentaions.md)
 
