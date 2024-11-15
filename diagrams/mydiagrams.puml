@@ -1,0 +1,598 @@
+@startuml EtsyScraper Architecture Diagram
+namespace collector {
+    class DefaultCollector << (S,Aquamarine) >> {
+        + C *colly.Collector
+
+    }
+}
+
+
+namespace controllers {
+    class DailySoldStats << (S,Aquamarine) >> {
+        + TotalSales int
+        + DailyRevenue float64
+        + Items []models.Item
+
+    }
+    class FollowShopRequest << (S,Aquamarine) >> {
+        + FollowShopName string
+
+    }
+    class LoginRequest << (S,Aquamarine) >> {
+        + Email string
+        + Password string
+
+    }
+    class LoginResponse << (S,Aquamarine) >> {
+        + TokenType string
+        + AccessToken *models.Token
+        + RefreshToken *models.Token
+        + User UserData
+
+    }
+    class NewShopRequest << (S,Aquamarine) >> {
+        + ShopName string
+
+    }
+    class RegisterAccount << (S,Aquamarine) >> {
+        + FirstName string
+        + LastName string
+        + Email string
+        + Password string
+        + PasswordConfirm string
+        + SubscriptionType string
+
+    }
+    class ReqPassChange << (S,Aquamarine) >> {
+        + CurrentPass string
+        + NewPass string
+        + ConfirmPass string
+
+    }
+    class ResponseSoldItemInfo << (S,Aquamarine) >> {
+        + Name string
+        + ItemID uint
+        + OriginalPrice float64
+        + CurrencySymbol string
+        + SalePrice float64
+        + DiscoutPercent string
+        + ItemLink string
+        + Available bool
+        + SoldQuantity int
+
+    }
+    class Shop << (S,Aquamarine) >> {
+        + Scraper scraping.ScrapeUpdateProcess
+        + Operations ShopOperations
+        + User repository.UserRepository
+        + Shop repository.ShopRepository
+
+        + CreateSoldStats(dailyShopSales []models.DailyShopSales) (<font color=blue>map</font>[string]DailySoldStats, error)
+        + SaveShopToDB(scrappedShop *models.Shop, ShopRequest *models.ShopRequest) error
+        + UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopRequest) error
+        + CheckAndUpdateOutOfProdMenu(AllMenus []models.MenuItem, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) (bool, error)
+        + CreateOutOfProdMenu(Shop *models.Shop, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) error
+        + GetShopByID(ID uint) (*models.Shop, error)
+        + GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (<font color=blue>map</font>[string]DailySoldStats, error)
+        + GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error)
+        + EstablishAccountShopRelation(requestedShop *models.Shop, userID uuid.UUID) error
+        + CreateShopRequest(ShopRequest *models.ShopRequest) error
+        + GetItemsByShopID(ID uint) ([]models.Item, error)
+        + GetSoldItemsByShopID(ID uint) ([]ResponseSoldItemInfo, error)
+        + GetItemsBySoldItems(SoldItems []models.SoldItems) ([]models.Item, error)
+        + GetItemsCountByShopID(ID uint) (itemsCount, error)
+        + CreateNewShopRequest(ctx *gin.Context) 
+        + FollowShop(ctx *gin.Context) 
+        + UnFollowShop(ctx *gin.Context) 
+        + HandleGetShopByID(ctx *gin.Context) 
+        + HandleGetItemsByShopID(ctx *gin.Context) 
+        + HandleGetItemsCountByShopID(ctx *gin.Context) 
+        + HandleGetSoldItemsByShopID(ctx *gin.Context) 
+        + ProcessStatsRequest(ctx *gin.Context) 
+        + CreateNewShop(ShopRequest *models.ShopRequest) error
+        + UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
+        + UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
+        + SoldItemsTask(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
+
+    }
+    interface ShopOperations  {
+        + GetShopByID(ID uint) (*models.Shop, error)
+        + CreateNewShop(ShopRequest *models.ShopRequest) error
+        + GetItemsByShopID(ID uint) ([]models.Item, error)
+        + CreateShopRequest(ShopRequest *models.ShopRequest) error
+        + GetTotalRevenue(ShopID uint, AverageItemPrice float64) (float64, error)
+        + GetSoldItemsByShopID(ID uint) ([]ResponseSoldItemInfo, error)
+        + GetSellingStatsByPeriod(ShopID uint, timePeriod time.Time) (<font color=blue>map</font>[string]DailySoldStats, error)
+        + UpdateSellingHistory(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) error
+        + UpdateDiscontinuedItems(Shop *models.Shop, Task *models.TaskSchedule, ShopRequest *models.ShopRequest) ([]models.SoldItems, error)
+        + CreateSoldStats(dailyShopSales []models.DailyShopSales) (<font color=blue>map</font>[string]DailySoldStats, error)
+        + EstablishAccountShopRelation(requestedShop *models.Shop, userID uuid.UUID) error
+        + SaveShopToDB(scrappedShop *models.Shop, ShopRequest *models.ShopRequest) error
+        + UpdateShopMenuToDB(Shop *models.Shop, ShopRequest *models.ShopRequest) error
+        + CreateOutOfProdMenu(Shop *models.Shop, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) error
+        + CheckAndUpdateOutOfProdMenu(AllMenus []models.MenuItem, SoldOutItems []models.Item, ShopRequest *models.ShopRequest) (bool, error)
+        + GetItemsBySoldItems(SoldItems []models.SoldItems) ([]models.Item, error)
+
+    }
+    interface ShopRoutesInterface  {
+        + CreateNewShopRequest(ctx *gin.Context) 
+        + FollowShop(ctx *gin.Context) 
+        + UnFollowShop(ctx *gin.Context) 
+        + HandleGetShopByID(ctx *gin.Context) 
+        + HandleGetItemsByShopID(ctx *gin.Context) 
+        + HandleGetSoldItemsByShopID(ctx *gin.Context) 
+        + ProcessStatsRequest(ctx *gin.Context) 
+        + HandleGetItemsCountByShopID(ctx *gin.Context) 
+
+    }
+    class UnFollowShopRequest << (S,Aquamarine) >> {
+        + UnFollowShopName string
+
+    }
+    class User << (S,Aquamarine) >> {
+        - utils utils.UtilsProcess
+        - config init.Config
+
+        + User repository.UserRepository
+
+        + RegisterUser(ctx *gin.Context) 
+        + LoginAccount(ctx *gin.Context) 
+        + LogOutAccount(ctx *gin.Context) 
+        + VerifyAccount(ctx *gin.Context) 
+        + ChangePass(ctx *gin.Context) 
+        + ForgotPassReq(ctx *gin.Context) 
+        + ResetPass(ctx *gin.Context) 
+        + GenerateLoginResponse(Account *models.Account, AccessToken *models.Token, RefreshToken *models.Token) *LoginResponse
+        + CreateNewAccountRecord(account *RegisterAccount, passwardHashed string, EmailVerificationToken string) (*models.Account, error)
+
+    }
+    interface UserControllerInterface  {
+        + RegisterUser(c *gin.Context) 
+        + VerifyAccount(c *gin.Context) 
+        + LoginAccount(c *gin.Context) 
+        + LogOutAccount(c *gin.Context) 
+        + ForgotPassReq(c *gin.Context) 
+        + ChangePass(c *gin.Context) 
+        + ResetPass(c *gin.Context) 
+
+    }
+    class UserData << (S,Aquamarine) >> {
+        + Name string
+        + Email string
+        + Shops []models.Shop
+
+    }
+    class UserReqForgotPassword << (S,Aquamarine) >> {
+        + Email string
+
+    }
+    class UserReqPassChange << (S,Aquamarine) >> {
+        + RCP string
+        + NewPass string
+        + ConfirmPass string
+
+    }
+    class itemsCount << (S,Aquamarine) >> {
+        + Available int
+        + OutOfProduction int
+
+    }
+}
+
+"controllers.ShopOperations" <|-- "controllers.Shop"
+"controllers.ShopRoutesInterface" <|-- "controllers.Shop"
+"controllers.UserControllerInterface" <|-- "controllers.User"
+
+namespace initializer {
+    class Config << (S,Aquamarine) >> {
+        + DataBaseHost string
+        + DataBaseUserName string
+        + DatabaseUserPassword string
+        + DataBaseName string
+        + DataBasePort string
+        + ServerPort string
+        + ClientOrigin string
+        + JwtSecret string
+        + AccTokenExp time.Duration
+        + RefTokenExp time.Duration
+        + EmailAddress string
+        + SMTPHost string
+        + SMTPPass string
+        + SMTPPort int
+        + SMTPUser string
+        + RedisURL string
+        + ScrapShopURL string
+        + MaxPageLimit int
+        + ProxyHostURL1 string
+        + ProxyHostURL2 string
+        + ProxyHostURL3 string
+
+    }
+}
+
+
+namespace models {
+    class Account << (S,Aquamarine) >> {
+        + ID uuid.UUID
+        + FirstName string
+        + LastName string
+        + Email string
+        + PasswordHashed string
+        + SubscriptionType string
+        + EmailVerified bool
+        + EmailVerificationToken string
+        + RequestChangePass bool
+        + AccountPassResetToken string
+        + LastTimeLoggedIn time.Time
+        + LastTimeLoggedOut time.Time
+        + ShopsFollowing []Shop
+        + Requests []ShopRequest
+
+    }
+    class CustomClaims << (S,Aquamarine) >> {
+        + CreatedAt int64
+        + ExpiresAt int64
+        + UserUUID uuid.UUID
+
+    }
+    class DailyShopSales << (S,Aquamarine) >> {
+        + ShopID uint
+        + TotalSales int
+        + Admirers int
+        + DailyRevenue float64
+        + Shop Shop
+
+    }
+    class Item << (S,Aquamarine) >> {
+        + Name string
+        + OriginalPrice float64
+        + CurrencySymbol string
+        + SalePrice float64
+        + DiscoutPercent string
+        + Available bool
+        + ItemLink string
+        + MenuItemID uint
+        + ListingID uint
+        + DataShopID string
+        + SoldUnits []SoldItems
+        + PriceHistory []ItemHistoryChange
+
+    }
+    class ItemHistoryChange << (S,Aquamarine) >> {
+        + ItemID uint
+        + NewItemCreated bool
+        + OldPrice float64
+        + NewPrice float64
+        + OldAvailable bool
+        + NewAvailable bool
+        + OldMenuItemID uint
+        + NewMenuItemID uint
+
+    }
+    class MenuItem << (S,Aquamarine) >> {
+        + ShopMenuID uint
+        + Category string
+        + SectionID string
+        + Link string
+        + Amount int
+        + Items []Item
+
+    }
+    class Reviews << (S,Aquamarine) >> {
+        + ShopID uint
+        + ShopRating float64
+        + ReviewsCount int
+        + ReviewsTopic []ReviewsTopic
+
+    }
+    class ReviewsTopic << (S,Aquamarine) >> {
+        + ReviewsID uint
+        + Keyword string
+        + KeywordCount int
+
+    }
+    class Shop << (S,Aquamarine) >> {
+        + Name string
+        + Description string
+        + Location string
+        + TotalSales int
+        + JoinedSince string
+        + LastUpdateTime string
+        + Admirers int
+        + HasSoldHistory bool
+        + OnVacation bool
+        + Revenue float64
+        + AverageItemsPrice float64
+        + CreatedByUserID uuid.UUID
+        + SocialMediaLinks []SocialMediaLinks
+        + Member []ShopMember
+        + ShopMenu ShopMenu
+        + Reviews Reviews
+        + Followers []Account
+
+    }
+    class ShopMember << (S,Aquamarine) >> {
+        + ShopID uint
+        + Name string
+        + Role string
+
+    }
+    class ShopMenu << (S,Aquamarine) >> {
+        + ShopID uint
+        + TotalItemsAmount int
+        + Menu []MenuItem
+
+    }
+    class ShopRequest << (S,Aquamarine) >> {
+        + AccountID uuid.UUID
+        + ShopName string
+        + Status string
+
+    }
+    class SocialMediaLinks << (S,Aquamarine) >> {
+        + ShopID uint
+        + Link string
+
+    }
+    class SoldItems << (S,Aquamarine) >> {
+        + Name string
+        + ItemLink string
+        + ItemID uint
+        + ListingID uint
+        + DataShopID string
+
+    }
+    class TaskSchedule << (S,Aquamarine) >> {
+        + IsScrapeFinished bool
+        + IsPaginationScrapped bool
+        + CurrentPage int
+        + LastPage int
+        + UpdateSoldItems int
+
+    }
+    class models.Token << (T, #FF7700) >>  {
+    }
+}
+"gorm.Model" *-- "models.Account"
+"gorm.Model" *-- "models.DailyShopSales"
+"gorm.Model" *-- "models.Item"
+"gorm.Model" *-- "models.ItemHistoryChange"
+"gorm.Model" *-- "models.MenuItem"
+"gorm.Model" *-- "models.Reviews"
+"gorm.Model" *-- "models.ReviewsTopic"
+"gorm.Model" *-- "models.Shop"
+"gorm.Model" *-- "models.ShopMember"
+"gorm.Model" *-- "models.ShopMenu"
+"gorm.Model" *-- "models.ShopRequest"
+"gorm.Model" *-- "models.SocialMediaLinks"
+"gorm.Model" *-- "models.SoldItems"
+
+
+namespace repository {
+    class DataBase << (S,Aquamarine) >> {
+        + DB *gorm.DB
+
+        + CreateItemHistoryChange(Change models.ItemHistoryChange) error
+        + CreateNewItem(item models.Item) (models.Item, error)
+        + UpdateItem(existingItem models.Item, changes <font color=blue>map</font>[string]<font color=blue>interface</font>{}) error
+        + GetItemByListingID(ID uint) (*models.Item, error)
+        + GetAllItemsByDataShopID(dataShopID string) ([]models.Item, error)
+        + UpdateColumnsInShop(Shop models.Shop, updateData <font color=blue>map</font>[string]<font color=blue>interface</font>{}) error
+        + CreateDailySales(ShopID uint, TotalSales int, Admirers int) error
+        + CreateShop(scrappedShop *models.Shop) error
+        + SaveShop(Shop *models.Shop) error
+        + SaveSoldItemsToDB(ScrappedSoldItems []models.SoldItems) error
+        + UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uint, dailyRevenue float64) error
+        + SaveMenu(Menus models.MenuItem) error
+        + CreateMenu(Menus models.MenuItem) (models.MenuItem, error)
+        + FetchShopByID(ID uint) (*models.Shop, error)
+        + FetchStatsByPeriod(ShopID uint, timePeriod time.Time) ([]models.DailyShopSales, error)
+        + FetchSoldItemsByListingID(listingIDs []uint) ([]models.SoldItems, error)
+        + FetchItemsBySoldItems(soldItemID uint) (models.Item, error)
+        + GetSoldItemsInRange(fromDate time.Time, ShopID uint) ([]models.SoldItems, error)
+        + UpdateAccountShopRelation(requestedShop *models.Shop, UserID uuid.UUID) error
+        + GetAverageItemPrice(ShopID uint) (float64, error)
+        + SaveShopRequestToDB(ShopRequest *models.ShopRequest) error
+        + GetShopWithItemsByShopID(ID uint) (*models.Shop, error)
+        + GetShopByName(ShopName string) (*models.Shop, error)
+        + GetAllShops() (*[]models.Shop, error)
+        + GetAccountByID(ID uuid.UUID) (*models.Account, error)
+        + GetAccountByEmail(email string) *models.Account
+        + UpdateLastTimeLoggedIn(Account *models.Account) error
+        + JoinShopFollowing(Account *models.Account) (*models.Account, error)
+        + UpdateLastTimeLoggedOut(UserID uuid.UUID) error
+        + UpdateAccountAfterVerify(Account *models.Account) error
+        + UpdateAccountNewPass(Account *models.Account, passwardHashed string) error
+        + UpdateAccountAfterResetPass(Account *models.Account, newPasswardHashed string) error
+        + SaveAccount(Account *models.Account) error
+        + CreateAccount(newAccount *models.Account) (*models.Account, error)
+        + InsertTokenForAccount(column string, token string, VerifyUser *models.Account) (*models.Account, error)
+        + GetAccountWithShops(accountID uuid.UUID) (*models.Account, error)
+
+    }
+    interface ShopRepository  {
+        + CreateShop(scrappedShop *models.Shop) error
+        + SaveShop(Shop *models.Shop) error
+        + SaveSoldItemsToDB(ScrappedSoldItems []models.SoldItems) error
+        + UpdateDailySales(ScrappedSoldItems []models.SoldItems, ShopID uint, dailyRevenue float64) error
+        + SaveMenu(Menus models.MenuItem) error
+        + FetchShopByID(ID uint) (*models.Shop, error)
+        + FetchStatsByPeriod(ShopID uint, timePeriod time.Time) ([]models.DailyShopSales, error)
+        + FetchSoldItemsByListingID(listingIDs []uint) ([]models.SoldItems, error)
+        + FetchItemsBySoldItems(soldItemID uint) (models.Item, error)
+        + GetSoldItemsInRange(fromDate time.Time, ShopID uint) ([]models.SoldItems, error)
+        + UpdateAccountShopRelation(requestedShop *models.Shop, UserID uuid.UUID) error
+        + GetAverageItemPrice(ShopID uint) (float64, error)
+        + SaveShopRequestToDB(ShopRequest *models.ShopRequest) error
+        + GetShopWithItemsByShopID(ID uint) (*models.Shop, error)
+        + GetShopByName(ShopName string) (*models.Shop, error)
+        + GetAllShops() (*[]models.Shop, error)
+        + CreateDailySales(ShopID uint, TotalSales int, Admirers int) error
+        + UpdateColumnsInShop(Shop models.Shop, updateData <font color=blue>map</font>[string]<font color=blue>interface</font>{}) error
+        + CreateMenu(Menus models.MenuItem) (models.MenuItem, error)
+        + GetItemByListingID(ID uint) (*models.Item, error)
+        + CreateItemHistoryChange(Change models.ItemHistoryChange) error
+        + UpdateItem(existingItem models.Item, changes <font color=blue>map</font>[string]<font color=blue>interface</font>{}) error
+        + GetAllItemsByDataShopID(dataShopID string) ([]models.Item, error)
+        + CreateNewItem(item models.Item) (models.Item, error)
+
+    }
+    interface UserRepository  {
+        + GetAccountByID(ID uuid.UUID) (*models.Account, error)
+        + GetAccountByEmail(email string) *models.Account
+        + UpdateLastTimeLoggedIn(Account *models.Account) error
+        + JoinShopFollowing(Account *models.Account) (*models.Account, error)
+        + UpdateLastTimeLoggedOut(UserID uuid.UUID) error
+        + UpdateAccountAfterVerify(Account *models.Account) error
+        + UpdateAccountNewPass(Account *models.Account, passwardHashed string) error
+        + UpdateAccountAfterResetPass(Account *models.Account, newPasswardHashed string) error
+        + SaveAccount(Account *models.Account) error
+        + CreateAccount(newAccount *models.Account) (*models.Account, error)
+        + InsertTokenForAccount(column string, token string, VerifyUser *models.Account) (*models.Account, error)
+        + GetAccountWithShops(accountID uuid.UUID) (*models.Account, error)
+
+    }
+}
+
+"repository.ShopRepository" <|-- "repository.DataBase"
+"repository.UserRepository" <|-- "repository.DataBase"
+
+namespace routes {
+    class HTMLRoutes << (S,Aquamarine) >> {
+        + GeneralHTMLRoutes(server *gin.Engine, authentication gin.HandlerFunc, authorization gin.HandlerFunc, path string) 
+
+    }
+    class ShopRoutes << (S,Aquamarine) >> {
+        + ShopController controllers.ShopRoutesInterface
+
+        + GeneralShopRoutes(server *gin.Engine, authentication gin.HandlerFunc, authorization gin.HandlerFunc, isfollowingShop gin.HandlerFunc) 
+
+    }
+    class UserRoute << (S,Aquamarine) >> {
+        + UserController controllers.UserControllerInterface
+
+        + GeneraluserRoutes(server *gin.Engine, authentication gin.HandlerFunc, authorization gin.HandlerFunc) 
+
+    }
+}
+
+
+namespace scheduleUpdates {
+    interface CronJob  {
+        + AddFunc(spec string, cmd <font color=blue>func</font>() ) 
+        + Start() 
+
+    }
+    class CustomCronJob << (S,Aquamarine) >> {
+        - cronJob *cron.Cron
+
+        + AddFunc(spec string, cmd <font color=blue>func</font>() ) 
+        + Start() 
+        + Stop() 
+
+    }
+    class UpdateDB << (S,Aquamarine) >> {
+        + Repo repository.ShopRepository
+        + Shop controllers.ShopOperations
+
+        + StartShopUpdate(needUpdateItems bool, scraper scraping.ScrapeUpdateProcess) error
+        + UpdateSoldItems(queue UpdateSoldItemsQueue) 
+        + ShopItemsUpdate(Shop *models.Shop, updatedShop *models.Shop, scraper scraping.ScrapeUpdateProcess) error
+        + ApplyItemUpdates(existingItem models.Item, item models.Item, UpdatedMenuID uint) 
+        + HandleOutOfProductionItems(dataShopID string, OutOfProductionID uint, ShopMenuID uint, existingItemMap <font color=blue>map</font>[uint]bool) 
+        + AddNewItem(item models.Item) error
+
+    }
+    class UpdateSoldItemsQueue << (S,Aquamarine) >> {
+        + Shop models.Shop
+        + Task models.TaskSchedule
+
+    }
+}
+
+"scheduleUpdates.CronJob" <|-- "scheduleUpdates.CustomCronJob"
+
+namespace scrap {
+    interface ScrapeUpdateProcess  {
+        + CheckForUpdates(Shop string, needUpdateItems bool) (*models.Shop, error)
+        + ScrapAllMenuItems(shop *models.Shop) *models.Shop
+        + ScrapShop(shopName string) (*models.Shop, error)
+        + ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.SoldItems, *models.TaskSchedule)
+
+    }
+    class Scraper << (S,Aquamarine) >> {
+        + ScrapAllMenuItems(shop *models.Shop) *models.Shop
+        + ScrapShop(shopName string) (*models.Shop, error)
+        + ScrapSalesHistory(ShopName string, Task *models.TaskSchedule) ([]models.SoldItems, *models.TaskSchedule)
+        + CheckForUpdates(Shop string, needUpdateItems bool) (*models.Shop, error)
+
+    }
+}
+
+"scrap.ScrapeUpdateProcess" <|-- "scrap.Scraper"
+
+namespace utils {
+    class EmailConfig << (S,Aquamarine) >> {
+        + SMTPHost string
+        + SMTPAuth smtp.Auth
+
+    }
+    class EmailDetails << (S,Aquamarine) >> {
+        + To string
+        + UserName string
+        + Subject string
+        + HTMLbody string
+        + ButtonName string
+        + Plaintext string
+        + VerificationLink string
+
+    }
+    class ProxySetting << (S,Aquamarine) >> {
+        + Provider string
+        + Url string
+
+    }
+    class URLConfig << (S,Aquamarine) >> {
+        + ParamName string
+        + Token string
+        + Path string
+
+    }
+    class Utils << (S,Aquamarine) >> {
+        + CreateVerificationString() (string, error)
+        + SendVerificationEmail(account *models.Account) error
+        + SendResetPassEmail(account *models.Account) error
+        + HashPass(pass string) (string, error)
+        + IsPassVerified(pass string, hashedPass string) bool
+        + CreateJwtToken(exp time.Duration, userUUID uuid.UUID) (*models.Token, error)
+        + ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, error)
+        + RefreshAccToken(token *models.Token) (*models.Token, error)
+        + BlacklistJWT(token *models.Token) error
+        + IsJWTBlackListed(token *models.Token) (bool, error)
+        + GetTokens(ctx *gin.Context) (<font color=blue>map</font>[string]*models.Token, error)
+        + PickProxyProvider() ProxySetting
+        + GetRandomUserAgent() string
+
+    }
+    interface UtilsProcess  {
+        + CreateVerificationString() (string, error)
+        + SendVerificationEmail(account *models.Account) error
+        + SendResetPassEmail(account *models.Account) error
+        + HashPass(pass string) (string, error)
+        + IsPassVerified(pass string, hashedPass string) bool
+        + CreateJwtToken(exp time.Duration, userUUID uuid.UUID) (*models.Token, error)
+        + ValidateJWT(JWTToken *models.Token) (*models.CustomClaims, error)
+        + RefreshAccToken(token *models.Token) (*models.Token, error)
+        + BlacklistJWT(token *models.Token) error
+        + IsJWTBlackListed(token *models.Token) (bool, error)
+        + PickProxyProvider() ProxySetting
+        + GetRandomUserAgent() string
+        + GetTokens(ctx *gin.Context) (<font color=blue>map</font>[string]*models.Token, error)
+
+    }
+}
+
+"utils.UtilsProcess" <|-- "utils.Utils"
+
+"__builtin__.string" #.. "models.Token"
+@enduml
