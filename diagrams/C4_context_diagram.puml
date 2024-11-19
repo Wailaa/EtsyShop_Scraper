@@ -1,0 +1,13 @@
+@startuml Context Diagram
+!include <C4/C4_Container>
+
+Person(user, "User", "logs in to platform via frontend")
+System(etsyScraperApp, "Etsy Scraper Application", "Handles auth operations \nHandles scheduling, scraping, and storing Etsy data.\n")
+System_Ext(etsy, "Etsy.com", "The target website for scraping.")
+
+left to right direction
+
+Rel(user, etsyScraperApp, "Sends scraping requests\nand retrieves results\n")
+Rel(etsyScraperApp, etsy, "Sends HTTP requests\nfor product/shop data\n\n")
+Rel(etsy, etsyScraperApp, "\n\n\n\nReturns HTML responses")
+@enduml

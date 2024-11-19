@@ -1,0 +1,45 @@
+@startuml Component Diagram
+!include <C4/C4_Component>
+
+Container_Boundary(etsyScraperApp, "Etsy Scraper Application") {
+    
+    Component(collector, "Collector", "Golang (go-colly)", "Handles web scraping operations including managing requests, proxies, user-agent rotation, and rate limiting.")
+    Component(controller, "Controller", "Golang", "Manages application logic, HTTP handlers, data transformation, and business logic.")
+    Component(init, "Init", "Golang", "Sets up database connections, Redis integration, and environment configuration.")
+    Component(models, "Models", "Golang", "Defines data structures for accounts, shops, and tokens.")
+    Component(repository, "Repository", "Golang", "Handles data persistence and interactions with the database.")
+    Component(routes, "Routes", "Golang", "Manages application routing for user and shop endpoints.")
+    Component(scheduleUpdateTask, "Scheduler", "Golang", "Schedules periodic updates for shop data.")
+    Component(scraping, "Scraper", "Golang", "Implements scraping logic for shops, items, and sold items.")
+    Component(static, "Static Assets", "HTML/CSS", "Provides frontend templates and styles.")
+    Component(utils, "Utilities", "Golang", "Implements helper functions for email operations, password hashing, JWT handling, etc.")
+    Component(database, "Database", "PostgreSQL", "Stores user data, task schedules, and scraped data.")
+
+}
+
+System_Ext(etsy, "Etsy.com", "The target website for scraping.")
+
+Person(user, "User", "Interacts with the platform to scrape Etsy data.")
+
+Rel(user, routes, "Sends HTTP requests")
+Rel(routes, controller, "Handles HTTP requests")
+Rel(controller, models, "Uses data structures")
+Rel(controller, repository, "Invokes data persistence operations")
+Rel(controller, scraping, "Triggers scraping operations")
+Rel(scraping,controller, "retuns scraped data")
+Rel(controller, utils, "Uses utility functions")
+Rel(repository, database, "Performs database interactions")
+Rel(database, repository, "Stores and retrieves\ndata for users/shops")
+Rel(collector, etsy, "Sends HTTP requests for scraping")
+Rel(etsy, collector, "Returns HTML/json responses")
+Rel(scraping,collector ,"Uses collector for web scraping tasks")
+Rel(collector,scraping ,"returns DefaultCollector Type")
+Rel(scheduleUpdateTask, scraping, "Schedules scraping tasks")
+Rel(scheduleUpdateTask, repository, "Invokes data persistence operations")
+Rel(init, controller, "Initializes dependencies")
+
+
+Rel(utils, controller, "Provides shared utility functions")
+Rel(static, routes, "Serves static content via routes")
+Rel(controller, user, "Returns responses")
+@enduml

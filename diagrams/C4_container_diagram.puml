@@ -1,0 +1,25 @@
+@startuml Container Diagram
+!include <C4/C4_Container>
+
+Person(user, "User", "Logs into the platform and requests Etsy data.")
+System_Boundary(etsyScraperApp, "Etsy Scraper Application") {
+    Container(webFrontend, "Web Frontend", "Static HTML", "Provides UI for users to interact with the application.")
+    Container(apiServer, "API Server", "Golang/Gin Web Framework", "Handles user requests, scheduling, and processing tasks.")
+    Container(scraperEngine, "Scraper Engine", "Golang/go-colly", "Performs scraping tasks and data extraction from Etsy.")
+    Container(database, "Database", "PostgreSQL", "Stores user data, task schedules, and scraped data.")
+}
+
+System_Ext(etsy, "Etsy.com", "The target website for scraping.")
+
+left to right direction
+
+Rel(user, webFrontend, "Accesses the platform\nvia browser")
+Rel(webFrontend, apiServer, "Sends API requests\nfor authentication\nand scraping tasks")
+Rel(apiServer, scraperEngine, "Schedules scraping tasks")
+Rel(scraperEngine, etsy, "Sends HTTP requests\nfor product/shop data")
+Rel(etsy, scraperEngine, "Returns HTML/json responses")
+Rel(scraperEngine, database, "Saves extracted data")
+Rel(database, apiServer, "Stores and retrieves\ndata for users")
+Rel(apiServer, webFrontend, "Returns data to\nfrontend for display")
+
+@enduml
