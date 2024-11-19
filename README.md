@@ -85,3 +85,7 @@ to stop and remove container , please run:
 
 full endpoint list is available [here](https://github.com/Wailaa/EtsyShop_Scraper/blob/master/documentaions.md)
 
+Code diagram (overview of the system's code) available [here](https://github.com/Wailaa/EtsyShop_Scraper/blob/master/diagrams/diagrams.md)
+
+C$ diagrams available [here](https://github.com/Wailaa/EtsyShop_Scraper/blob/master/diagrams/C4_diagrams.md)
+
