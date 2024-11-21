@@ -39,7 +39,7 @@ type Config struct {
 func LoadProjConfig(path string) (config Config) {
 	viper.AddConfigPath(path)
 	viper.SetConfigType("env")
-	viper.SetConfigName("project")
+	viper.SetConfigName(".env")
 	viper.AutomaticEnv()
 
 	err := viper.ReadInConfig()

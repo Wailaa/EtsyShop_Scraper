@@ -9,7 +9,7 @@ This porgect is build for learning purpases , to build a stateless Golang Backen
 
 ## Environment Variables
 
-To run this project, you will need to add the following environment variables to your project.env file, add this file in the same directory as main.go.
+To run this project, you will need to add the following environment variables to your .env file, add this file to root directory (in the same directory as main.go).
 
 `POSTGRES_HOST`=host.docker.internal
 
