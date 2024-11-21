@@ -23,7 +23,7 @@ To run this project, you will need to add the following environment variables to
 
 `PORT`= 8080
 
-`CLIENT_ORIGIN`=http://localhost
+`CLIENT_ORIGIN`=localhost
 
 `JWT_SECRET`=-
 
