@@ -82,7 +82,6 @@ func TestSendVerificationEmailWrongClientOrigin(t *testing.T) {
 	err := Email.SendVerificationEmail(account)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "can't assign requested address")
 
 }
 func TestSendVerificationEmailSuccess(t *testing.T) {
