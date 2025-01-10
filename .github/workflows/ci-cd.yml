@@ -12,6 +12,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-server --version"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -27,6 +38,14 @@ jobs:
 
     - name: Create .env file
       run: echo "${{ secrets.ENV_FILE }}" > .env
+
+    - name: Wait for Redis to be ready
+      run: |
+        until redis-cli -h localhost -p 6379 ping; do
+          echo "Waiting for Redis to be ready..."
+          sleep 2
+        done
+        echo "Redis is ready."
 
     - name: Run Tests
       run: |
