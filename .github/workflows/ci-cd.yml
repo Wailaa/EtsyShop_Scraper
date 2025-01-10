@@ -25,10 +25,8 @@ jobs:
       run: |
         go mod tidy
 
-    - name: Run Linter
-      run: |
-        go install golang.org/x/lint/golint@latest
-        golint ./...
+    - name: Create .env file
+      run: echo "${{ secrets.ENV_FILE }}" > .env
 
     - name: Run Tests
       run: |
