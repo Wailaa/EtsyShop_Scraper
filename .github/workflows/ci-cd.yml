@@ -52,7 +52,7 @@ jobs:
         go mod tidy
 
     - name: Create .env file
-      run: echo "${{ secrets.ENV_FILE }}" > .env
+      run: echo "${{ secrets.ENV_FILE_TEST }}" > .env
 
     - name: Install redis-tools
       run: sudo apt-get update && sudo apt-get install -y redis-tools
@@ -91,6 +91,8 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Create .env file
+      run: echo "${{ secrets.ENV_FILE }}" > .env
 
     - name: Build and push Docker image
       run: |
