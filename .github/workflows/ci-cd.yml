@@ -96,5 +96,6 @@ jobs:
 
     - name: Build and push Docker image
       run: |
-        docker build -t ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}:latest .
-        docker push ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}:latest
+        docker buildx create --use  # This ensures that the buildx builder is set up
+        docker buildx build --platform linux/amd64 -t ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}:latest --push .
+    
