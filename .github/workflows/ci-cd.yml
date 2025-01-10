@@ -20,12 +20,6 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.19'
-
-    - name: Load environment variables
-      run: |
-        echo "Loading .env file"
-        set -o allexport; source .env; set +o allexport  # This will export the .env variables to the environment
-
     - name: Install dependencies
       run: |
         go mod tidy
