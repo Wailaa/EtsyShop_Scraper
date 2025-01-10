@@ -39,6 +39,9 @@ jobs:
     - name: Create .env file
       run: echo "${{ secrets.ENV_FILE }}" > .env
 
+    - name: Install redis-tools
+      run: sudo apt-get update && sudo apt-get install -y redis-tools
+
     - name: Wait for Redis to be ready
       run: |
         until redis-cli -h localhost -p 6379 ping; do
