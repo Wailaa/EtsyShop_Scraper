@@ -19,11 +19,8 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-<<<<<<< HEAD
         go-version: '1.21'
-=======
-        go-version: '1.21-alpine'
->>>>>>> dac65546c5c11222fb680035f0c9e9276e22728a
+
     - name: Install dependencies
       run: |
         go mod tidy
