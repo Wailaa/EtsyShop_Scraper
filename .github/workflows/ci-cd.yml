@@ -102,6 +102,10 @@ jobs:
       run: |
         docker buildx create --use  # This ensures that the buildx builder is set up
         docker buildx build --platform linux/amd64 -t ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}:${{ steps.tag.outputs.next_tag }} --push .
+    
+    outputs:
+      next_tag: ${{ steps.tag.outputs.next_tag }}
+    
 
   deploy:
     if: github.ref == 'refs/heads/master'
@@ -117,7 +121,7 @@ jobs:
       with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          
+
     - name: Deploy to EC2 Docker
       uses: appleboy/ssh-action@v0.1.7
       with:
