@@ -54,9 +54,6 @@ jobs:
     - name: Create .env file
       run: echo "${{ secrets.ENV_FILE_TEST }}" > .env
 
-    - name: Install redis-tools
-      run: sudo apt-get update && sudo apt-get install -y redis-tools
-
     - name: Wait for Redis to be ready
       run: |
         until redis-cli -h localhost -p 6379 ping; do
@@ -76,26 +73,23 @@ jobs:
     - name: Run Tests
       run: |
         go test ./... -v
-  
-  deploy:
-    if: github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    needs: build
+    
+    - name: Determine the Next Docker Image Tag
+      id: tag
+      run: |
+        TAGS=$(curl -s https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_REPOSITORY }}/tags/ | jq -r '.results[].name')
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+        LATEST_TAG=$(echo "$TAGS" | grep -E '^amd64-v1\.[0-9]+$' | sed -E 's/amd64-v1\.//' | sort -n | tail -1)
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-    - name: Create .env file
-      run: echo "${{ secrets.ENV_FILE }}" > .env
+        if [ -z "$LATEST_TAG" ]; then
+          NEXT_TAG="1"  # Start from v1.1 if no tags are found
+        else
+          NEXT_TAG=$((LATEST_TAG + 1))
+        fi
+
+        echo "::set-output name=next_tag::amd64-v1.$NEXT_TAG"
 
     - name: Build and push Docker image
       run: |
         docker buildx create --use  # This ensures that the buildx builder is set up
-        docker buildx build --platform linux/amd64 -t ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}:latest --push .
-    
+        docker buildx build --platform linux/amd64 -t ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}:${{ steps.tag.outputs.next_tag }} --push .
