@@ -119,7 +119,7 @@ jobs:
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_PRIVATE_KEY }}
         script: |
-          docker pull ${{ secrets.DOCKER_REPOSITORY }}:${{ steps.tag.outputs.next_tag }}
+          docker pull ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}:${{ steps.tag.outputs.next_tag }}
 
           CONTAINER_ID=$(docker ps | grep "amd64-v1" | awk '{print $1}')
           if [ -n "$CONTAINER_ID" ]; then
@@ -128,6 +128,4 @@ jobs:
           else
               echo "No running container found with image tag containing 'amd64-v1'"
 
-          docker run -d \
-            -p 8080:8080 \
-            ${{ secrets.DOCKER_REPOSITORY }}:${{ steps.tag.outputs.next_tag }}
+          docker run -d -p 80:8080 ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}:${{ steps.tag.outputs.next_tag }}
