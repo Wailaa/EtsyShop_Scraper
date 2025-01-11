@@ -56,7 +56,7 @@ jobs:
 
     - name: Wait for Redis to be ready
       run: |
-        until redis-cli -h localhost -p 6379 ping; do
+        until redis-cli -h redis -p 6379 ping; do
           echo "Waiting for Redis to be ready..."
           sleep 2
         done
