@@ -80,7 +80,7 @@ jobs:
     - name: Determine the Next Docker Image Tag
       id: tag
       run: |
-        TAGS=$(curl -s https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_REPOSITORY }}/${{ secrets.DOCKER_REPOSITORY }}/tags/ | jq -r '.results[].name')
+        TAGS=$(curl -s https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}/tags/ | jq -r '.results[].name')
 
         LATEST_TAG=$(echo "$TAGS" | grep -E '^amd64-v1\.[0-9]+$' | sed -E 's/amd64-v1\.//' | sort -n | tail -1)
 
