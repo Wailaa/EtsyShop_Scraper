@@ -102,3 +102,32 @@ jobs:
       run: |
         docker buildx create --use  # This ensures that the buildx builder is set up
         docker buildx build --platform linux/amd64 -t ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}:${{ steps.tag.outputs.next_tag }} --push .
+
+  deploy:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    needs: build
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+        
+    - name: Deploy to EC2 Docker
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_PRIVATE_KEY }}
+        script: |
+          docker pull ${{ secrets.DOCKER_REPOSITORY }}:${{ steps.tag.outputs.next_tag }}
+
+          CONTAINER_ID=$(docker ps | grep "amd64-v1" | awk '{print $1}')
+          if [ -n "$CONTAINER_ID" ]; then
+              docker stop $CONTAINER_ID || true
+              docker rm $CONTAINER_ID || true
+          else
+              echo "No running container found with image tag containing 'amd64-v1'"
+
+          docker run -d \
+            -p 8080:8080 \
+            ${{ secrets.DOCKER_REPOSITORY }}:${{ steps.tag.outputs.next_tag }}
