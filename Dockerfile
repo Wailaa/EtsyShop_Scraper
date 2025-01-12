@@ -1,4 +1,4 @@
-FROM golang
+FROM golang:1.21 AS builder
 
 RUN apk add --no-cache build-base
 
