@@ -80,6 +80,10 @@ jobs:
     - name: Create .env file 
       run: echo "${{ secrets.ENV_FILE }}" > .env
 
+    - name: Print .env file (Debugging)
+      run: |
+        echo "The .env file is: ${{ secrets.ENV_FILE }}"
+
     - name: Determine the Next Docker Image Tag
       id: tag
       run: |
