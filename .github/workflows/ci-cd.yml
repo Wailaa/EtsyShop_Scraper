@@ -51,8 +51,8 @@ jobs:
       run: |
         go mod tidy
 
-    - name: Create .env test file
-      run: echo "${{ secrets.ENV_FILE_TEST }}" > .env
+    - name: Create .env file
+      run: echo "${{ secrets.ENV_FILE}}" > .env
 
     - name: Install redis-tools
       run: sudo apt-get update && sudo apt-get install -y redis-tools
@@ -76,14 +76,6 @@ jobs:
     - name: Run Tests
       run: |
         go test ./... -v
-    
-    - name: Create .env file 
-      run: echo "${{ secrets.ENV_FILE }}" > .env
-
-    - name: Print .env file (Debugging)
-      run: |
-        TEST_POSTGRES_HOST=${{secrets.ENV_FILE.POSTGRES_HOST}}
-        echo "The .env file is: ${{ secrets.ENV_FILE }}"
 
     - name: Determine the Next Docker Image Tag
       id: tag
