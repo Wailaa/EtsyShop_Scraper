@@ -1,6 +1,6 @@
 FROM golang:1.21 AS builder
 
-RUN apk add --no-cache build-base
+RUN apt-get update && apt-get install -y build-essential && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
