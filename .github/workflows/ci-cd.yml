@@ -125,10 +125,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Print Next Tag (Debugging)
-      run: |
-        echo "The next_tag value is: ${{ needs.build.outputs.next_tag }}"
-
     - name: Deploy to EC2 Docker
       uses: appleboy/ssh-action@v0.1.7
       with:
@@ -137,13 +133,72 @@ jobs:
         key: ${{ secrets.EC2_PRIVATE_KEY }}
         script: |
           
-          CONTAINER_ID=$(docker ps | grep "amd64-v1" | awk '{print $1}')
-          if [ -n "$CONTAINER_ID" ]; then
-              docker stop $CONTAINER_ID || true
-              docker rm $CONTAINER_ID || true
+          echo "fetching container id of the current running container"
+          CURRENT_CONTAINER_ID=$(docker ps | grep "${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}:amd64-v1" | awk '{print $1}')
+
+          echo "checking if there is a running container.... "
+          if [ -z "$CURRENT_CONTAINER_ID" ]; then
+              echo "No running container found with the specified tag."
           else
-              echo "No running container found with image tag containing 'amd64-v1'"
+              echo "Found running container with ID: $CURRENT_CONTAINER_ID"
           fi
 
+          echo "Pulling the new Docker image: ${{secrets.DOCKER_REGISTRY}}/${{secrets.DOCKER_REPOSITORY}}:${{needs.build.outputs.next_tag}}..."
           docker pull ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}:${{ needs.build.outputs.next_tag }}
-          docker run -d -p 80:8080 ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}:${{ needs.build.outputs.next_tag }}
+
+          echo "check if port 80 is already in use with other container...."        
+          CONTAINER_USING_PORT=$(docker ps --filter "publish=80" --format "{{.Names}}")
+          
+          if [ -n "$CONTAINER_USING_PORT" ]; then
+              echo "stopping container using port 80: $CONTAINER_USING_PORT..."
+              docker stop "$CONTAINER_USING_PORT"
+              
+              echo "removing container :$CONTAINER_USING_PORT..."
+              docker rm "$CONTAINER_USING_PORT"
+          else 
+              echo "port 80 is not being used."
+          fi
+
+          echo "running the new container..."
+          NEW_CONTAINER_NAME="scraper_api_$${{ needs.build.outputs.next_tag }}"
+          docker run -d --name $NEW_CONTAINER_NAME -p 80:8080 ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.DOCKER_REPOSITORY }}:${{ needs.build.outputs.next_tag }}
+
+          echo "performing check to see if the container is running...."
+          NEW_CONTAINER_ID=$(docker ps -q --filter "name=$NEW_CONTAINER_NAME")
+          SUCCESS=false
+
+          for i in {1..10}; do
+              NEW_CONTAINER_RUNNING=$(docker inspect --format='{{.State.Status}}' $NEW_CONTAINER_ID)
+              if [ "$NEW_CONTAINER_RUNNING" == "running" ]; then
+                  echo "New container is running."
+                  SUCCESS=true
+                  break
+              fi
+              echo "Waiting for the new container to become healthy... Attempt $i"
+              sleep 5
+          done
+
+          if [ "$SUCCESS" != true ]; then
+              echo "New container Status is not running. Performing rollback..."
+              docker stop $NEW_CONTAINER_ID || true
+              docker rm $NEW_CONTAINER_ID || true
+
+              if [ -n "$CURRENT_CONTAINER_ID" ]; then
+                  echo "restarting the previous working container..."
+                  docker start $CURRENT_CONTAINER_ID || true
+              else
+                  echo "No previous container to roll back to. Exiting with failure.Rollback failed"
+                  exit 1
+              fi
+
+              echo "Rollback completed successfully. Previous container is running."
+              exit 1
+          fi
+
+          if [ -n "$CURRENT_CONTAINER_ID" ]; then
+              echo "Stopping and removing the old container with ID: $CURRENT_CONTAINER_ID"
+              docker stop $CURRENT_CONTAINER_ID || true
+              docker rm $CURRENT_CONTAINER_ID || true
+          fi
+
+          echo "Deployment succeeded! New container is running."
