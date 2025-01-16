@@ -1,8 +1,7 @@
 module EtsyScraper
 
 go 1.21
-
-toolchain go1.21.5
+toolchain go1.22.5
 
 require (
 	github.com/gin-gonic/gin v1.9.1
@@ -48,8 +47,8 @@ require (
 	github.com/klauspost/compress v1.17.8 // indirect
 	github.com/onsi/ginkgo/v2 v2.17.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/quic-go/qpack v0.4.0 // indirect
-	github.com/quic-go/quic-go v0.42.0 // indirect
+	github.com/quic-go/qpack v0.5.1 // indirect
+	github.com/quic-go/quic-go v0.48.2 // indirect
 	github.com/refraction-networking/utls v1.6.4 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
@@ -100,7 +99,7 @@ require (
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.7.0 // indirect
-	golang.org/x/exp v0.0.0-20240409090435-93d18d7e34b8 // indirect
+	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
