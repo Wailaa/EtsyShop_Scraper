@@ -7,7 +7,7 @@ import (
 )
 
 // var GetAllEnvProy = []string{config.ProxyHostURL1, config.ProxyHostURL2, config.ProxyHostURL3}
-var GetAllEnvProy = []string{Config.ProxyHostURL1, Config.ProxyHostURL2}
+var GetAllEnvProy = []string{Config.ProxyHostURL1}
 var Countries = []string{"UK", "FR", "DE", "US", "IR", "IT", "SP"}
 
 type ProxySetting struct {
