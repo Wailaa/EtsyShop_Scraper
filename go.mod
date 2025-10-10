@@ -49,7 +49,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.22.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
-	github.com/quic-go/quic-go v0.48.2 // indirect
+	github.com/quic-go/quic-go v0.49.1 // indirect
 	github.com/refraction-networking/utls v1.6.7 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
