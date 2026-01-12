@@ -13,7 +13,6 @@ import (
 	"EtsyScraper/models"
 	"EtsyScraper/repository"
 	"EtsyScraper/routes"
-	scheduleUpdates "EtsyScraper/scheduleUpdateTask"
 	scrap "EtsyScraper/scraping"
 	"EtsyScraper/utils"
 )
@@ -46,7 +45,7 @@ func main() {
 	implShop := controllers.Shop{Scraper: Scraper, User: Repository, Shop: Repository}
 	implShop.Operations = &implShop
 
-	scheduleUpdates.StartScheduleScrapUpdate(implShop)
+	// scheduleUpdates.StartScheduleScrapUpdate(implShop)
 
 	userRoutes := routes.NewUserRouteController(controllers.NewUserController(utils, Repository, config))
 	userRoutes.GeneraluserRoutes(server, controllers.AuthMiddleWare(utils, Repository), controllers.Authorization(Repository))
